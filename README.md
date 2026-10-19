@@ -10,7 +10,6 @@ Install using the [manual installation](#manual-install) instructions. Store lin
 - Secure by design
 - Render local and remote file URLs
 - Granular access to remote origins
-- Multiple markdown parsers
 - Full control over the [markdown-it] options
 - 30+ Themes ([cleanrmd], [GitHub][github-theme])
 - Custom theme support
