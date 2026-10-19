@@ -10,8 +10,6 @@ var Popup = () => {
     _themes: [
       'github',
       'github-dark',
-      'nimbus',
-      'nimbus-dark',
       // 'air',
       'almond',
       'awsm',
