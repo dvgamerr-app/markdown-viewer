@@ -136,108 +136,40 @@ pre#_markdown,
 body {
   display: flex;
 }
-/*nimbus "on this page" (src/components/ui/toc/TOC.astro)*/
 body._toc-left { padding-left: 300px !important; }
-body._toc-right { padding-right: 18rem !important; }
+body._toc-right { padding-right: 300px !important; }
 #_toc {
-  --toc-foreground: oklch(0.21 0 0);
-  --toc-muted-foreground: oklch(0.556 0 0);
-  --toc-border: oklch(0.935 0 0);
-  --toc-primary: oklch(0.145 0 0);
   position: fixed;
-  top: 0; bottom: 0; right: 0;
-  width: 18rem;
+  top: 0; bottom: 0; left: 0;
+  width: 299px;
   height: 100%;
-  box-sizing: border-box;
-  padding: 1.5rem 1.5rem 2rem 2rem;
+  border-right: 1px solid var(--toc-delimiter);
   overflow-y: auto;
   overflow-x: hidden;
-  background: transparent;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
-  scrollbar-width: none;
 }
-#_toc::-webkit-scrollbar { display: none; }
-._color-dark #_toc {
-  --toc-foreground: oklch(0.97 0 0);
-  --toc-muted-foreground: oklch(0.556 0 0);
-  --toc-border: oklch(0.269 0 0);
-  --toc-primary: oklch(0.9 0 0);
-}
-#_toc ._toc-title {
-  margin: 0 0 0.5rem;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  font-weight: 600;
-  color: var(--toc-foreground);
-}
-#_toc ._toc-nav {
-  position: relative;
-}
-#_toc ._toc-rail {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-#_toc ._toc-rail-active {
-  stroke: var(--toc-primary);
-  opacity: 0;
-  transition-property: stroke-dasharray, stroke-dashoffset, opacity;
-  transition-duration: 300ms;
-  transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
-}
-#_toc ._toc-rail-active[data-ready=true] { opacity: 1; }
-#_toc ._toc-rail-active[data-initial=true] { transition-property: opacity; }
-@media (prefers-reduced-motion: reduce) {
-  #_toc ._toc-rail-active { transition-property: opacity; }
-}
-#_toc ._toc-list {
-  display: flex;
-  flex-direction: column;
-  list-style: none;
+#_toc ._ul {
+  padding-left: 20px !important;
   margin: 0 !important;
-  padding: 0 !important;
 }
-#_toc ._toc-list li {
-  margin: 0 !important;
-  padding: 0 !important;
-  list-style: none;
+#_toc > ._ul {
+  padding: 0 0 0 10px !important;
 }
-#_toc ._toc-list li::before { content: none !important; }
-#_toc ._toc-curve {
-  display: block;
-  height: 0.5rem;
-  color: var(--toc-border);
+#_toc > ._ul:first-child {
+  padding-top: 15px !important;
 }
-#_toc ._toc-list a {
-  display: block !important;
-  padding: 0.375rem 0 0.375rem 1.25rem !important;
+#_toc > ._ul:last-child {
+  padding-bottom: 15px !important;
+}
+#_toc ._ul a {
   border: 0 !important;
-  border-left: 2px solid var(--toc-border) !important;
-  background: none !important;
-  font-size: 0.8125rem;
-  line-height: 1.375;
-  font-weight: 400;
-  color: var(--toc-muted-foreground) !important;
-  text-decoration: none !important;
-  transition: color 150ms, border-color 150ms;
+  padding: 5px 10px !important;
+  display: block !important;
 }
-#_toc ._toc-list a:hover {
-  color: var(--toc-foreground) !important;
-  border-left-color: color-mix(in oklch, var(--toc-foreground) 20%, transparent) !important;
+._color-light #_toc {
+  border-right: 1px solid #e1e4e8;
 }
-#_toc ._toc-list a[aria-current=true] {
-  font-weight: 500;
-  color: var(--toc-foreground) !important;
-}
-/*nimbus shows the toc from xl (1280px) up*/
-@media (max-width: 1279px) {
-  body._toc-right { padding-right: 0 !important; }
-  #_toc { display: none; }
+._color-dark #_toc {
+  border-right: 1px solid #30363d;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -395,114 +327,6 @@ body._toc-right { padding-right: 18rem !important; }
 /*resize*/
 pre:has(> code.mermaid) {
   resize: vertical;
-  /*diagram-design skin*/
-  background: #f5f5f5 !important;
-  border: 1px solid rgba(45,49,66,0.12) !important;
-  border-radius: 8px !important;
-  padding: 24px !important;
-  box-shadow: none !important;
-}
-._mermaid-dark pre:has(> code.mermaid) {
-  background: #2d3142 !important;
-  border-color: rgba(245,245,245,0.12) !important;
-}
-pre > code.mermaid {
-  background: none !important;
-  padding: 0 !important;
-  border: 0 !important;
-}
-pre.mmd-fullscreen > code.mermaid {
-  cursor: grab !important;
-}
-pre.mmd-fullscreen > code.mermaid:active {
-  cursor: grabbing !important;
-}
-/*zoom/move only in fullscreen: inline shows just the fullscreen button*/
-pre:not(.mmd-fullscreen) > .mmd-toolbar > button:not([data-action=fullscreen]) {
-  display: none;
-}
-/*mermaid toolbar*/
-pre:has(> code.mermaid) {
-  position: relative;
-}
-.mmd-toolbar {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 2;
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity .15s;
-}
-pre:hover > .mmd-toolbar,
-pre.mmd-fullscreen > .mmd-toolbar,
-.mmd-toolbar:focus-within {
-  opacity: 1;
-}
-.mmd-toolbar button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  margin: 0;
-  border: 1px solid #bfc0c0;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #4f5d75;
-  cursor: pointer;
-  box-shadow: none;
-}
-.mmd-toolbar button:hover {
-  color: #eb6c36;
-  border-color: #eb6c36;
-}
-._mermaid-dark .mmd-toolbar button {
-  background: #393e53;
-  border-color: rgba(191,192,192,0.25);
-  color: #bfc0c0;
-}
-._mermaid-dark .mmd-toolbar button:hover {
-  color: #f08a59;
-  border-color: #f08a59;
-}
-/*mermaid fullscreen (browser viewport)*/
-pre.mmd-fullscreen:has(> code.mermaid) {
-  position: fixed !important;
-  inset: 0;
-  z-index: 2147483646;
-  width: 100vw;
-  height: 100vh;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  resize: none;
-  overflow: hidden;
-}
-html._mmd-fullscreen,
-html._mmd-fullscreen body {
-  overflow: hidden !important;
-}
-pre.mmd-fullscreen > code.mermaid {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-pre.mmd-fullscreen > code.mermaid > svg {
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none !important;
-}
-pre.mmd-fullscreen > .mmd-toolbar {
-  opacity: 1;
-  top: 16px;
-  right: 16px;
 }
 /*pan/zoom*/
 .markdown-body code.mermaid,

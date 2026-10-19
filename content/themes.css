@@ -24,7 +24,39 @@
 /*---------------------------------------------------------------------------*/
 /*toc*/
 
-/*toc styling lives in index.css (nimbus layout)*/
+/*github*/
+._theme-github #_toc { /*.markdown-body {*/
+  background-color: var(--color-canvas-default);
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+  font-size: 16px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+._theme-github #_toc a { /*.markdown-body a {*/
+  background-color: transparent;
+  color: #0969da;
+  text-decoration: none;
+}
+._theme-github #_toc a:hover {
+  text-decoration: underline;
+}
+
+/*github-dark*/
+._theme-github-dark #_toc { /*.markdown-body {*/
+  background-color: #0d1117;
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+  font-size: 16px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+._theme-github-dark #_toc a { /*.markdown-body a {*/
+  background-color: transparent;
+  color: #58a6ff;
+  text-decoration: none;
+}
+._theme-github-dark #_toc a:hover {
+  text-decoration: underline;
+}
 
 /*---------------------------------------------------------------------------*/
 /*anchor link*/
