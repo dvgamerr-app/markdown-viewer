@@ -1,4 +1,13 @@
 var mmd = (() => {
+  // Firefox content scripts reach the page window through an Xray wrapper whose builtins lack their methods, the GWT code bundled in mermaid calls window.Math.max
+  if (window.Math !== Math) {
+    try {
+      Object.defineProperty(window, 'Math', {value: Math, configurable: true, writable: true})
+    }
+    catch (err) {
+      window.Math = Math
+    }
+  }
   var loaded = false
 
   var walk = (regex, string, result = [], match = regex.exec(string)) =>
@@ -314,13 +323,26 @@ var mmd = (() => {
         gantt: {barHeight: 20, barGap: 8, fontSize: 11, sectionFontSize: 11}
       }
       mermaid.initialize(config)
-      mermaid.init(config, 'code.mermaid')
+      // render from textContent: mermaid.init reads innerHTML and its entity decoding fails in Firefox content scripts
+      Array.from(document.querySelectorAll('code.mermaid')).forEach((node, index) => {
+        var text = node.textContent
+        node.removeAttribute('data-processed')
+        mermaid.render('mmd-' + Date.now() + '-' + index, text).then(({svg, bindFunctions}) => {
+          node.innerHTML = svg
+          node.setAttribute('data-processed', 'true')
+          bindFunctions && bindFunctions(node)
+        }, (err) => {
+          document.querySelectorAll('[id^="dmmd-"]').forEach((el) => el.remove())
+          node.textContent = text + '\n\n' + (err && err.message || err)
+          node.setAttribute('data-processed', 'true')
+        })
+      })
       loaded = true
 
       var diagrams = Array.from(document.querySelectorAll('code.mermaid'))
       var timeout = setInterval(() => {
         var svg = Array.from(document.querySelectorAll('pre > code.mermaid > svg'))
-        if (diagrams.length === svg.length) {
+        if (diagrams.every((diagram) => diagram.hasAttribute('data-processed'))) {
           clearInterval(timeout)
           svg.forEach((diagram) => {
             var panzoom = Panzoom(diagram, {canvas: true, maxScale: 20, minScale: 0.2, touchAction: 'auto', pinchAndPan: true, noBind: true, cursor: ''})
