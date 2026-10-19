@@ -74,7 +74,12 @@ var Popup = () => {
 
   var events = {
     tab: (e) => {
-      state.tab = e.target.hash.replace('#tab-', '')
+      // the handler sits on the nav, so ignore clicks on the indicator or empty space
+      var link = e.target.closest && e.target.closest('a[href^="#tab-"]')
+      if (!link) {
+        return false
+      }
+      state.tab = link.hash.replace('#tab-', '')
       localStorage.setItem('tab', state.tab)
       return false
     },
