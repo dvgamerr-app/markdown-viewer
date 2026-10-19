@@ -1,15 +1,18 @@
 
-importScripts('/vendor/markdown-it.min.js')
-importScripts('/background/compilers/markdown-it.js')
+// chrome loads the scripts in the service worker, firefox loads them from background.scripts
+if (typeof importScripts === 'function') {
+  importScripts('/vendor/markdown-it.min.js')
+  importScripts('/background/compilers/markdown-it.js')
 
-importScripts('/background/storage.js')
-importScripts('/background/webrequest.js')
-importScripts('/background/detect.js')
-importScripts('/background/inject.js')
-importScripts('/background/messages.js')
-importScripts('/background/mathjax.js')
-importScripts('/background/xhr.js')
-importScripts('/background/icon.js')
+  importScripts('/background/storage.js')
+  importScripts('/background/webrequest.js')
+  importScripts('/background/detect.js')
+  importScripts('/background/inject.js')
+  importScripts('/background/messages.js')
+  importScripts('/background/mathjax.js')
+  importScripts('/background/xhr.js')
+  importScripts('/background/icon.js')
+}
 
 ;(() => {
   var storage = md.storage(md)
