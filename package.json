@@ -1,8 +1,8 @@
 {
-  "name": "markdown-viewer",
+  "name": "nimbus-markdown",
   "version": "0.0.0",
   "private": true,
-  "description": "Markdown Viewer / Browser Extension",
+  "description": "Nimbus Markdown / Browser Extension",
   "packageManager": "bun@1.4.2",
   "scripts": {
     "test:ci": "bun test",

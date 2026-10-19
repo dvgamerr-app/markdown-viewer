@@ -18,7 +18,7 @@ cd "$(dirname "$0")"
 rm -rf ../themes
 rm -rf ../vendor
 rm -rf ../dist/tmp
-rm -f ../markdown-viewer.zip
+rm -f ../nimbus-markdown.zip
 mkdir -p ../themes
 mkdir -p ../vendor
 
@@ -34,23 +34,23 @@ sh panzoom/build.sh
 sh prism/build.sh
 sh themes/build.sh $browser
 
-# copy files, staged in dist/tmp so a loaded dist/markdown-viewer never sees a half copy
+# copy files, staged in dist/tmp so a loaded dist/nimbus-markdown never sees a half copy
 cd ..
-mkdir -p dist/tmp/markdown-viewer
-cp -r background content icons options popup themes vendor LICENSE dist/tmp/markdown-viewer/
+mkdir -p dist/tmp/nimbus-markdown
+cp -r background content icons options popup themes vendor LICENSE dist/tmp/nimbus-markdown/
 
 # copy manifest.json
 if [ "$browser" = "chrome" ]; then
-  cp manifest.chrome.json dist/tmp/markdown-viewer/manifest.json
+  cp manifest.chrome.json dist/tmp/nimbus-markdown/manifest.json
   cp manifest.chrome.json manifest.json
 elif [ "$browser" = "firefox" ]; then
-  cp manifest.firefox.json dist/tmp/markdown-viewer/manifest.json
+  cp manifest.firefox.json dist/tmp/nimbus-markdown/manifest.json
   cp manifest.firefox.json manifest.json
 fi
 
-# swap the staged folder into dist/markdown-viewer
-rm -rf dist/markdown-viewer dist/markdown-viewer.zip
-mv dist/tmp/markdown-viewer dist/markdown-viewer
+# swap the staged folder into dist/nimbus-markdown
+rm -rf dist/nimbus-markdown dist/nimbus-markdown.zip
+mv dist/tmp/nimbus-markdown dist/nimbus-markdown
 rm -rf dist/tmp
 
 # zip is missing from Git Bash on Windows, fall back to the bundled bsdtar
@@ -62,14 +62,14 @@ archive () {
   fi
 }
 
-# archive the markdown-viewer folder itself
+# archive the nimbus-markdown folder itself
 if [ "$browser" = "chrome" ]; then
   cd dist/
-  archive markdown-viewer.zip markdown-viewer
+  archive nimbus-markdown.zip nimbus-markdown
   cd ..
-# archive the contents of the markdown-viewer folder
+# archive the contents of the nimbus-markdown folder
 elif [ "$browser" = "firefox" ]; then
-  cd dist/markdown-viewer/
-  archive ../markdown-viewer.zip .
+  cd dist/nimbus-markdown/
+  archive ../nimbus-markdown.zip .
   cd ../../
 fi

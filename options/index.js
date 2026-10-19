@@ -26,6 +26,6 @@ document.querySelector('.nav').addEventListener('click', (e) => {
     e.target.classList.add('active')
   }
   else if (e.target.innerText === 'Help') {
-    window.location = 'https://github.com/simov/markdown-viewer#table-of-contents'
+    window.location = 'https://github.com/dvgamerr-app/nimbus-markdown#table-of-contents'
   }
 })

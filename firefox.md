@@ -1,5 +1,5 @@
 
-# Markdown Viewer on Firefox
+# nimbus-markdown on Firefox
 
 ## Table of Contents
 
@@ -95,7 +95,7 @@ express()
     // by default serve-static serves markdown content with content-type: text/markdown
     if (
       /Firefox/.test(req.headers['user-agent']) &&
-      // the default Path Matching RegExp in Markdown Viewer
+      // the default Path Matching RegExp in nimbus-markdown
       /\.(?:markdown|mdown|mkdn|md|mkd|mdwn|mdtxt|mdtext|text)(?:#.*|\?.*)?$/.test(req.url)
     ) {
       res.setHeader('content-type', 'text/plain; charset=utf-8')

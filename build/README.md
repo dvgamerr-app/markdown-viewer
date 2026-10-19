@@ -1,14 +1,13 @@
 
 # Build
 
-Build the `themes` and `vendor` folders, the unpacked extension in `dist/markdown-viewer/`, and the `dist/markdown-viewer.zip` package:
+Build the `themes` and `vendor` folders, the unpacked extension in `dist/nimbus-markdown/`, and the `dist/nimbus-markdown.zip` package:
 
 ```bash
-# pick a release tag
-git clone --depth 1 --branch 5.2 https://github.com/simov/markdown-viewer.git
-cd markdown-viewer/
+git clone https://github.com/dvgamerr-app/nimbus-markdown.git
+cd nimbus-markdown/
 # build
-sh build/package.sh
+sh build/package.sh chrome
 ```
 
 ### Windows
@@ -16,7 +15,7 @@ sh build/package.sh
 ```bat
 build\package.bat chrome
 build\package.bat firefox
-:: rebuild only the themes folder, synced into dist/markdown-viewer/themes
+:: rebuild only the themes folder, synced into dist/nimbus-markdown/themes
 build\package.bat chrome themes
 ```
 
@@ -28,7 +27,7 @@ The script runs `package.sh` through Git Bash. Every step uses `bun` (`bun insta
 - git
 - zip
 
-## Markdown Viewer Dependencies
+## nimbus-markdown Dependencies
 
 | module | version
 | :-     | -:
@@ -36,7 +35,7 @@ The script runs `package.sh` through Git Bash. Every step uses `bun` (`bun insta
 | cleanrmd            | 0.1.0
 | github-markdown-css | 5.5.1
 | mathjax             | 3.2.2
-| mermaid             | 10.8.0
+| mermaid | 12.2.0
 | mithril             | 1.1.7
 | prismjs             | 1.29.0
 | csso                | 5.0.5

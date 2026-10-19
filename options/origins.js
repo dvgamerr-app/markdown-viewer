@@ -141,7 +141,7 @@ var Origins = () => {
   }
 
   var render = () =>
-    m('.m-origins',
+    m('.m-origins hidden',
 
       // file access
       m('.row',

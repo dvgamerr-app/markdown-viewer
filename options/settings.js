@@ -53,6 +53,7 @@ var Settings = () => {
       ),
       m('.col-xxl-6.col-xl-6.col-lg-6.col-md-6.col-sm-12',
         m('select.mdc-elevation--z2 m-select', {
+          'aria-label': 'Extension icon',
           onchange: events.icon
           },
           state._icons.map((icon) =>
@@ -69,6 +70,7 @@ var Settings = () => {
       ),
       m('.col-xxl-6.col-xl-6.col-lg-6.col-md-6.col-sm-12',
         m('select.mdc-elevation--z2 m-select', {
+          'aria-label': 'Interface appearance',
           onchange: events.theme
           },
           state._themes.map((theme) =>

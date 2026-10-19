@@ -1,0 +1,536 @@
+/* ============================================================
+ * Nimbus — markdown rendering ported from the Nimbus docs design
+ * (globals.css + prose.css). Concatenated after light.css or
+ * dark.css by build.sh, so every rule reads the --nb-* tokens.
+ * ============================================================ */
+
+:root {
+  /* Spacing scale — 4px grid */
+  --nb-space-1: 0.25rem;
+  --nb-space-2: 0.5rem;
+  --nb-space-3: 0.75rem;
+  --nb-space-4: 1rem;
+  --nb-space-5: 1.25rem;
+  --nb-space-6: 1.5rem;
+  --nb-space-8: 2rem;
+  --nb-space-10: 2.5rem;
+  --nb-space-12: 3rem;
+  --nb-space-16: 4rem;
+
+  /* Radius */
+  --nb-radius-sm: 0.25rem;
+  --nb-radius: 0.375rem;
+  --nb-radius-md: 0.5rem;
+  --nb-radius-lg: 0.75rem;
+
+  /* Layout */
+  --nb-sidebar-width: 18.75rem;
+  --nb-content-max: 43.5rem;
+  --nb-gutter: var(--nb-space-4);
+  --nb-page-top: var(--nb-space-8);
+  --nb-page-bottom: var(--nb-space-16);
+
+  /* Vertical rhythm */
+  --nb-flow: var(--nb-space-5);
+  --nb-flow-dense: var(--nb-space-6);
+  --nb-flow-h2: var(--nb-space-10);
+  --nb-flow-h3: var(--nb-space-8);
+
+  /* Typography */
+  --nb-font-sans:
+    "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  --nb-font-mono:
+    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "Cascadia Code",
+    "Source Code Pro", Menlo, Consolas, monospace;
+  --nb-text-size: 0.9375rem;
+  --nb-text-leading: 1.75;
+  --nb-h1-size: 2.1875rem;
+  --nb-h1-weight: 600;
+  --nb-h1-tracking: -0.025em;
+  --nb-h2-size: 1.3rem;
+  --nb-h2-weight: 650;
+  --nb-h2-tracking: -0.015em;
+  --nb-h3-size: 1.1rem;
+  --nb-h3-weight: 600;
+  --nb-h3-tracking: -0.01em;
+  --nb-h4-weight: 600;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --nb-gutter: var(--nb-space-8);
+    --nb-page-top: var(--nb-space-12);
+  }
+}
+@media (min-width: 1536px) {
+  :root {
+    --nb-content-max: 52rem;
+  }
+}
+
+/* ---- Page ---- */
+
+html,
+body {
+  background: var(--nb-background) !important;
+  color: var(--nb-foreground);
+  font-family: var(--nb-font-sans);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--nb-primary) 10%, transparent);
+  color: var(--nb-foreground);
+}
+
+:focus-visible {
+  outline: 2px solid var(--nb-ring);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar,
+::-webkit-scrollbar-corner {
+  width: 6px;
+  height: 6px;
+  background: transparent;
+}
+::-webkit-scrollbar-track,
+._color-dark::-webkit-scrollbar-track,
+._color-dark *::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+::-webkit-scrollbar-thumb,
+._color-dark::-webkit-scrollbar-thumb,
+._color-dark *::-webkit-scrollbar-thumb {
+  background: var(--nb-scrollbar) !important;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover,
+._color-dark::-webkit-scrollbar-thumb:hover,
+._color-dark *::-webkit-scrollbar-thumb:hover {
+  background: var(--nb-muted-foreground) !important;
+}
+
+/* ---- Layout: centered reading column ---- */
+
+body .markdown-theme:not([class*="_width-"]) {
+  width: 100% !important;
+  max-width: calc(var(--nb-content-max) + var(--nb-gutter) * 2) !important;
+}
+body .markdown-theme {
+  box-sizing: border-box;
+  padding: var(--nb-page-top) var(--nb-gutter) var(--nb-page-bottom) !important;
+}
+
+/* ---- On this page (TOC) ---- */
+
+/* layout, rail and colors live in content/index.css (ported from TOC.astro);
+ * the theme only hands it the Nimbus font */
+body #_toc {
+  font-family: var(--nb-font-sans);
+}
+
+/* ---- Prose ---- */
+
+.markdown-theme {
+  font-size: var(--nb-text-size);
+  line-height: var(--nb-text-leading);
+  color: var(--nb-foreground);
+  overflow-wrap: break-word;
+}
+
+.markdown-theme > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.markdown-theme > * + * {
+  margin-top: var(--nb-flow);
+}
+
+.markdown-theme h1,
+.markdown-theme h2,
+.markdown-theme h3,
+.markdown-theme h4,
+.markdown-theme h5,
+.markdown-theme h6 {
+  margin-bottom: 0;
+  color: var(--nb-foreground);
+  line-height: 1.3;
+  text-wrap: balance;
+  scroll-margin-top: var(--nb-space-6);
+}
+.markdown-theme h1 {
+  font-size: var(--nb-h1-size);
+  font-weight: var(--nb-h1-weight);
+  letter-spacing: var(--nb-h1-tracking);
+  line-height: 1.2;
+}
+.markdown-theme > h1:first-child {
+  margin-top: 0;
+}
+.markdown-theme h2 {
+  font-size: var(--nb-h2-size);
+  font-weight: var(--nb-h2-weight);
+  letter-spacing: var(--nb-h2-tracking);
+  margin-top: var(--nb-flow-h2);
+}
+.markdown-theme h3 {
+  font-size: var(--nb-h3-size);
+  font-weight: var(--nb-h3-weight);
+  letter-spacing: var(--nb-h3-tracking);
+  margin-top: var(--nb-flow-h3);
+}
+.markdown-theme h4,
+.markdown-theme h5,
+.markdown-theme h6 {
+  font-size: 1em;
+  font-weight: var(--nb-h4-weight);
+  margin-top: var(--nb-flow-h3);
+}
+.markdown-theme h6 {
+  color: var(--nb-muted-foreground);
+}
+
+.markdown-theme p,
+.markdown-theme li,
+.markdown-theme blockquote {
+  text-wrap: pretty;
+}
+
+.markdown-theme strong,
+.markdown-theme b {
+  font-weight: 600;
+}
+
+/* Heading anchors — muted, revealed on hover */
+.markdown-theme .anchor {
+  color: var(--nb-muted-foreground) !important;
+  text-decoration: none !important;
+}
+.markdown-theme .anchor:hover {
+  color: var(--nb-foreground) !important;
+}
+.markdown-theme .octicon-link {
+  color: inherit !important;
+}
+
+/* Links */
+.markdown-theme a {
+  color: var(--nb-foreground);
+  text-decoration-line: underline;
+  text-decoration-color: var(--nb-border-strong);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  font-weight: 500;
+  transition: text-decoration-color 0.15s;
+}
+.markdown-theme a:hover {
+  text-decoration-color: var(--nb-foreground);
+}
+
+/* Lists */
+.markdown-theme ul,
+.markdown-theme ol {
+  padding-left: var(--nb-space-5);
+}
+.markdown-theme ul {
+  list-style-type: disc;
+}
+.markdown-theme ol {
+  list-style-type: decimal;
+}
+.markdown-theme ul ul {
+  list-style-type: circle;
+}
+.markdown-theme ul ul ul {
+  list-style-type: square;
+}
+.markdown-theme li {
+  margin: var(--nb-space-1) 0;
+}
+.markdown-theme li > ul,
+.markdown-theme li > ol {
+  margin: var(--nb-space-1) 0 0;
+}
+.markdown-theme li > p {
+  margin: 0;
+}
+.markdown-theme li > p + p {
+  margin-top: var(--nb-space-2);
+}
+.markdown-theme li::marker {
+  color: var(--nb-muted-foreground);
+}
+
+/* Task lists */
+.markdown-theme li:has(> input[type="checkbox"]),
+.markdown-theme li.task-list-item {
+  list-style: none;
+}
+.markdown-theme ul:has(> li > input[type="checkbox"]) {
+  padding-left: var(--nb-space-1);
+}
+.markdown-theme input[type="checkbox"] {
+  margin: 0 var(--nb-space-2) 0 0;
+  vertical-align: -0.125em;
+  accent-color: var(--nb-primary);
+}
+
+/* Blockquote */
+.markdown-theme blockquote {
+  margin-left: 0;
+  margin-right: 0;
+  padding: 0 0 0 var(--nb-space-4);
+  border-left: 2px solid var(--nb-border);
+  color: var(--nb-muted-foreground);
+  background: none;
+  font-style: normal;
+}
+.markdown-theme blockquote > * + * {
+  margin-top: var(--nb-space-3);
+}
+.markdown-theme blockquote > :first-child {
+  margin-top: 0;
+}
+.markdown-theme blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* Rule */
+.markdown-theme hr {
+  height: 0;
+  border: 0;
+  border-top: 1px solid var(--nb-border);
+  margin: var(--nb-flow-dense) 0;
+  background: none;
+}
+
+/* Inline code */
+.markdown-theme :not(pre) > code {
+  font-family: var(--nb-font-mono);
+  direction: ltr;
+  unicode-bidi: isolate;
+  background: var(--nb-muted);
+  color: var(--nb-foreground);
+  border: 1px solid var(--nb-border);
+  border-radius: var(--nb-radius);
+  padding: 0.125rem 0.375rem;
+  font-size: 0.8125em;
+  font-weight: 450;
+  white-space: break-spaces;
+}
+.markdown-theme :not(pre) > code::before,
+.markdown-theme :not(pre) > code::after {
+  content: none;
+}
+
+/* Code blocks (plain + Prism) */
+.markdown-theme pre,
+.markdown-theme pre[class*="language-"] {
+  position: relative;
+  margin: var(--nb-flow-dense) 0 0;
+  padding: var(--nb-space-3) var(--nb-space-4);
+  border: 1px solid var(--nb-border);
+  border-radius: var(--nb-radius-md);
+  background: var(--nb-card) !important;
+  font-family: var(--nb-font-mono);
+  font-size: 0.875rem;
+  line-height: 1.625;
+  box-shadow: none;
+  text-shadow: none;
+}
+.markdown-theme > pre + * {
+  margin-top: var(--nb-flow-dense);
+}
+.markdown-theme pre code,
+.markdown-theme code[class*="language-"] {
+  display: block;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: none !important;
+  color: var(--nb-foreground);
+  font-family: var(--nb-font-mono);
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  text-shadow: none;
+  white-space: pre;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.markdown-theme pre::before,
+.markdown-theme pre::after {
+  content: none;
+}
+
+/* Tables */
+.markdown-theme table {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  text-align: left;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--nb-border);
+  border-radius: var(--nb-radius-lg);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.markdown-theme th,
+.markdown-theme td {
+  padding: 0.625rem var(--nb-space-3);
+  text-align: left;
+  vertical-align: top;
+  border: 0;
+  border-bottom: 1px solid var(--nb-border);
+  background: none;
+}
+.markdown-theme th {
+  background: var(--nb-muted);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+.markdown-theme tr {
+  background: none !important;
+  border: 0;
+}
+.markdown-theme tr:last-child td {
+  border-bottom: 0;
+}
+.markdown-theme thead tr:first-child th:first-child {
+  border-top-left-radius: var(--nb-radius-lg);
+}
+.markdown-theme thead tr:first-child th:last-child {
+  border-top-right-radius: var(--nb-radius-lg);
+}
+
+/* Media */
+.markdown-theme img,
+.markdown-theme video {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--nb-radius-md);
+  background-color: transparent;
+}
+
+/* Keycaps */
+.markdown-theme kbd {
+  display: inline-block;
+  font-family: var(--nb-font-mono);
+  font-size: 0.75em;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--nb-foreground);
+  background: var(--nb-muted);
+  border: 1px solid var(--nb-border);
+  border-bottom-width: 2px;
+  border-radius: var(--nb-radius);
+  padding: 0.1875rem 0.375rem;
+  vertical-align: 0.0625rem;
+  box-shadow: none;
+}
+
+/* Highlight */
+.markdown-theme mark {
+  background: color-mix(in oklch, var(--nb-primary) 12%, transparent);
+  color: var(--nb-foreground);
+  border-radius: var(--nb-radius-sm);
+  padding: 0.0625rem var(--nb-space-1);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Disclosure */
+.markdown-theme details {
+  border: 1px solid var(--nb-border);
+  border-radius: var(--nb-radius-md);
+  padding: 0.625rem 0.875rem;
+}
+.markdown-theme details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.625rem;
+  cursor: pointer;
+  font-weight: 500;
+  list-style: none;
+  user-select: none;
+}
+.markdown-theme details > summary::-webkit-details-marker {
+  display: none;
+}
+.markdown-theme details > summary::after {
+  content: "";
+  flex-shrink: 0;
+  width: 0.4375em;
+  height: 0.4375em;
+  border-right: 1.5px solid var(--nb-muted-foreground);
+  border-bottom: 1.5px solid var(--nb-muted-foreground);
+  transform: rotate(-45deg);
+  transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.markdown-theme details[open] > summary::after {
+  transform: rotate(45deg) translateY(-0.125em);
+}
+.markdown-theme details[open] > summary {
+  margin-bottom: var(--nb-space-2);
+}
+.markdown-theme details > :not(summary) + * {
+  margin-top: var(--nb-space-3);
+}
+
+/* Definition lists */
+.markdown-theme dt {
+  font-weight: 600;
+}
+.markdown-theme dt:not(:first-child) {
+  margin-top: var(--nb-space-3);
+}
+.markdown-theme dd {
+  margin-left: var(--nb-space-4);
+  color: var(--nb-muted-foreground);
+}
+
+/* Footnotes */
+.markdown-theme sup,
+.markdown-theme sub {
+  font-size: 0.75em;
+  line-height: 0;
+}
+.markdown-theme .footnotes {
+  margin-top: var(--nb-flow-h2);
+  font-size: 0.875rem;
+  color: var(--nb-muted-foreground);
+}
+.markdown-theme .footnotes-sep {
+  margin-top: var(--nb-flow-h2);
+}
+
+/* Raw markdown view */
+pre#_markdown {
+  font-family: var(--nb-font-mono);
+  font-size: 0.875rem;
+  line-height: 1.625;
+}
+
+@media print {
+  body .markdown-theme {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

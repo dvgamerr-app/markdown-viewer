@@ -10,6 +10,8 @@ var Popup = () => {
     _themes: [
       'github',
       'github-dark',
+      'nimbus',
+      'nimbus-dark',
       // 'air',
       'almond',
       'awsm',
@@ -193,6 +195,7 @@ var Popup = () => {
 
   var render = () =>
     m('#popup',
+      m('header.popup-brand', m('img', {src: '/icons/nimbus.svg', width: 38, height: 38, alt: ''}), m('div', m('strong', 'Nimbus Markdown'), m('span', 'A calmer way to read.'))),
       // raw
       m('button.mdc-button mdc-button--raised m-button', {
         oncreate: oncreate.ripple,
@@ -216,6 +219,8 @@ var Popup = () => {
         state.tabs.map((tab) =>
         m('a.mdc-tab', {
           href: '#tab-' + tab,
+          class: state.tab === tab ? 'mdc-tab--active' : '',
+          'aria-current': state.tab === tab ? 'page' : undefined,
           },
           tab
         )),
@@ -306,12 +311,12 @@ var Popup = () => {
         oncreate: oncreate.ripple,
         onclick: events.advanced
         },
-        'Advanced Options'
+        'All settings →'
       )
     )
 
   var options = () =>
-    m('.row m-settings hidden',
+    m('.row m-settings',
       m('.col-xxl-4.col-xl-4.col-lg-6.col-md-6.col-sm-12',
         m('h3', 'Theme'),
         m('.bs-callout m-theme',

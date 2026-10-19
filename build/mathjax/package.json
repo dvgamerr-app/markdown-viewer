@@ -1,7 +1,7 @@
 {
-  "name": "markdown-viewer",
+  "name": "nimbus-markdown",
   "version": "0.0.0",
-  "description": "Markdown Viewer / Browser Extension",
+  "description": "nimbus-markdown / Browser Extension",
   "private": true,
   "dependencies": {
     "mathjax": "3.2.2"

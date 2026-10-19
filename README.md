@@ -1,7 +1,9 @@
 
-# Markdown Viewer / Browser Extension
+# Nimbus Markdown / Browser Extension
 
-**Install: [Chrome]** / **[Firefox]** / **[Edge]** / **[Opera]**  / **[Brave]** / **[Chromium]** / **[Vivaldi]**
+A browser extension for rendering Markdown, based on [Markdown Viewer](https://github.com/simov/markdown-viewer).
+
+Install using the [manual installation](#manual-install) instructions. Store links below refer to the upstream extension.
 
 # Features
 
@@ -42,7 +44,7 @@
 ## Local Files
 
 1. Navigate to `chrome://extensions`
-2. Locate the Markdown Viewer extension and click on the `Details` button
+2. Locate the nimbus-markdown extension and click on the `Details` button
 
 ![img-extensions]
 
@@ -52,8 +54,8 @@
 
 ## Remote Files
 
-1. Click on the Markdown Viewer icon and select [Advanced Options](#manage-origins)
-2. Add the origins that you want enabled for the Markdown Viewer extension
+1. Click on the nimbus-markdown icon and select [Advanced Options](#manage-origins)
+2. Add the origins that you want enabled for the nimbus-markdown extension
 
 ---
 
@@ -189,9 +191,9 @@ Generates Table of Contents (ToC) based on the headers found in the markdown doc
 
 # Manage Origins
 
-Click on the Markdown Viewer icon and select `Advanced Options`.
+Click on the nimbus-markdown icon and select `Advanced Options`.
 
-By default Markdown Viewer does not have access to any content:
+By default nimbus-markdown does not have access to any content:
 
 ![img-no-access]
 
@@ -285,9 +287,9 @@ Only origins that needs to be refreshed will be highlighted. The extension canno
 
 # Syntax Examples
 
-Examples about the Markdown syntax and all features available in Markdown Viewer can be found on [GitHub][syntax-github], [GitLab][syntax-gitlab] and [BitBucket][syntax-bitbucket]:
+Examples about the Markdown syntax and all features available in nimbus-markdown can be found on [GitHub][syntax-github], [GitLab][syntax-gitlab] and [BitBucket][syntax-bitbucket]:
 
-- **elements.md** - quick overview of the Markdown syntax and a summary of the Markdown Viewer features
+- **elements.md** - quick overview of the Markdown syntax and a summary of the nimbus-markdown features
 - **syntax.md** - extensive list of Markdown syntax examples with different combinations and edge cases
 - **prism.md** - syntax highlighting examples
 - **mermaid.md** - different types of Mermaid diagrams
@@ -306,14 +308,14 @@ Note that in any of the following cases you won't receive any future updates aut
 ## Load packed .crx
 
 1. Go to [releases] and pick a release that you want to install
-2. Download the `markdown-viewer.crx` file
+2. Download the `nimbus-markdown.crx` file
 3. Navigate to `chrome://extensions`
-4. Drag and drop the `markdown-viewer.crx` file into the `chrome://extensions` page
+4. Drag and drop the `nimbus-markdown.crx` file into the `chrome://extensions` page
 
 ## Load unpacked .zip
 
 1. Go to [releases] and pick a release that you want to install
-2. Download the `markdown-viewer.zip` file and extract it
+2. Download the `nimbus-markdown.zip` file and extract it
 3. Navigate to `chrome://extensions`
 4. Make sure that the `Developer mode` switch is enabled
 5. Click on the `Load unpacked` button and select the extracted directory
@@ -328,7 +330,7 @@ Note that in any of the following cases you won't receive any future updates aut
 
 ## Manifest v2
 
-1. Clone the [mv2] or [compilers-mv2] branch (Markdown Viewer v4.0)
+1. Clone the [mv2] or [compilers-mv2] branch (nimbus-markdown v4.0)
 2. Navigate to `chrome://extensions`
 3. Make sure that the `Developer mode` switch is enabled
 4. Click on the `Load unpacked` button and select the cloned directory
@@ -385,10 +387,10 @@ SOFTWARE.
   [gfm]: https://github.github.com/gfm/
   [prism-lang]: https://prismjs.com/#supported-languages
   [compilers]: https://github.com/simov/markdown-viewer/tree/compilers
-  [releases]: https://github.com/simov/markdown-viewer/releases
+  [releases]: https://github.com/dvgamerr-app/nimbus-markdown/releases
   [mv2]: https://github.com/simov/markdown-viewer/tree/mv2
   [compilers-mv2]: https://github.com/simov/markdown-viewer/tree/compilers-mv2
-  [firefox-docs]: https://github.com/simov/markdown-viewer/blob/main/firefox.md
+  [firefox-docs]: firefox.md
   [custom-theme]: https://gist.github.com/simov/2a074a1c0123e6ba4bc2bfa6a67d3203
 
   [syntax-github]: https://github.com/simov/markdown-syntax
