@@ -124,38 +124,12 @@ body .markdown-theme {
   padding: var(--nb-page-top) var(--nb-gutter) var(--nb-page-bottom) !important;
 }
 
-/* ---- Sidebar (TOC) ---- */
+/* ---- On this page (TOC) ---- */
 
-body._toc-left {
-  padding-left: var(--nb-sidebar-width) !important;
-}
+/* layout, rail and colors live in content/index.css (ported from TOC.astro);
+ * the theme only hands it the Nimbus font */
 body #_toc {
-  box-sizing: border-box;
-  width: var(--nb-sidebar-width);
-  padding: var(--nb-space-6) var(--nb-space-3);
-  background: var(--nb-muted);
-  border-right: 1px solid var(--nb-border) !important;
   font-family: var(--nb-font-sans);
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-body #_toc > ._ul {
-  padding: 0 !important;
-}
-body #_toc ._ul ._ul {
-  padding-left: var(--nb-space-3) !important;
-}
-body #_toc ._ul a {
-  margin: 1px 0;
-  padding: var(--nb-space-1) var(--nb-space-2) !important;
-  border-radius: var(--nb-radius);
-  color: var(--nb-muted-foreground);
-  text-decoration: none;
-  transition: color 0.15s, background-color 0.15s;
-}
-body #_toc ._ul a:hover {
-  color: var(--nb-foreground);
-  background: var(--nb-accent);
 }
 
 /* ---- Prose ---- */
