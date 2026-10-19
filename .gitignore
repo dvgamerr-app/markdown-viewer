@@ -9,5 +9,5 @@ package-lock.json
 /dist/
 /manifest.json
 /background/index-compilers.js
-/bun.lock
-/bun.lockb
+bun.lock
+bun.lockb
