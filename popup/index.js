@@ -253,7 +253,8 @@ var Popup = () => {
           class: state.tab === 'compiler' ? 'is-active' : ''
           },
           m('select.mdc-elevation--z2 m-select', {
-            onchange: events.compiler.name
+            onchange: events.compiler.name,
+            style: state.compilers.length > 1 ? '' : 'display: none',
             },
             state.compilers.map((name) =>
               m('option', {selected: state.compiler === name}, name)
@@ -364,7 +365,8 @@ var Popup = () => {
         m('h3', 'Compiler'),
         m('.bs-callout m-compiler',
           m('select.mdc-elevation--z2 m-select', {
-            onchange: events.compiler.name
+            onchange: events.compiler.name,
+            style: state.compilers.length > 1 ? '' : 'display: none',
             },
             state.compilers.map((name) =>
               m('option', {selected: state.compiler === name}, name)
