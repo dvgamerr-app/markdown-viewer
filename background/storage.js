@@ -82,10 +82,14 @@ md.storage.bug = (res) => {
   // reload extension bug
   chrome.permissions.getAll((permissions) => {
     var origins = Object.keys(res.origins || {})
-    chrome.permissions.remove({
-      origins: permissions.origins
-        .filter((origin) => origins.indexOf(origin.slice(0, -2)) === -1)
-    })
+    // host_permissions from the manifest are required and cannot be removed
+    var required = chrome.runtime.getManifest().host_permissions || []
+    var remove = permissions.origins
+      .filter((origin) => origins.indexOf(origin.slice(0, -2)) === -1)
+      .filter((origin) => required.indexOf(origin) === -1)
+    if (remove.length) {
+      chrome.permissions.remove({origins: remove})
+    }
   })
 }
 

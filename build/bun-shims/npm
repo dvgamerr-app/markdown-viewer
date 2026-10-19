@@ -1,0 +1,6 @@
+#!/bin/sh
+# only the npm subcommands the build scripts use
+case "$1" in
+  ci|i|install) shift; exec bun install --no-save "$@" ;;
+  *) exec bun "$@" ;;
+esac

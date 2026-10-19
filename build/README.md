@@ -1,7 +1,7 @@
 
 # Build
 
-Build the `themes` and `vendor` folders, and create the `markdown-viewer.zip` package:
+Build the `themes` and `vendor` folders, the unpacked extension in `dist/markdown-viewer/`, and the `dist/markdown-viewer.zip` package:
 
 ```bash
 # pick a release tag
@@ -10,6 +10,17 @@ cd markdown-viewer/
 # build
 sh build/package.sh
 ```
+
+### Windows
+
+```bat
+build\package.bat chrome
+build\package.bat firefox
+:: rebuild only the themes folder, synced into dist/markdown-viewer/themes
+build\package.bat chrome themes
+```
+
+The script runs `package.sh` through Git Bash. When `node` is not installed it builds with `bun` through the shims in `build/bun-shims` (`node-sass` is swapped for `sass`), and when `zip` is missing it archives with the `tar.exe` bundled with Windows.
 
 ## Build Dependencies
 

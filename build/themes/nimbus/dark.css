@@ -1,0 +1,32 @@
+/* Nimbus — dark tokens */
+:root {
+  color-scheme: dark;
+
+  --nb-background: oklch(0.085 0 0);
+  --nb-foreground: oklch(0.97 0 0);
+
+  --nb-card: #0f0f0f;
+  --nb-muted: #060606;
+  --nb-muted-foreground: oklch(0.556 0 0);
+  --nb-accent: oklch(0.269 0 0);
+
+  --nb-primary: oklch(0.9 0 0);
+  --nb-primary-foreground: oklch(0.085 0 0);
+
+  --nb-border: oklch(0.269 0 0);
+  --nb-border-strong: oklch(0.371 0 0);
+  --nb-selected: oklch(0.371 0 0);
+  --nb-ring: oklch(0.9 0 0 / 0.35);
+
+  --nb-info: oklch(0.75 0.12 255);
+  --nb-info-muted: oklch(0.17 0.03 260);
+  --nb-success: oklch(0.72 0.12 150);
+  --nb-success-muted: oklch(0.17 0.025 153);
+  --nb-warning: oklch(0.78 0.11 80);
+  --nb-warning-muted: oklch(0.19 0.03 70);
+  --nb-danger: oklch(0.72 0.14 25);
+  --nb-danger-muted: oklch(0.17 0.03 25);
+
+  --nb-shadow-sm: 0 1px 2px oklch(0 0 0 / 0.2);
+  --nb-scrollbar: color-mix(in oklch, var(--nb-foreground) 20%, transparent);
+}
