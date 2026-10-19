@@ -1,0 +1,11 @@
+{
+  "name": "markdown-viewer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Markdown Viewer / Browser Extension",
+  "packageManager": "bun@1.4.2",
+  "scripts": {
+    "test:ci": "bun test",
+    "build": "sh build/package.sh chrome"
+  }
+}
