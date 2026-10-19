@@ -20,6 +20,8 @@ var state = {
   _themes: {
     'github': 'light',
     'github-dark': 'dark',
+    'nimbus': 'light',
+    'nimbus-dark': 'dark',
     'almond': 'light',
     // 'air': 'light',
     'awsm': 'light',

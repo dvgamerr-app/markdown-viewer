@@ -16,6 +16,13 @@ mkdir -p ../../themes
 npx csso --input node_modules/github-markdown-css/github-markdown-light.css --output ../../themes/github.css
 npx csso --input node_modules/github-markdown-css/github-markdown-dark.css --output ../../themes/github-dark.css
 
+# nimbus
+cat nimbus/light.css nimbus/base.css > nimbus.tmp.css
+npx csso --input nimbus.tmp.css --output ../../themes/nimbus.css
+cat nimbus/dark.css nimbus/base.css > nimbus.tmp.css
+npx csso --input nimbus.tmp.css --output ../../themes/nimbus-dark.css
+rm -f nimbus.tmp.css
+
 # themes
 npx csso --input cleanrmd/inst/resources/almond/almond.css --output ../../themes/almond.css
 npx csso --input cleanrmd/inst/resources/awsm.css/awsm.css --output ../../themes/awsm.css
