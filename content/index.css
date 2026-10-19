@@ -403,8 +403,8 @@ pre:has(> code.mermaid) {
   box-shadow: none !important;
 }
 ._mermaid-dark pre:has(> code.mermaid) {
-  background: #2d3142 !important;
-  border-color: rgba(245,245,245,0.12) !important;
+  background: #020202 !important;
+  border-color: #262626 !important;
 }
 pre > code.mermaid {
   background: none !important;
@@ -460,13 +460,13 @@ pre.mmd-fullscreen > .mmd-toolbar,
   border-color: #eb6c36;
 }
 ._mermaid-dark .mmd-toolbar button {
-  background: #393e53;
-  border-color: rgba(191,192,192,0.25);
-  color: #bfc0c0;
+  background: #0f0f0f;
+  border-color: #404040;
+  color: #dedede;
 }
 ._mermaid-dark .mmd-toolbar button:hover {
-  color: #f08a59;
-  border-color: #f08a59;
+  color: #79b1f9;
+  border-color: #79b1f9;
 }
 /*mermaid fullscreen (browser viewport)*/
 pre.mmd-fullscreen:has(> code.mermaid) {

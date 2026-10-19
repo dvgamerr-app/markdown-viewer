@@ -15,11 +15,12 @@ var mmd = (() => {
       inkRgb: '45,49,66'
     },
     dark: {
-      paper: '#2d3142', paper2: '#393e53', node: '#393e53',
-      ink: '#f5f5f5', muted: '#bfc0c0', soft: '#8e98ac',
-      rule: 'rgba(245,245,245,0.12)', ruleSolid: 'rgba(191,192,192,0.25)',
-      accent: '#f08a59', accentTint: 'rgba(240,138,89,0.10)', link: '#6a95d8',
-      series: ['#9caf8f', '#82a0c0', '#d3ad7a', '#b88670', '#8d8298'],
+      // nimbus-dark palette (build/themes/nimbus/dark.css) as hex, mermaid cannot parse oklch
+      paper: '#020202', paper2: '#0f0f0f', node: '#0f0f0f',
+      ink: '#f5f5f5', muted: '#dedede', soft: '#a3a3a3',
+      rule: 'rgba(245,245,245,0.12)', ruleSolid: '#404040',
+      accent: '#79b1f9', accentTint: 'rgba(121,177,249,0.10)', link: '#79b1f9',
+      series: ['#69ba7c', '#79b1f9', '#dcaf61', '#f07f77', '#a3a3a3'],
       inkRgb: '245,245,245'
     }
   }
@@ -139,7 +140,7 @@ var mmd = (() => {
     }
     .node rect, .actor, rect.actor, .cluster rect, .note, .er.entityBox,
     .statediagram-state rect, .classGroup rect, rect.task { rx: 6px; ry: 6px; }
-    .cluster rect { rx: 8px; ry: 8px; stroke-dasharray: 4 4; }
+    .cluster rect { rx: 8px; ry: 8px; stroke-dasharray: 4 4; fill: ${t.paper} !important; }
     .cluster-label, .cluster-label span, .cluster .nodeLabel {
       font-family: ${mono} !important; font-size: 10px !important;
       letter-spacing: 0.12em; text-transform: uppercase; color: ${t.soft} !important; fill: ${t.soft} !important;
@@ -318,12 +319,13 @@ var mmd = (() => {
 
       var diagrams = Array.from(document.querySelectorAll('code.mermaid'))
       var timeout = setInterval(() => {
-        var svg = Array.from(document.querySelectorAll('pre code.mermaid svg'))
+        var svg = Array.from(document.querySelectorAll('pre > code.mermaid > svg'))
         if (diagrams.length === svg.length) {
           clearInterval(timeout)
           svg.forEach((diagram) => {
             var panzoom = Panzoom(diagram, {canvas: true, maxScale: 20, minScale: 0.2, touchAction: 'auto', pinchAndPan: true, noBind: true, cursor: ''})
-            toolbar(diagram.parentElement.parentElement, panzoom)
+            var pre = diagram.closest('pre')
+            pre && pre.querySelector(':scope > code.mermaid') && toolbar(pre, panzoom)
           })
         }
       }, 50)
