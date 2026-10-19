@@ -20,6 +20,8 @@ var state = {
   _themes: {
     'github': 'light',
     'github-dark': 'dark',
+    'nimbus': 'light',
+    'nimbus-dark': 'dark',
     'almond': 'light',
     // 'air': 'light',
     'awsm': 'light',
@@ -193,8 +195,8 @@ function mount () {
         }
 
         if (state.content.toc) {
-          dom.push(m('#_toc.tex2jax-ignore', m.trust(state.toc)))
-          state.raw ? $('body').classList.remove('_toc-left') : $('body').classList.add('_toc-left')
+          dom.push(m('#_toc.tex2jax-ignore', {oncreate: toc.spy, onupdate: toc.spy}, m.trust(state.toc)))
+          state.raw ? $('body').classList.remove('_toc-right') : $('body').classList.add('_toc-right')
         }
 
         if (state.theme === 'custom') {
@@ -218,18 +220,277 @@ var toc = (() => {
   var walk = (regex, string, group, result = [], match = regex.exec(string)) =>
     !match ? result : walk(regex, string, group, result.concat(!group ? match[1] :
       group.reduce((all, name, index) => (all[name] = match[index + 1], all), {})))
+
+  // nimbus "on this page": static rail (border-l + S-curves at indent changes)
+  // with an animated active indicator that slides along the rail's arc length
+  var READING_BAND = 0.25
+  var BOTTOM_EPSILON = 2
+  var REVEAL_PADDING = 12
+
+  var curve = (from, to, d) =>
+    '<svg aria-hidden="true" class="_toc-curve" viewBox="0 0 1 1" preserveAspectRatio="none" ' +
+    'fill="none" stroke="currentColor" stroke-width="2" overflow="visible" ' +
+    'style="margin-left: calc(' + from + 'rem - 0.0625rem); width: ' + Math.abs(to - from) + 'rem;">' +
+    '<path d="' + d + '" vector-effect="non-scaling-stroke"/></svg>'
+
+  var init = (root) => {
+    var nav = root.querySelector('nav')
+    var activePath = root.querySelector('[data-toc-rail-active]')
+    var links = Array.from(root.querySelectorAll('[data-toc-link]'))
+    if (!nav || !activePath || !links.length) return () => {}
+
+    var slugs = links.map((link) => link.dataset.slug)
+    var observed = slugs
+      .map((slug, index) => ({el: document.getElementById(slug), index}))
+      .filter((o) => o.el !== null)
+    if (!observed.length) return () => {}
+
+    var segments = []
+    var totalLength = 0
+    var currentIndex = -1
+    var currentLink = null
+    var hasApplied = false
+
+    var buildRail = () => {
+      var navRect = nav.getBoundingClientRect()
+      var m = links.map((link) => {
+        var r = link.getBoundingClientRect()
+        return {x: r.left - navRect.left + 1, yTop: r.top - navRect.top, yBot: r.top - navRect.top + r.height}
+      })
+      var measure = (sub) => {
+        activePath.setAttribute('d', sub)
+        return activePath.getTotalLength()
+      }
+      var d = ''
+      var next = []
+      var cumulative = 0
+      var prevX = 0
+      var prevYBot = 0
+      m.forEach((cur, i) => {
+        if (i === 0) {
+          d += `M ${cur.x} ${cur.yTop} `
+        }
+        else {
+          var prev = m[i - 1]
+          var midY = (prev.yBot + cur.yTop) / 2
+          var connector = Math.abs(cur.x - prev.x) < 0.5
+            ? `L ${cur.x} ${cur.yTop} `
+            : `C ${prev.x} ${midY}, ${cur.x} ${midY}, ${cur.x} ${cur.yTop} `
+          d += connector
+          cumulative += measure(`M ${prevX} ${prevYBot} ${connector}`)
+        }
+        var start = cumulative
+        var seg = `L ${cur.x} ${cur.yBot} `
+        d += seg
+        cumulative += measure(`M ${cur.x} ${cur.yTop} ${seg}`)
+        next.push({start, length: cumulative - start})
+        prevX = cur.x
+        prevYBot = cur.yBot
+      })
+      activePath.setAttribute('d', d)
+      segments = next
+      totalLength = cumulative
+    }
+
+    var applyActive = (index, instant) => {
+      var seg = segments[index]
+      if (!seg) return
+      if (instant) {
+        activePath.setAttribute('data-initial', 'true')
+        void activePath.getBoundingClientRect()
+      }
+      activePath.style.strokeDasharray = `${seg.length} ${totalLength + 1}`
+      activePath.style.strokeDashoffset = `${-seg.start}`
+      if (instant) {
+        requestAnimationFrame(() => {
+          activePath.setAttribute('data-ready', 'true')
+          requestAnimationFrame(() => activePath.removeAttribute('data-initial'))
+        })
+      }
+    }
+
+    var reveal = (link) => {
+      var hostRect = root.getBoundingClientRect()
+      var linkRect = link.getBoundingClientRect()
+      if (linkRect.top < hostRect.top + REVEAL_PADDING) {
+        root.scrollTop += linkRect.top - hostRect.top - REVEAL_PADDING
+      }
+      else if (linkRect.bottom > hostRect.bottom - REVEAL_PADDING) {
+        root.scrollTop += linkRect.bottom - hostRect.bottom + REVEAL_PADDING
+      }
+    }
+
+    var setActive = (index) => {
+      if (index === currentIndex) return
+      currentIndex = index
+      currentLink && currentLink.removeAttribute('aria-current')
+      currentLink = links[index] || null
+      if (currentLink) {
+        currentLink.setAttribute('aria-current', 'true')
+        reveal(currentLink)
+      }
+      applyActive(index, !hasApplied)
+      hasApplied = true
+    }
+
+    var observedIndex = 0
+    var atBottom = false
+    var pinnedIndex = null
+    var pinnedEnteredViewport = false
+
+    var resolve = () =>
+      setActive(pinnedIndex !== null ? pinnedIndex : atBottom ? links.length - 1 : observedIndex)
+
+    var updateObservedIndex = () => {
+      var bandBottom = window.innerHeight * READING_BAND
+      var index = 0
+      for (var o of observed) {
+        if (o.el.getBoundingClientRect().top <= bandBottom) index = o.index
+        else break
+      }
+      observedIndex = index
+    }
+
+    var updateBottom = () => {
+      var scrollEl = document.scrollingElement || document.documentElement
+      var maxScroll = scrollEl.scrollHeight - window.innerHeight
+      atBottom = maxScroll > BOTTOM_EPSILON && scrollEl.scrollTop >= maxScroll - BOTTOM_EPSILON
+    }
+
+    var releaseStalePin = () => {
+      if (pinnedIndex === null) return
+      var heading = document.getElementById(slugs[pinnedIndex])
+      if (!heading) {
+        pinnedIndex = null
+        pinnedEnteredViewport = false
+        return
+      }
+      var rect = heading.getBoundingClientRect()
+      if (rect.bottom >= 0 && rect.top <= window.innerHeight) {
+        pinnedEnteredViewport = true
+      }
+      else if (pinnedEnteredViewport) {
+        pinnedIndex = null
+        pinnedEnteredViewport = false
+      }
+    }
+
+    var ticking = false
+    var onScroll = () => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        updateObservedIndex()
+        updateBottom()
+        releaseStalePin()
+        resolve()
+        ticking = false
+      })
+    }
+
+    var onLayoutChange = () => {
+      buildRail()
+      updateObservedIndex()
+      updateBottom()
+      releaseStalePin()
+      resolve()
+      if (currentIndex >= 0) {
+        applyActive(currentIndex, true)
+        links[currentIndex] && reveal(links[currentIndex])
+      }
+    }
+
+    var controller = new AbortController()
+    var signal = controller.signal
+
+    // clicking a link pins it until the reader scrolls by hand
+    nav.addEventListener('click', (e) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      var link = e.target.closest('[data-toc-link]')
+      if (!link) return
+      var i = slugs.indexOf(link.dataset.slug)
+      if (i === -1) return
+      pinnedIndex = i
+      var rect = document.getElementById(slugs[i])?.getBoundingClientRect()
+      pinnedEnteredViewport = !!rect && rect.bottom >= 0 && rect.top <= window.innerHeight
+      resolve()
+    }, {signal})
+
+    var releasePin = () => {
+      if (pinnedIndex === null) return
+      pinnedIndex = null
+      pinnedEnteredViewport = false
+      resolve()
+    }
+    var keys = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' ', 'Spacebar']
+    window.addEventListener('wheel', releasePin, {passive: true, signal})
+    window.addEventListener('touchmove', releasePin, {passive: true, signal})
+    window.addEventListener('keydown', (e) => keys.includes(e.key) && releasePin(), {signal})
+    window.addEventListener('scroll', onScroll, {passive: true, signal})
+    window.addEventListener('resize', onLayoutChange, {passive: true, signal})
+
+    var ro = new ResizeObserver(onLayoutChange)
+    ro.observe(nav)
+
+    buildRail()
+    updateObservedIndex()
+    updateBottom()
+    resolve()
+
+    return () => {
+      controller.abort()
+      ro.disconnect()
+    }
+  }
+
+  var cleanup = () => {}
+  var mounted = null
+
   return {
-    render: (html) =>
-      walk(
+    render: (html) => {
+      var headers = walk(
         /<h([1-6]) id="(.*?)">(.*?)<\/h[1-6]>/gs,
         html,
         ['level', 'id', 'title']
-      )
-      .reduce((toc, {id, title, level}) => toc +=
-        '<div class="_ul">'.repeat(level) +
-        '<a href="#' + id + '">' + title.replace(/<a[^>]+>/g, '').replace(/<\/a>/g, '') + '</a>' +
-        '</div>'.repeat(level)
-      , '')
+      ).map((header) => ({...header, level: parseInt(header.level)}))
+
+      // a single h1 is the page title, list the sections below it
+      if (headers.filter(({level}) => level === 1).length === 1 && headers.length > 1) {
+        headers = headers.filter(({level}) => level !== 1)
+      }
+      if (!headers.length) return ''
+      var top = Math.min(...headers.map(({level}) => level))
+
+      return '<div class="_toc-title">On this page</div>' +
+        '<nav aria-label="Table of contents" class="_toc-nav">' +
+        '<svg data-toc-rail aria-hidden="true" class="_toc-rail" fill="none">' +
+        '<path data-toc-rail-active class="_toc-rail-active" stroke-width="2" stroke-linecap="round"/></svg>' +
+        '<ul class="_toc-list">' +
+        headers.map(({id, title, level}, i) => {
+          var depth = level - top
+          var prev = i > 0 ? headers[i - 1].level - top : depth
+          var next = i < headers.length - 1 ? headers[i + 1].level - top : depth
+          return '<li>' +
+            (depth > prev ? curve(prev, depth, 'M 0 0 C 0 0.5, 1 0.5, 1 1') : '') +
+            '<a href="#' + id + '" data-toc-link data-slug="' + id + '" ' +
+            'style="margin-left: calc(' + depth + 'rem - 0.125rem);">' +
+            title.replace(/<a[^>]+>/g, '').replace(/<\/a>/g, '') +
+            '</a>' +
+            (next < depth ? curve(next, depth, 'M 1 0 C 1 0.5, 0 0.5, 0 1') : '') +
+            '</li>'
+        }).join('') +
+        '</ul></nav>'
+    },
+    spy: (vnode) => {
+      var root = vnode && vnode.dom || document.getElementById('_toc')
+      if (!root) return
+      var nav = root.querySelector('nav')
+      // mithril keeps #_toc across redraws; re-init only when the trusted html was replaced
+      if (nav && nav === mounted) return
+      cleanup()
+      mounted = nav
+      cleanup = init(root)
+    }
   }
 })()
 
