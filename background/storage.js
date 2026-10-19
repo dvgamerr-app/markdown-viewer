@@ -176,6 +176,9 @@ md.storage.migrations = (state) => {
       color: 'auto'
     }
   }
+  // the Nimbus themes were removed, fall back to the matching github theme
+  if (state.theme === 'nimbus') state.theme = 'github'
+  if (state.theme === 'nimbus-dark') state.theme = 'github-dark'
   // markdown-it is the only compiler, drop the removed ones
   state.compiler = 'markdown-it'
   delete state.marked
