@@ -47,12 +47,12 @@ md.storage.defaults = (compilers) => {
       width: 'auto',
     },
     content: {
-      autoreload: false,
-      emoji: false,
-      mathjax: false,
-      mermaid: false,
+      autoreload: true,
+      emoji: true,
+      mathjax: true,
+      mermaid: true,
       syntax: true,
-      toc: false,
+      toc: true,
     },
     origins: {
       'file://': {
@@ -107,16 +107,7 @@ md.storage.migrations = (state) => {
   if (state.themes === undefined) {
     state.themes = []
   }
-  if (state.marked.tables !== undefined) {
-    delete state.marked.tables
-  }
   // v3.9 -> v4.0
-  if (state.remark.commonmark !== undefined) {
-    delete state.remark.commonmark
-  }
-  if (state.remark.pedantic !== undefined) {
-    delete state.remark.pedantic
-  }
   if (state.content.mermaid === undefined) {
     state.content.mermaid = false
   }
@@ -131,9 +122,6 @@ md.storage.migrations = (state) => {
     state.origins[origin].csp = false
     state.origins[origin].encoding = ''
   })
-  if (state.marked.smartLists !== undefined) {
-    delete state.marked.smartLists
-  }
   if (state.content.syntax === undefined) {
     state.content.syntax = true
   }
@@ -145,9 +133,6 @@ md.storage.migrations = (state) => {
   }
   if (state.icon === undefined) {
     state.icon = false
-  }
-  if (state.remark.footnotes !== undefined) {
-    delete state.remark.footnotes
   }
   // v5.0 -> v5.1
   if (state.header !== null) {
@@ -184,12 +169,6 @@ md.storage.migrations = (state) => {
     })
 
   }
-  if (state.marked.linkify === undefined) {
-    Object.assign(state.marked, {
-      linkify: true,
-    })
-    delete state.marked.sanitize
-  }
   // v5.2 -> v5.3
   if (state.custom === undefined) {
     state.custom = {
@@ -197,4 +176,8 @@ md.storage.migrations = (state) => {
       color: 'auto'
     }
   }
+  // markdown-it is the only compiler, drop the removed ones
+  state.compiler = 'markdown-it'
+  delete state.marked
+  delete state.remark
 }

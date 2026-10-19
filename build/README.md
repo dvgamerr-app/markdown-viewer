@@ -20,12 +20,11 @@ build\package.bat firefox
 build\package.bat chrome themes
 ```
 
-The script runs `package.sh` through Git Bash. When `node` is not installed it builds with `bun` through the shims in `build/bun-shims` (`node-sass` is swapped for `sass`), and when `zip` is missing it archives with the `tar.exe` bundled with Windows.
+The script runs `package.sh` through Git Bash. Every step uses `bun` (`bun install`, `bun x`), and when `zip` is missing it archives with the `tar.exe` bundled with Windows.
 
 ## Build Dependencies
 
-- node >= 18
-- npm >= 10
+- bun >= 1.1
 - git
 - zip
 
@@ -56,17 +55,6 @@ The script runs `package.sh` through Git Bash. When `node` is not installed it b
 | markdown-it-sup        | 1.0.0
 | markdown-it-task-lists | 2.1.1
 | github-slugger         | 2.0.0
-| **marked**
-| marked                | 12.0.1
-| marked-gfm-heading-id | 3.1.3
-| marked-linkify-it     | 3.1.9
-| marked-smartypants    | 1.1.6
-| **remark**
-| remark        | 15.0.1
-| remark-breaks | 4.0.0
-| remark-gfm    | 4.0.0
-| remark-html   | 16.0.1
-| remark-slug   | 7.0.1
 | **mdc**
 | @material/button    | 0.37.1
 | @material/ripple    | 0.37.1

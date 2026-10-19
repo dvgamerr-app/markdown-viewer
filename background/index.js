@@ -1,10 +1,6 @@
 
 importScripts('/vendor/markdown-it.min.js')
-importScripts('/vendor/marked.min.js')
-importScripts('/vendor/remark.min.js')
 importScripts('/background/compilers/markdown-it.js')
-importScripts('/background/compilers/marked.js')
-importScripts('/background/compilers/remark.js')
 
 importScripts('/background/storage.js')
 importScripts('/background/webrequest.js')

@@ -4,11 +4,11 @@
 cd "$(dirname "$0")"
 
 # before
-npm ci 2> /dev/null || npm i
+bun install
 mkdir -p tmp
 
 # mermaid.min.js
-node fix-csp-issue.js \
+bun fix-csp-issue.js \
   node_modules/mermaid/dist/mermaid.min.js \
   tmp/mermaid.min.js
 

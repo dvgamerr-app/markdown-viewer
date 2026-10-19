@@ -16,7 +16,7 @@ export const stubs = (overrides = {}) => ({
   },
   window: {addEventListener () {}, innerHeight: 800},
   chrome: {runtime: {id: 'test', onMessage: {addListener () {}}, getURL: (path) => path, sendMessage () {}}},
-  args: {theme: 'github', raw: false, themes: {width: 'auto'}, content: {}, compiler: 'marked', custom: {}, icon: 'default'},
+  args: {theme: 'github', raw: false, themes: {width: 'auto'}, content: {}, compiler: 'markdown-it', custom: {}, icon: 'default'},
   m: Object.assign(() => ({}), {trust: (html) => html, mount () {}, redraw () {}}),
   setInterval: () => 0,
   clearInterval () {},

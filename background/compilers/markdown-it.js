@@ -3,24 +3,24 @@ var md = {compilers: {}}
 
 md.compilers['markdown-it'] = (() => {
   var defaults = {
-    breaks: false,
+    breaks: true,
     html: true,
     linkify: true,
-    typographer: false,
-    xhtmlOut: false,
+    typographer: true,
+    xhtmlOut: true,
     langPrefix: 'language-',
     quotes: '“”‘’',
     // plugins
-    abbr: false,
-    attrs: false,
-    cjk: false,
-    deflist: false,
-    footnote: false,
-    ins: false,
-    mark: false,
-    sub: false,
-    sup: false,
-    tasklists: false,
+    abbr: true,
+    attrs: true,
+    cjk: true,
+    deflist: true,
+    footnote: true,
+    ins: true,
+    mark: true,
+    sub: true,
+    sup: true,
+    tasklists: true,
   }
 
   var description = {

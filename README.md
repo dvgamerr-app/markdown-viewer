@@ -9,7 +9,7 @@
 - Render local and remote file URLs
 - Granular access to remote origins
 - Multiple markdown parsers
-- Full control over the compiler options ([markdown-it], [marked], [remark])
+- Full control over the [markdown-it] options
 - 30+ Themes ([cleanrmd], [GitHub][github-theme])
 - Custom theme support
 - GitHub Flavored Markdown (GFM)
@@ -90,21 +90,21 @@ Full **CommonMark** support including **GFM** tables and strikethrough **+**
 
 | Option         | Default | Description
 | :-             | :-:     | :-
-| **abbr**       | `false` | Abbreviation using `*[word]: Text` `<abbr>`
-| **attr**       | `false` | Custom attributes using `{}` curly brackets
-| **breaks**     | `false` | Convert new lines `\n` in paragraphs into line breaks `<br>`
-| **cjk**        | `false` | Suppress linebreaks between east asian characters
-| **deflist**    | `false` | Definition list `<dl>`
-| **footnote**   | `false` | Footnotes `[^1]` `[^1]: a`
+| **abbr**       | **`true`**  | Abbreviation using `*[word]: Text` `<abbr>`
+| **attr**       | **`true`**  | Custom attributes using `{}` curly brackets
+| **breaks**     | **`true`**  | Convert new lines `\n` in paragraphs into line breaks `<br>`
+| **cjk**        | **`true`**  | Suppress linebreaks between east asian characters
+| **deflist**    | **`true`**  | Definition list `<dl>`
+| **footnote**   | **`true`**  | Footnotes `[^1]` `[^1]: a`
 | **html**       | **`true`**  | Enable HTML tags in source
-| **ins**        | `false` | Inserted text `++a++` `<ins>`
+| **ins**        | **`true`**  | Inserted text `++a++` `<ins>`
 | **linkify**    | **`true`**  | Autoconvert URL-like text to links
-| **mark**       | `false` | Marked text `==a==` `<mark>`
-| **sub**        | `false` | Subscript `~a~` `<sub>`
-| **sup**        | `false` | Superscript `^a^` `<sup>`
-| **tasklists**  | `false` | Task lists `- [x]`
-| **typographer**| `false` | Enable some language-neutral replacement + quotes beautification
-| **xhtmlOut**   | `false` | Use `/` to close single tags (`<br />`)
+| **mark**       | **`true`**  | Marked text `==a==` `<mark>`
+| **sub**        | **`true`**  | Subscript `~a~` `<sub>`
+| **sup**        | **`true`**  | Superscript `^a^` `<sup>`
+| **tasklists**  | **`true`**  | Task lists `- [x]`
+| **typographer**| **`true`**  | Enable some language-neutral replacement + quotes beautification
+| **xhtmlOut**   | **`true`**  | Use `/` to close single tags (`<br />`)
 
 ---
 
@@ -112,12 +112,12 @@ Full **CommonMark** support including **GFM** tables and strikethrough **+**
 
 | Option         | Default | Description
 | :-             | :-:     | :-
-| **autoreload** | `false` | Auto reload on file change
-| **emoji**      | `false` | Convert emoji `:shortnames:` into EmojiOne images
-| **mathjax**    | `false` | Render MathJax formulas
-| **mermaid**    | `false` | Render Mermaid diagrams
+| **autoreload** | **`true`**  | Auto reload on file change
+| **emoji**      | **`true`**  | Convert emoji `:shortnames:` into EmojiOne images
+| **mathjax**    | **`true`**  | Render MathJax formulas
+| **mermaid**    | **`true`**  | Render Mermaid diagrams
 | **syntax**     | **`true`**  | Syntax highlighted fenced code blocks
-| **toc**        | `false` | Generate Table of Contents
+| **toc**        | **`true`**  | Generate Table of Contents
 
 ## Autoreload
 
