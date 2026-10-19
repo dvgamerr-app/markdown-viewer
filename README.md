@@ -1,9 +1,9 @@
 
 # Nimbus Markdown / Browser Extension
 
-A browser extension for rendering Markdown, based on [Markdown Viewer](https://github.com/simov/markdown-viewer).
+A browser extension for rendering Markdown, forked from the original extension by Simeon Velichkov.
 
-Install using the [manual installation](#manual-install) instructions. Store links below refer to the upstream extension.
+Install using the [manual installation](#manual-install) instructions.
 
 # Features
 
@@ -327,20 +327,13 @@ Note that in any of the following cases you won't receive any future updates aut
 4. Make sure that the `Developer mode` switch is enabled
 5. Click on the `Load unpacked` button and select the cloned directory
 
-## Manifest v2
-
-1. Clone the [mv2] or [compilers-mv2] branch (nimbus-markdown v4.0)
-2. Navigate to `chrome://extensions`
-3. Make sure that the `Developer mode` switch is enabled
-4. Click on the `Load unpacked` button and select the cloned directory
-
 ---
 
 # License
 
 The MIT License (MIT)
 
-Copyright (c) 2013-present, Simeon Velichkov <simeonvelichkov@gmail.com> (https://github.com/simov/markdown-viewer)
+Copyright (c) 2013-present, Simeon Velichkov <simeonvelichkov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -361,13 +354,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-  [chrome]: https://chromewebstore.google.com/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk
-  [firefox]: https://addons.mozilla.org/en-US/firefox/addon/markdown-viewer-chrome/
-  [edge]: https://microsoftedge.microsoft.com/addons/detail/markdown-viewer/cgfmehpekedojlmjepoimbfcafopimdg
-  [opera]: https://chromewebstore.google.com/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk
-  [brave]: https://chromewebstore.google.com/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk
-  [chromium]: https://chromewebstore.google.com/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk
-  [vivaldi]: https://chromewebstore.google.com/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk
 
   [marked]: https://github.com/markedjs/marked
   [remark]: https://github.com/remarkjs/remark
@@ -385,10 +371,7 @@ SOFTWARE.
 
   [gfm]: https://github.github.com/gfm/
   [prism-lang]: https://prismjs.com/#supported-languages
-  [compilers]: https://github.com/simov/markdown-viewer/tree/compilers
   [releases]: https://github.com/dvgamerr-app/nimbus-markdown/releases
-  [mv2]: https://github.com/simov/markdown-viewer/tree/mv2
-  [compilers-mv2]: https://github.com/simov/markdown-viewer/tree/compilers-mv2
   [firefox-docs]: firefox.md
   [custom-theme]: https://gist.github.com/simov/2a074a1c0123e6ba4bc2bfa6a67d3203
 
