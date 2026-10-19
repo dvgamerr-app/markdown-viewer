@@ -4,7 +4,7 @@
 cd "$(dirname "$0")"
 
 # before
-npm ci 2> /dev/null || npm i
+bun install
 
 # copy
 # https://github.com/mathjax/MathJax#reducing-the-size-of-the-components-directory

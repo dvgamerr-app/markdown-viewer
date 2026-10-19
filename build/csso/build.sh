@@ -4,7 +4,7 @@
 cd "$(dirname "$0")"
 
 # before
-npm ci 2> /dev/null || npm i
+bun install
 
 # copy
 cp node_modules/csso/dist/csso.js ../../vendor/csso.min.js

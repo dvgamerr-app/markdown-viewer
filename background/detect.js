@@ -42,12 +42,7 @@ md.detect = ({storage: {state}, inject}) => {
               header: document.contentType,
               loaded: !!window.state,
             })
-        }, (res) => {
-          if (chrome.runtime.lastError) {
-            // origin not allowed
-            return
-          }
-
+        }).then((res) => {
           try {
             var win = JSON.parse(res[0].result)
             if (!win) {
@@ -73,6 +68,8 @@ md.detect = ({storage: {state}, inject}) => {
               inject(id)
             }
           }
+        }, () => {
+          // origin not allowed
         })
       })
     }

@@ -31,21 +31,18 @@ if not defined bash (
 
 cd /d "%~dp0"
 
-rem without node, route node/npm/npx to bun through the shims
-where node >nul 2>nul || (
-  where bun >nul 2>nul || (
-    echo node or bun is required
-    exit /b 1
-  )
-  echo node not found, building with bun
-  set "PATH=%~dp0bun-shims;%PATH%"
+rem every build script runs through bun (install, x, scripts)
+where bun >nul 2>nul || (
+  echo bun is required, install it from https://bun.sh
+  exit /b 1
+)
 )
 
 rem "themes" only rebuilds the themes folder, skipping vendor and the zip
 if /i "%~2"=="themes" (
   "%bash%" themes/build.sh %browser%
-  if exist "..\dist\markdown-viewer" (
-    xcopy /e /i /y /q "..\themes" "..\dist\markdown-viewer\themes" >nul
+  if exist "..\dist\nimbus-markdown" (
+    xcopy /e /i /y /q "..\themes" "..\dist\nimbus-markdown\themes" >nul
   )
 ) else (
   "%bash%" package.sh %browser%

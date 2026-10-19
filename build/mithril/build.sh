@@ -4,7 +4,7 @@
 cd "$(dirname "$0")"
 
 # before
-npm ci 2> /dev/null || npm i
+bun install
 
 # copy
 cp node_modules/mithril/mithril.min.js ../../vendor/mithril.min.js

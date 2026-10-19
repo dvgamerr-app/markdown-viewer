@@ -1,7 +1,7 @@
 {
-  "name": "markdown-viewer",
+  "name": "nimbus-markdown",
   "version": "0.0.0",
-  "description": "Markdown Viewer / Browser Extension",
+  "description": "nimbus-markdown / Browser Extension",
   "private": true,
   "dependencies": {
     "@material/button": "0.37.1",
@@ -14,7 +14,7 @@
     "@rollup/plugin-commonjs": "23.0.2",
     "@rollup/plugin-node-resolve": "15.0.1",
     "csso-cli": "4.0.2",
-    "node-sass": "9.0.0",
+    "sass": "1.77.8",
     "rollup": "3.29.4",
     "terser": "5.30.3"
   },

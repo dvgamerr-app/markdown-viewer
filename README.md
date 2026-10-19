@@ -1,15 +1,16 @@
 
-# Markdown Viewer / Browser Extension
+# Nimbus Markdown / Browser Extension
 
-**Install: [Chrome]** / **[Firefox]** / **[Edge]** / **[Opera]**  / **[Brave]** / **[Chromium]** / **[Vivaldi]**
+A browser extension for rendering Markdown, forked from the original extension by Simeon Velichkov.
+
+Install using the [manual installation](#manual-install) instructions.
 
 # Features
 
 - Secure by design
 - Render local and remote file URLs
 - Granular access to remote origins
-- Multiple markdown parsers
-- Full control over the compiler options ([markdown-it], [marked], [remark])
+- Full control over the [markdown-it] options
 - 30+ Themes ([cleanrmd], [GitHub][github-theme])
 - Custom theme support
 - GitHub Flavored Markdown (GFM)
@@ -42,7 +43,7 @@
 ## Local Files
 
 1. Navigate to `chrome://extensions`
-2. Locate the Markdown Viewer extension and click on the `Details` button
+2. Locate the nimbus-markdown extension and click on the `Details` button
 
 ![img-extensions]
 
@@ -52,8 +53,8 @@
 
 ## Remote Files
 
-1. Click on the Markdown Viewer icon and select [Advanced Options](#manage-origins)
-2. Add the origins that you want enabled for the Markdown Viewer extension
+1. Click on the nimbus-markdown icon and select [Advanced Options](#manage-origins)
+2. Add the origins that you want enabled for the nimbus-markdown extension
 
 ---
 
@@ -90,21 +91,21 @@ Full **CommonMark** support including **GFM** tables and strikethrough **+**
 
 | Option         | Default | Description
 | :-             | :-:     | :-
-| **abbr**       | `false` | Abbreviation using `*[word]: Text` `<abbr>`
-| **attr**       | `false` | Custom attributes using `{}` curly brackets
-| **breaks**     | `false` | Convert new lines `\n` in paragraphs into line breaks `<br>`
-| **cjk**        | `false` | Suppress linebreaks between east asian characters
-| **deflist**    | `false` | Definition list `<dl>`
-| **footnote**   | `false` | Footnotes `[^1]` `[^1]: a`
+| **abbr**       | **`true`**  | Abbreviation using `*[word]: Text` `<abbr>`
+| **attr**       | **`true`**  | Custom attributes using `{}` curly brackets
+| **breaks**     | **`true`**  | Convert new lines `\n` in paragraphs into line breaks `<br>`
+| **cjk**        | **`true`**  | Suppress linebreaks between east asian characters
+| **deflist**    | **`true`**  | Definition list `<dl>`
+| **footnote**   | **`true`**  | Footnotes `[^1]` `[^1]: a`
 | **html**       | **`true`**  | Enable HTML tags in source
-| **ins**        | `false` | Inserted text `++a++` `<ins>`
+| **ins**        | **`true`**  | Inserted text `++a++` `<ins>`
 | **linkify**    | **`true`**  | Autoconvert URL-like text to links
-| **mark**       | `false` | Marked text `==a==` `<mark>`
-| **sub**        | `false` | Subscript `~a~` `<sub>`
-| **sup**        | `false` | Superscript `^a^` `<sup>`
-| **tasklists**  | `false` | Task lists `- [x]`
-| **typographer**| `false` | Enable some language-neutral replacement + quotes beautification
-| **xhtmlOut**   | `false` | Use `/` to close single tags (`<br />`)
+| **mark**       | **`true`**  | Marked text `==a==` `<mark>`
+| **sub**        | **`true`**  | Subscript `~a~` `<sub>`
+| **sup**        | **`true`**  | Superscript `^a^` `<sup>`
+| **tasklists**  | **`true`**  | Task lists `- [x]`
+| **typographer**| **`true`**  | Enable some language-neutral replacement + quotes beautification
+| **xhtmlOut**   | **`true`**  | Use `/` to close single tags (`<br />`)
 
 ---
 
@@ -112,12 +113,12 @@ Full **CommonMark** support including **GFM** tables and strikethrough **+**
 
 | Option         | Default | Description
 | :-             | :-:     | :-
-| **autoreload** | `false` | Auto reload on file change
-| **emoji**      | `false` | Convert emoji `:shortnames:` into EmojiOne images
-| **mathjax**    | `false` | Render MathJax formulas
-| **mermaid**    | `false` | Render Mermaid diagrams
+| **autoreload** | **`true`**  | Auto reload on file change
+| **emoji**      | **`true`**  | Convert emoji `:shortnames:` into EmojiOne images
+| **mathjax**    | **`true`**  | Render MathJax formulas
+| **mermaid**    | **`true`**  | Render Mermaid diagrams
 | **syntax**     | **`true`**  | Syntax highlighted fenced code blocks
-| **toc**        | `false` | Generate Table of Contents
+| **toc**        | **`true`**  | Generate Table of Contents
 
 ## Autoreload
 
@@ -189,9 +190,9 @@ Generates Table of Contents (ToC) based on the headers found in the markdown doc
 
 # Manage Origins
 
-Click on the Markdown Viewer icon and select `Advanced Options`.
+Click on the nimbus-markdown icon and select `Advanced Options`.
 
-By default Markdown Viewer does not have access to any content:
+By default nimbus-markdown does not have access to any content:
 
 ![img-no-access]
 
@@ -285,9 +286,9 @@ Only origins that needs to be refreshed will be highlighted. The extension canno
 
 # Syntax Examples
 
-Examples about the Markdown syntax and all features available in Markdown Viewer can be found on [GitHub][syntax-github], [GitLab][syntax-gitlab] and [BitBucket][syntax-bitbucket]:
+Examples about the Markdown syntax and all features available in nimbus-markdown can be found on [GitHub][syntax-github], [GitLab][syntax-gitlab] and [BitBucket][syntax-bitbucket]:
 
-- **elements.md** - quick overview of the Markdown syntax and a summary of the Markdown Viewer features
+- **elements.md** - quick overview of the Markdown syntax and a summary of the nimbus-markdown features
 - **syntax.md** - extensive list of Markdown syntax examples with different combinations and edge cases
 - **prism.md** - syntax highlighting examples
 - **mermaid.md** - different types of Mermaid diagrams
@@ -306,14 +307,14 @@ Note that in any of the following cases you won't receive any future updates aut
 ## Load packed .crx
 
 1. Go to [releases] and pick a release that you want to install
-2. Download the `markdown-viewer.crx` file
+2. Download the `nimbus-markdown.crx` file
 3. Navigate to `chrome://extensions`
-4. Drag and drop the `markdown-viewer.crx` file into the `chrome://extensions` page
+4. Drag and drop the `nimbus-markdown.crx` file into the `chrome://extensions` page
 
 ## Load unpacked .zip
 
 1. Go to [releases] and pick a release that you want to install
-2. Download the `markdown-viewer.zip` file and extract it
+2. Download the `nimbus-markdown.zip` file and extract it
 3. Navigate to `chrome://extensions`
 4. Make sure that the `Developer mode` switch is enabled
 5. Click on the `Load unpacked` button and select the extracted directory
@@ -326,20 +327,13 @@ Note that in any of the following cases you won't receive any future updates aut
 4. Make sure that the `Developer mode` switch is enabled
 5. Click on the `Load unpacked` button and select the cloned directory
 
-## Manifest v2
-
-1. Clone the [mv2] or [compilers-mv2] branch (Markdown Viewer v4.0)
-2. Navigate to `chrome://extensions`
-3. Make sure that the `Developer mode` switch is enabled
-4. Click on the `Load unpacked` button and select the cloned directory
-
 ---
 
 # License
 
 The MIT License (MIT)
 
-Copyright (c) 2013-present, Simeon Velichkov <simeonvelichkov@gmail.com> (https://github.com/simov/markdown-viewer)
+Copyright (c) 2013-present, Simeon Velichkov <simeonvelichkov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -360,13 +354,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-  [chrome]: https://chromewebstore.google.com/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk
-  [firefox]: https://addons.mozilla.org/en-US/firefox/addon/markdown-viewer-chrome/
-  [edge]: https://microsoftedge.microsoft.com/addons/detail/markdown-viewer/cgfmehpekedojlmjepoimbfcafopimdg
-  [opera]: https://chromewebstore.google.com/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk
-  [brave]: https://chromewebstore.google.com/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk
-  [chromium]: https://chromewebstore.google.com/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk
-  [vivaldi]: https://chromewebstore.google.com/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk
 
   [marked]: https://github.com/markedjs/marked
   [remark]: https://github.com/remarkjs/remark
@@ -384,11 +371,8 @@ SOFTWARE.
 
   [gfm]: https://github.github.com/gfm/
   [prism-lang]: https://prismjs.com/#supported-languages
-  [compilers]: https://github.com/simov/markdown-viewer/tree/compilers
-  [releases]: https://github.com/simov/markdown-viewer/releases
-  [mv2]: https://github.com/simov/markdown-viewer/tree/mv2
-  [compilers-mv2]: https://github.com/simov/markdown-viewer/tree/compilers-mv2
-  [firefox-docs]: https://github.com/simov/markdown-viewer/blob/main/firefox.md
+  [releases]: https://github.com/dvgamerr-app/nimbus-markdown/releases
+  [firefox-docs]: firefox.md
   [custom-theme]: https://gist.github.com/simov/2a074a1c0123e6ba4bc2bfa6a67d3203
 
   [syntax-github]: https://github.com/simov/markdown-syntax

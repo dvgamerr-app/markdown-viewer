@@ -4,12 +4,12 @@
 cd "$(dirname "$0")"
 
 # before
-npm ci 2> /dev/null || npm i
+bun install
 mkdir -p tmp
 
 # markdown-it.min.js
-npx rollup --config rollup.mjs --input markdown-it.mjs --file tmp/markdown-it.js
-npx terser --compress --mangle -- tmp/markdown-it.js > tmp/markdown-it.min.js
+bun x rollup --config rollup.mjs --input markdown-it.mjs --file tmp/markdown-it.js
+bun x terser --compress --mangle -- tmp/markdown-it.js > tmp/markdown-it.min.js
 
 # copy
 cp tmp/markdown-it.min.js ../../vendor/

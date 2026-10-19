@@ -74,7 +74,12 @@ var Popup = () => {
 
   var events = {
     tab: (e) => {
-      state.tab = e.target.hash.replace('#tab-', '')
+      // the handler sits on the nav, so ignore clicks on the indicator or empty space
+      var link = e.target.closest && e.target.closest('a[href^="#tab-"]')
+      if (!link) {
+        return false
+      }
+      state.tab = link.hash.replace('#tab-', '')
       localStorage.setItem('tab', state.tab)
       return false
     },
@@ -190,6 +195,7 @@ var Popup = () => {
 
   var render = () =>
     m('#popup',
+      m('header.popup-brand', m('img', {src: '/icons/nimbus.svg', width: 38, height: 38, alt: ''}), m('div', m('strong', 'Nimbus Markdown'), m('span', 'A calmer way to read.'))),
       // raw
       m('button.mdc-button mdc-button--raised m-button', {
         oncreate: oncreate.ripple,
@@ -213,6 +219,8 @@ var Popup = () => {
         state.tabs.map((tab) =>
         m('a.mdc-tab', {
           href: '#tab-' + tab,
+          class: state.tab === tab ? 'mdc-tab--active' : '',
+          'aria-current': state.tab === tab ? 'page' : undefined,
           },
           tab
         )),
@@ -245,7 +253,8 @@ var Popup = () => {
           class: state.tab === 'compiler' ? 'is-active' : ''
           },
           m('select.mdc-elevation--z2 m-select', {
-            onchange: events.compiler.name
+            onchange: events.compiler.name,
+            style: state.compilers.length > 1 ? '' : 'display: none',
             },
             state.compilers.map((name) =>
               m('option', {selected: state.compiler === name}, name)
@@ -303,12 +312,12 @@ var Popup = () => {
         oncreate: oncreate.ripple,
         onclick: events.advanced
         },
-        'Advanced Options'
+        'All settings →'
       )
     )
 
   var options = () =>
-    m('.row m-settings hidden',
+    m('.row m-settings',
       m('.col-xxl-4.col-xl-4.col-lg-6.col-md-6.col-sm-12',
         m('h3', 'Theme'),
         m('.bs-callout m-theme',
@@ -356,7 +365,8 @@ var Popup = () => {
         m('h3', 'Compiler'),
         m('.bs-callout m-compiler',
           m('select.mdc-elevation--z2 m-select', {
-            onchange: events.compiler.name
+            onchange: events.compiler.name,
+            style: state.compilers.length > 1 ? '' : 'display: none',
             },
             state.compilers.map((name) =>
               m('option', {selected: state.compiler === name}, name)
