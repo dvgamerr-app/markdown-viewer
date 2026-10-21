@@ -444,7 +444,7 @@ pre:not(.mmd-fullscreen) > .mmd-find,
 /*node focus: dim everything but the node and its direct links*/
 svg.mmd-focus .node:not(.mmd-on),
 svg.mmd-focus path.flowchart-link:not(.mmd-on),
-svg.mmd-focus .edgeLabel:not(.mmd-on) {
+svg.mmd-focus g.edgeLabel:not(.mmd-on) {
   opacity: .15;
 }
 pre.mmd-fullscreen g.node {
@@ -457,7 +457,7 @@ g.node.mmd-match > :is(rect, polygon, circle, path) {
 /*hover / focus motion*/
 pre.mmd-fullscreen svg g.node,
 pre.mmd-fullscreen svg path.flowchart-link,
-pre.mmd-fullscreen svg .edgeLabel {
+pre.mmd-fullscreen svg g.edgeLabel {
   transition: opacity .18s ease, filter .18s ease;
 }
 pre.mmd-fullscreen svg g.node:hover {
@@ -472,9 +472,21 @@ pre.mmd-fullscreen svg g.node.mmd-selected {
   filter: drop-shadow(0 0 10px #eb6c36);
 }
 pre.mmd-fullscreen svg path.flowchart-link.mmd-hover,
+pre.mmd-fullscreen svg path.flowchart-link.mmd-on,
 pre.mmd-fullscreen svg path.flowchart-link.mmd-peek {
   stroke: #eb6c36 !important;
   stroke-width: 2.2px !important;
+}
+/*links into the node are blue, links out of it stay orange*/
+pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-hover,
+pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-on,
+pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek {
+  stroke: #2e5aa8 !important;
+}
+._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-hover,
+._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-on,
+._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek {
+  stroke: #79b1f9 !important;
 }
 .mmd-flow {
   fill: none !important;
@@ -518,6 +530,10 @@ pre.mmd-fullscreen svg path.flowchart-link.mmd-peek {
   border-radius: 10px;
   background: #ffffff;
   color: #2d3142;
+  /*the card sits inside the diagram <pre>, undo its monospace font and no-wrap text*/
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  white-space: normal;
+  text-align: left;
   font-size: 12px;
   line-height: 1.4;
   box-shadow: 0 18px 48px rgba(0, 0, 0, .22);
@@ -543,6 +559,7 @@ pre.mmd-fullscreen svg path.flowchart-link.mmd-peek {
 }
 .mmd-card-copy {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
 }
 .mmd-card-eyebrow,
@@ -554,7 +571,12 @@ pre.mmd-fullscreen svg path.flowchart-link.mmd-peek {
 }
 .mmd-card-title {
   font-size: 15px;
+  line-height: 1.35;
   overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.mmd-card-close {
+  flex: none;
 }
 .mmd-card button {
   margin: 0;
@@ -666,6 +688,7 @@ pre.mmd-fullscreen svg path.flowchart-link.mmd-peek {
   border-radius: 6px;
   background: #ffffff;
   color: #2d3142;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 13px;
   box-shadow: none;
 }
