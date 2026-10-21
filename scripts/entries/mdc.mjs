@@ -7,7 +7,7 @@ let ripple = {MDCRipple}
 let tabs = {MDCTabBar}
 let textfield = {MDCTextField}
 
-export {
+globalThis.mdc = {
   ripple,
   tabs,
   textfield,

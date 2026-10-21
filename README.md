@@ -322,10 +322,10 @@ Note that in any of the following cases you won't receive any future updates aut
 ## Build
 
 1. Clone this repository
-2. Execute `sh build/package.sh chrome` (or `firefox` to build for Firefox)
+2. Execute `bun i` then `bun run build:dist` (or `bun run build:dist:firefox` to build for Firefox)
 3. Navigate to `chrome://extensions`
 4. Make sure that the `Developer mode` switch is enabled
-5. Click on the `Load unpacked` button and select the cloned directory
+5. Click on the `Load unpacked` button and select `dist/nimbus-markdown`
 
 ---
 

@@ -1,31 +1,20 @@
-
 # Build
 
-Build the `themes` and `vendor` folders, the unpacked extension in `dist/nimbus-markdown/`, and the `dist/nimbus-markdown.zip` package:
+Everything is one script, [build.mjs](build.mjs), run by bun. It builds the unpacked extension in `dist/nimbus-markdown/` (including `themes` and `vendor`) and the `dist/nimbus-markdown.zip` package. No `sh`, `bat`, `zip` or node is needed.
 
 ```bash
 git clone https://github.com/dvgamerr-app/nimbus-markdown.git
 cd nimbus-markdown/
-# build
-sh build/package.sh chrome
+bun i
+bun run build:dist           # chrome
+bun run build:dist:firefox   # firefox
+bun run build:themes         # only rebuild dist/nimbus-markdown/themes
 ```
-
-### Windows
-
-```bat
-build\package.bat chrome
-build\package.bat firefox
-:: rebuild only the themes folder, synced into dist/nimbus-markdown/themes
-build\package.bat chrome themes
-```
-
-The script runs `package.sh` through Git Bash. Every step uses `bun` (`bun install`, `bun x`), and when `zip` is missing it archives with the `tar.exe` bundled with Windows.
 
 ## Build Dependencies
 
 - bun >= 1.1
-- git
-- zip
+- git (`cleanrmd` is installed from GitHub)
 
 ## nimbus-markdown Dependencies
 

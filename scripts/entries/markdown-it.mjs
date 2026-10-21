@@ -13,7 +13,7 @@ import sup from 'markdown-it-sup'
 import tasklists from 'markdown-it-task-lists'
 import slugger from 'github-slugger'
 
-export {
+globalThis.mdit = {
   mdit,
   abbr,
   anchor,
