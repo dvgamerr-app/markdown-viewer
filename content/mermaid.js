@@ -212,6 +212,10 @@ var mmd = (() => {
     zoomIn: '<path d="M8 3v10M3 8h10"/>',
     zoomOut: '<path d="M3 8h10"/>',
     reset: '<path d="M3 8a5 5 0 1 0 1.5-3.5M3 2v3h3"/>',
+    play: '<path d="M5 3l8 5-8 5z"/>',
+    pause: '<path d="M5 3v10M11 3v10"/>',
+    prev: '<path d="M10 3L5 8l5 5"/>',
+    next: '<path d="M6 3l5 5-5 5"/>',
     find: '<circle cx="7" cy="7" r="4"/><path d="M10 10l4 4"/>',
     map: '<rect x="2" y="3" width="12" height="10" rx="1.5"/><rect x="8" y="7" width="4" height="4" rx=".5"/>'
   }
@@ -255,7 +259,8 @@ var mmd = (() => {
     pre._mmdDispose = () => {
       abort.abort()
       panzoom.destroy()
-      pre.querySelectorAll(':scope > .mmd-toolbar, :scope > .mmd-card, :scope > .mmd-find, :scope > .mmd-map').forEach((el) => el.remove())
+      pre._mmdSeqStop && pre._mmdSeqStop()
+      pre.querySelectorAll(':scope > .mmd-toolbar, :scope > .mmd-card, :scope > .mmd-find, :scope > .mmd-map, :scope > .mmd-player').forEach((el) => el.remove())
     }
 
     var bar = document.createElement('div')
@@ -273,6 +278,11 @@ var mmd = (() => {
       bar.appendChild(btn)
       return btn
     }
+    var isSequence = (() => {
+      var drawn = pre.querySelector(':scope > code.mermaid svg')
+      return !!drawn && drawn.getAttribute('aria-roledescription') === 'sequence'
+    })()
+    isSequence && button('play', 'Play sequence (P)', () => pre._mmdSeqToggle && pre._mmdSeqToggle())
     var find = button('find', 'Find node (/)', () => openFind())
     var mapButton = button('map', 'Overview map (M)', () => toggleMap())
     button('zoomIn', 'Zoom in (+)', () => panzoom.zoomIn())
@@ -695,9 +705,273 @@ var mmd = (() => {
       moveMap()
     })
 
-    // keys while fullscreen: + - 0 zoom, arrows move, / find, M map, escape unwinds focus then fullscreen
+    // sequence diagrams: step through the messages in order. A token travels along the current message,
+    // the ones still to come stay dimmed, and the run ends with the whole diagram shown again
+    var seqStop = () => {}
+    var seqKey = () => false
+    if (isSequence) {
+      var TRAVEL = 480
+      var HOLD = 720
+      var calm = !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      var msgs = Array.from(svg.querySelectorAll('.messageLine0, .messageLine1')).map((line) => {
+        var before = line.previousElementSibling
+        var text = before && before.classList.contains('messageText') ? before : null
+        // the autonumber dot (a bare line with a marker) and its number follow the line, possibly after an activation bar
+        var extras = []
+        for (var after = line.nextElementSibling; after && !/messageLine|messageText/.test(after.getAttribute('class') || ''); after = after.nextElementSibling) {
+          if (after.tagName.toLowerCase() === 'line' || after.classList.contains('sequenceNumber')) extras.push(after)
+        }
+        // what the ends look like decides how it plays: an arrowhead is travelled towards, a cross is a lost
+        // message (red), and a plain line has no direction so it shows an indeterminate progress (blue)
+        var from = line.getAttribute('marker-start')
+        var to = line.getAttribute('marker-end')
+        var lost = /crosshead/.test((from || '') + (to || ''))
+        var kind = lost ? 'lost' : from || to ? 'head' : 'plain'
+        var parts = [line, text].concat(extras)
+        parts.forEach((el) => el && el.setAttribute('data-mmd-kind', kind))
+        // the lifelines it leaves and reaches, and how far down it sits
+        var isLine = line.tagName.toLowerCase() === 'line'
+        var begin = isLine ? {x: parseFloat(line.getAttribute('x1')), y: parseFloat(line.getAttribute('y1'))} : line.getPointAtLength(0)
+        var end = isLine ? {x: parseFloat(line.getAttribute('x2'))} : begin
+        return {parts, line, kind, from, to, tinted: [], label: text ? text.textContent.trim() : '', x: [begin.x, end.x], y: begin.y}
+      })
+
+      // messages that leave one lifeline for different targets, with nothing else reaching that lifeline in between,
+      // are a fan-out and play together; a fragment edge (alt / else / loop) between two messages keeps them apart
+      var lifelines = Array.from(svg.querySelectorAll('line.actor-line')).map((l) => parseFloat(l.getAttribute('x1')))
+      var near = (x) => lifelines.reduce((best, lx, i) => (Math.abs(lx - x) < Math.abs(lifelines[best] - x) ? i : best), 0)
+      var edges_ = Array.from(svg.querySelectorAll('.loopLine'))
+        .filter((l) => l.tagName.toLowerCase() === 'line' && l.getAttribute('y1') === l.getAttribute('y2'))
+        .map((l) => parseFloat(l.getAttribute('y1')))
+      var fenced = (a, b) => edges_.some((y) => y > Math.min(a, b) && y < Math.max(a, b))
+      var levels = []
+      var ready = {}
+      msgs.forEach((msg) => {
+        var a = near(msg.x[0])
+        var b = near(msg.x[1])
+        var level = ready[a] || 0
+        while (levels[level] && levels[level].some((other) => other.b === b || fenced(other.y, msg.y))) level++
+        ;(levels[level] = levels[level] || []).push(Object.assign(msg, {b}))
+        ready[a] = level
+        ready[b] = Math.max(ready[b] || 0, level + 1)
+      })
+      var steps = levels.filter(Boolean).map((group) => {
+        group.sort((m, n) => m.y - n.y)
+        return {
+          msgs: group,
+          parts: group.flatMap((m) => m.parts),
+          label: group.map((m) => m.label).filter(Boolean).join(' \u00B7 '),
+        }
+      })
+      var at = -1
+      var playing = false
+      var timer = 0
+      var frame = 0
+      var drawn = []
+
+      var player = h('div', 'mmd-player')
+      player.hidden = true
+      ;['pointerdown', 'click', 'dblclick', 'wheel'].forEach((type) => player.addEventListener(type, (e) => e.stopPropagation()))
+      var tool = (name, title, onclick) => {
+        var btn = h('button', 'mmd-player-btn')
+        btn.type = 'button'
+        btn.title = title
+        btn.setAttribute('aria-label', title)
+        btn.innerHTML = icon(name)
+        btn.addEventListener('click', onclick)
+        return btn
+      }
+      var counter = h('span', 'mmd-player-count')
+      var caption = h('span', 'mmd-player-caption')
+      var playTool = tool('play', 'Play (P)', () => toggle())
+      var closeTool = h('button', 'mmd-player-close', '\u00D7')
+      closeTool.type = 'button'
+      closeTool.title = 'Close (Esc)'
+      closeTool.setAttribute('aria-label', 'Close')
+      closeTool.addEventListener('click', () => seqStop())
+      player.append(tool('prev', 'Previous message ([)', () => move(-1)), playTool, tool('next', 'Next message (])', () => move(1)), counter, caption, closeTool)
+      pre.appendChild(player)
+
+      var mark = (current) => steps.forEach((step, j) => {
+        var state = current < 0 ? '' : j < current ? 'done' : j === current ? 'now' : 'wait'
+        step.msgs.forEach((msg) => light(msg, state === 'now'))
+        step.parts.forEach((el) => {
+          if (!el) return
+          state ? el.setAttribute('data-mmd-seq', state) : el.removeAttribute('data-mmd-seq')
+        })
+      })
+      var clearToken = () => {
+        cancelAnimationFrame(frame)
+        drawn.forEach((el) => el.remove())
+        drawn = []
+      }
+      // arrowheads and crosses are marker elements, so the current message gets a coloured copy of each
+      var dark = () => document.documentElement.classList.contains('_mermaid-dark')
+      var tone = (kind) => ({
+        head: '#eb6c36',
+        lost: dark() ? '#f07f77' : '#c0392b',
+        plain: dark() ? '#79b1f9' : '#2e5aa8',
+      })[kind]
+      var light = (step, on) => {
+        step.tinted.forEach(({attr, original}) => step.line.setAttribute(attr, original))
+        step.tinted = []
+        if (!on) return
+        ;['marker-start', 'marker-end'].forEach((attr) => {
+          var original = step.line.getAttribute(attr)
+          var match = /#([^")]+)/.exec(original || '')
+          if (!match) return
+          var copyId = match[1] + '-lit-' + step.kind
+          if (!svg.querySelector('[id="' + copyId + '"]')) {
+            var source = svg.querySelector('[id="' + match[1] + '"]')
+            if (!source) return
+            var copy = source.cloneNode(true)
+            copy.id = copyId
+            copy.querySelectorAll('*').forEach((part) => {
+              var style = getComputedStyle(part)
+              if (style.fill !== 'none') part.style.setProperty('fill', tone(step.kind), 'important')
+              if (style.stroke !== 'none') part.style.setProperty('stroke', tone(step.kind), 'important')
+            })
+            source.parentNode.appendChild(copy)
+          }
+          step.tinted.push({attr, original})
+          step.line.setAttribute(attr, 'url(#' + copyId + ')')
+        })
+      }
+      var travelOne = (step) => {
+        var line = step.line
+        var parent = line.parentNode
+        var ns = 'http://www.w3.org/2000/svg'
+        // no arrowhead, no direction: an indeterminate bar slides along the line while the step lasts
+        if (step.kind === 'plain') {
+          var bar = line.cloneNode(false)
+          ;['id', 'style', 'marker-start', 'marker-end', 'data-mmd-seq', 'data-mmd-kind'].forEach((name) => bar.removeAttribute(name))
+          bar.setAttribute('class', 'mmd-indet')
+          bar.setAttribute('pathLength', '1')
+          parent.appendChild(bar)
+          drawn.push(bar)
+          return
+        }
+        var point
+        if (line.tagName.toLowerCase() === 'line') {
+          var [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map((name) => parseFloat(line.getAttribute(name)))
+          point = (t) => ({x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t})
+        }
+        else {
+          var length = line.getTotalLength()
+          point = (t) => line.getPointAtLength(length * t)
+        }
+        // each head is travelled towards from the opposite end, two heads send one token from each end past each other
+        var ways = step.from && step.to ? [1, -1] : [step.from ? -1 : 1]
+        var tokens = ways.map((way) => {
+          var token = document.createElementNS(ns, 'circle')
+          token.setAttribute('class', 'mmd-token')
+          token.setAttribute('data-kind', step.kind)
+          token.setAttribute('r', '4')
+          parent.appendChild(token)
+          drawn.push(token)
+          return {token, way}
+        })
+        var place = (t) => tokens.forEach(({token, way}) => {
+          var p = point(way > 0 ? t : 1 - t)
+          token.setAttribute('cx', p.x)
+          token.setAttribute('cy', p.y)
+        })
+        place(0)
+        return place
+      }
+      // every message of a step travels on one clock
+      var travel = (step) => {
+        var places = step.msgs.map(travelOne).filter(Boolean)
+        if (calm) return places.forEach((place) => place(1))
+        var begin = performance.now()
+        var tick = (now) => {
+          var t = Math.min((now - begin) / TRAVEL, 1)
+          places.forEach((place) => place(t))
+          if (t < 1) frame = requestAnimationFrame(tick)
+        }
+        frame = requestAnimationFrame(tick)
+      }
+      var paint = () => {
+        playTool.innerHTML = icon(playing ? 'pause' : 'play')
+        playTool.title = playing ? 'Pause (P)' : at >= steps.length ? 'Replay (P)' : 'Play (P)'
+        playTool.setAttribute('aria-label', playTool.title)
+      }
+      var go = (i) => {
+        clearTimeout(timer)
+        clearToken()
+        player.hidden = false
+        svg.classList.add('mmd-seq')
+        at = Math.max(0, Math.min(i, steps.length - 1))
+        mark(at)
+        travel(steps[at])
+        counter.textContent = at + 1 + ' / ' + steps.length
+        caption.textContent = steps[at].label
+        paint()
+        if (playing) timer = setTimeout(() => (at + 1 < steps.length ? go(at + 1) : finish()), HOLD)
+      }
+      // the run ends complete: every message back at full strength
+      var finish = () => {
+        clearTimeout(timer)
+        clearToken()
+        playing = false
+        at = steps.length
+        mark(at)
+        counter.textContent = steps.length + ' / ' + steps.length
+        caption.textContent = 'Complete'
+        paint()
+      }
+      var pause = () => {
+        playing = false
+        clearTimeout(timer)
+        paint()
+      }
+      var toggle = () => {
+        if (!steps.length) return
+        if (at < 0 || at >= steps.length) {
+          playing = true
+          go(0)
+        }
+        else if (playing) {
+          pause()
+        }
+        else {
+          playing = true
+          go(at)
+        }
+      }
+      var move = (by) => {
+        if (!steps.length) return
+        pause()
+        if (by > 0 && at >= steps.length - 1 && at >= 0) return finish()
+        go(at < 0 ? 0 : at >= steps.length ? steps.length - 1 : at + by)
+      }
+      seqStop = () => {
+        playing = false
+        clearTimeout(timer)
+        clearToken()
+        at = -1
+        mark(-1)
+        svg.classList.remove('mmd-seq')
+        player.hidden = true
+        paint()
+      }
+      seqKey = (e) => {
+        if (e.key === 'p' || e.key === 'P') return toggle(), true
+        if (e.key === '[') return move(-1), true
+        if (e.key === ']') return move(1), true
+        if (e.key === 'Escape' && at >= 0) return seqStop(), true
+        return false
+      }
+      paint()
+    }
+
+    pre._mmdSeqStop = seqStop
+    pre._mmdSeqToggle = () => seqKey({key: 'p'})
+
+    // keys while fullscreen: + - 0 zoom, arrows move, / find, M map, P play, escape unwinds focus then fullscreen
     pre._mmdKey = (e) => {
       if (e.target === finder) return false
+      if (seqKey(e)) return true
       var step = 80 / panzoom.getScale()
       if (e.key === 'Escape') return focused ? (focus(null), true) : false
       if (e.key === '+' || e.key === '=') return panzoom.zoomIn(), true
