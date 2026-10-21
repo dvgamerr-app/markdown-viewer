@@ -1,6 +1,19 @@
 
 # Change Log
 
+## v1.0 - 2026-10-21
+First release of Nimbus Markdown. Versioning restarts at 1.0.
+- rename to Nimbus Markdown, with Nimbus light and dark themes as the default
+- markdown-it as the only compiler
+- build with a single bun script
+- update mermaid to v12.2.0
+- fullscreen mermaid viewer: find node, overview map, node focus popup, blue links into a node and orange links out
+- fix a second script injection resetting an already rendered page
+- bump markdown-it, fflate and prismjs to patched versions
+
+## Before Nimbus Markdown
+Releases of the original extension this project was forked from, numbered on its own scale.
+
 ## v5.3 - 2024-04-30
 - custom theme support
 - syntax highlighted raw markdown view
