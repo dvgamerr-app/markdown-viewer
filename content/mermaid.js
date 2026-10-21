@@ -304,8 +304,28 @@ var mmd = (() => {
       }
       return null
     }
+    // edges with a custom id (A e1@--> B) carry no node names, so find the nodes at the two ends of the path
+    var reach = (el) => {
+      var length = el.getTotalLength()
+      var matrix = el.getScreenCTM()
+      if (!length || !matrix) return null
+      var at = (distance) => {
+        var point = el.getPointAtLength(distance).matrixTransform(matrix)
+        var best = null
+        nodes.forEach((n) => {
+          var box = n.el.getBoundingClientRect()
+          var gap = Math.hypot(Math.max(box.left - point.x, 0, point.x - box.right), Math.max(box.top - point.y, 0, point.y - box.bottom))
+          if (!best || gap < best.gap) best = {id: n.id, gap}
+        })
+        // the arrowhead stops a few units short of the node border
+        return best && best.gap <= 12 * Math.abs(matrix.a) ? best.id : null
+      }
+      var from = at(0)
+      var to = at(length)
+      return from && to && from !== to ? {from, to} : null
+    }
     var edges = Array.from(svg.querySelectorAll('path.flowchart-link')).map((el) => {
-      var pair = ends(el.id)
+      var pair = ends(el.id) || reach(el)
       if (!pair) return null
       var label = svg.querySelector('.edgeLabel [data-id="' + local(el.id) + '"]')
       return {el, from: pair.from, to: pair.to, label: label ? label.closest('.edgeLabel') : null}
