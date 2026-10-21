@@ -29,11 +29,6 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: package.json
-      # build/package.sh installs each vendor dependency with npm and bundles it with node;
-      # node 20 because build/mdc uses node-sass 9, which has no prebuilt binary for newer node
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version: ${{ vars.NODE_VERSION || '20' }}
       # No --if-present: missing checks must fail rather than pass silently.
       # No lint/format/typecheck step: the project has no linter config and is plain JavaScript;
       # linting runs through Qlty below.
@@ -44,7 +39,7 @@ jobs:
         run: bun run test:ci
       - name: Production build
         if: ${{ !cancelled() }}
-        run: bun run build
+        run: bun run build:dist
 
   qlty:
     name: Qlty Analysis
