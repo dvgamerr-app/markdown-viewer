@@ -166,7 +166,19 @@ var mmd = (() => {
     .edgeLabel foreignObject { overflow: visible; }
     .edgeLabel foreignObject > div { transform: translateY(-12px); }
     line[id^=actor] { stroke: ${t.ruleSolid} !important; stroke-width: 1px !important; stroke-dasharray: 4 3; }
-    .loopLine { stroke: ${t.ruleSolid} !important; stroke-dasharray: 4 3; }
+    .loopLine { stroke: rgba(${t.inkRgb},0.22) !important; stroke-dasharray: 4 3; }
+    /* sequence: names in sans, labels in muted mono, fragments as ink-wash frames with a mono operator tab,
+       activation bars as thin muted rails, notes neutral so accent stays free for the focal message */
+    text.actor, text.actor > tspan { font-size: 13px !important; font-weight: 600; }
+    .messageText { fill: ${t.muted} !important; }
+    .noteText, .noteText > tspan { font-size: 12px !important; fill: ${t.ink} !important; }
+    .note { fill: rgba(${t.inkRgb},0.03) !important; stroke: ${t.ruleSolid} !important; }
+    rect.rect { fill: rgba(${t.inkRgb},0.04) !important; stroke: ${t.rule} !important; }
+    .labelBox { fill: ${t.paper} !important; stroke: rgba(${t.inkRgb},0.22) !important; }
+    .labelText, .labelText > tspan { font-size: 9px !important; letter-spacing: 0.12em; text-transform: uppercase; fill: ${t.muted} !important; }
+    .loopText, .loopText > tspan { font-size: 11px !important; fill: ${t.muted} !important; }
+    /* the else / and guard of a fragment is a sectionTitle */
+    .sectionTitle { font-size: 11px !important; }
     .activation0, .activation1, .activation2 { fill: rgba(${t.inkRgb},0.06) !important; stroke: ${t.muted} !important; stroke-width: 0.8px !important; }
     .titleText, .pieTitleText { font-family: 'Instrument Serif', Georgia, serif !important; font-size: 22px !important; font-weight: 400 !important; }
     .sectionTitle, .tick text, .taskText, .taskTextOutsideRight, .taskTextOutsideLeft {
@@ -772,7 +784,7 @@ var mmd = (() => {
       themeCSS: css(t),
       fontFamily: sans,
       flowchart: {curve: 'step', padding: 16, nodeSpacing: 48, rankSpacing: 56, htmlLabels: true},
-      sequence: {actorMargin: 64, boxMargin: 12, noteMargin: 12, messageMargin: 40, mirrorActors: false},
+      sequence: {actorMargin: 64, boxMargin: 12, noteMargin: 12, messageMargin: 40, mirrorActors: false, activationWidth: 8},
       state: {padding: 12},
       er: {fontSize: 12},
       gantt: {barHeight: 20, barGap: 8, fontSize: 11, sectionFontSize: 11}
