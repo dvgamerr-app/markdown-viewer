@@ -441,9 +441,21 @@ pre:not(.mmd-fullscreen) > .mmd-find,
 ._mermaid-dark .mmd-toolbar .mmd-level {
   color: #dedede;
 }
+/*mermaid measures each diagram in a temporary element appended to the body. While the page is still
+  hidden that element would be drawn on screen with unstyled boxes: park it out of view, size unchanged*/
+body > div[id^="dmmd-"] {
+  position: fixed !important;
+  top: 0 !important;
+  left: -100000px !important;
+  pointer-events: none;
+}
 /*node focus: dim everything but the node and its direct links*/
 svg.mmd-focus .node:not(.mmd-on),
 svg.mmd-focus path.flowchart-link:not(.mmd-on),
+svg.mmd-focus path.transition:not(.mmd-on),
+svg.mmd-focus path.relationshipLine:not(.mmd-on),
+svg.mmd-focus g.mmd-er-card:not(.mmd-on),
+svg.mmd-focus g.statediagram-cluster:not(.mmd-on),
 svg.mmd-focus g.edgeLabel:not(.mmd-on) {
   opacity: .15;
 }
@@ -457,6 +469,8 @@ g.node.mmd-match > :is(rect, polygon, circle, path) {
 /*hover / focus motion*/
 pre.mmd-fullscreen svg g.node,
 pre.mmd-fullscreen svg path.flowchart-link,
+pre.mmd-fullscreen svg path.transition,
+pre.mmd-fullscreen svg path.relationshipLine,
 pre.mmd-fullscreen svg g.edgeLabel {
   transition: opacity .18s ease, filter .18s ease;
 }
@@ -472,20 +486,38 @@ pre.mmd-fullscreen svg g.node.mmd-selected {
   filter: drop-shadow(0 0 10px #eb6c36);
 }
 pre.mmd-fullscreen svg path.flowchart-link.mmd-hover,
+pre.mmd-fullscreen svg path.transition.mmd-hover,
+pre.mmd-fullscreen svg path.relationshipLine.mmd-hover,
 pre.mmd-fullscreen svg path.flowchart-link.mmd-on,
-pre.mmd-fullscreen svg path.flowchart-link.mmd-peek {
+pre.mmd-fullscreen svg path.transition.mmd-on,
+pre.mmd-fullscreen svg path.relationshipLine.mmd-on,
+pre.mmd-fullscreen svg path.flowchart-link.mmd-peek,
+pre.mmd-fullscreen svg path.transition.mmd-peek,
+pre.mmd-fullscreen svg path.relationshipLine.mmd-peek {
   stroke: #eb6c36 !important;
   stroke-width: 2.2px !important;
 }
 /*links into the node are blue, links out of it stay orange*/
 pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-hover,
+pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-hover,
+pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-hover,
 pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-on,
-pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek {
+pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-on,
+pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-on,
+pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek,
+pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-peek,
+pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-peek {
   stroke: #2e5aa8 !important;
 }
 ._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-hover,
+._mermaid-dark pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-hover,
+._mermaid-dark pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-hover,
 ._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-on,
-._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek {
+._mermaid-dark pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-on,
+._mermaid-dark pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-on,
+._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek,
+._mermaid-dark pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-peek,
+._mermaid-dark pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-peek {
   stroke: #79b1f9 !important;
 }
 .mmd-flow {
@@ -748,6 +780,29 @@ svg.mmd-seq text.messageText[data-mmd-seq=now] {
 }
 ._mermaid-dark svg.mmd-seq text.messageText[data-mmd-seq=now] {
   fill: #eb6c36 !important;
+}
+/*state playback: the state just reached is lit, the ones reached before keep their colours, the rest wait*/
+svg.mmd-seq g.node[data-mmd-seq=now] > :is(rect, circle, polygon, ellipse):not(.mmd-er-box, .mmd-er-fill) {
+  fill: rgba(235, 108, 54, .08) !important;
+  stroke: #eb6c36 !important;
+  stroke-width: 1.6px !important;
+}
+svg.mmd-seq g.node[data-mmd-seq=now] .outer-path path[stroke]:not([stroke=none]) {
+  stroke: #eb6c36 !important;
+}
+svg.mmd-seq g.node[data-mmd-seq=now] > .mmd-er-box {
+  stroke: #eb6c36 !important;
+  stroke-width: 1.6px !important;
+}
+svg.mmd-seq g.node[data-mmd-seq=now] > .mmd-er-fill {
+  fill: rgba(235, 108, 54, .08) !important;
+}
+svg.mmd-seq g.statediagram-cluster[data-mmd-seq=now] rect.outer {
+  stroke: #eb6c36 !important;
+  stroke-dasharray: none !important;
+}
+._mermaid-dark svg.mmd-seq g.node[data-mmd-seq=now] > :is(rect, circle, polygon, ellipse):not(.mmd-er-box, .mmd-er-fill) {
+  fill: rgba(235, 108, 54, .14) !important;
 }
 .mmd-token {
   fill: #eb6c36;
