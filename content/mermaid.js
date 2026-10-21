@@ -234,8 +234,16 @@ var mmd = (() => {
   // fullscreen + zoom controls; zoom/move only work in fullscreen, inline the diagram is static
   // mouse: wheel zoom, drag move | touchpad: pinch zoom, two-finger move | touch: pinch zoom, drag move
   var toolbar = (pre, panzoom) => {
-    var old = pre.querySelector(':scope > .mmd-toolbar')
-    if (old) old.remove()
+    // every render builds a new set of controls: drop the previous set, its listeners and its panzoom,
+    // otherwise they keep running against the replaced svg
+    pre._mmdDispose && pre._mmdDispose()
+    var abort = new AbortController()
+    var signal = abort.signal
+    pre._mmdDispose = () => {
+      abort.abort()
+      panzoom.destroy()
+      pre.querySelectorAll(':scope > .mmd-toolbar, :scope > .mmd-card, :scope > .mmd-find, :scope > .mmd-map').forEach((el) => el.remove())
+    }
 
     var bar = document.createElement('div')
     bar.className = 'mmd-toolbar'
@@ -306,6 +314,37 @@ var mmd = (() => {
       el.className = cls
       if (text != null) el.textContent = text
       return el
+    }
+
+    // arrowheads are separate marker elements, so a lit edge gets an orange copy of its marker
+    // links out of the focused node are orange, links into it are blue
+    var lit = (dir) => (dir === 'in' ? (document.documentElement.classList.contains('_mermaid-dark') ? '#79b1f9' : '#2e5aa8') : '#eb6c36')
+    var tint = (edge, on, dir) => {
+      var el = edge.el
+      if (!on) {
+        if (el.dataset.mmdMarker) {
+          el.setAttribute('marker-end', el.dataset.mmdMarker)
+          delete el.dataset.mmdMarker
+        }
+        return
+      }
+      var current = el.getAttribute('marker-end')
+      var match = /#([^")]+)/.exec(current || '')
+      if (!match || el.dataset.mmdMarker) return
+      var copyId = match[1] + '-lit-' + dir
+      if (!svg.querySelector('[id="' + copyId + '"]')) {
+        var source = svg.querySelector('[id="' + match[1] + '"]')
+        if (!source) return
+        var copy = source.cloneNode(true)
+        copy.id = copyId
+        copy.querySelectorAll('path').forEach((p) => {
+          p.style.setProperty('fill', lit(dir), 'important')
+          p.style.setProperty('stroke', lit(dir), 'important')
+        })
+        source.parentNode.appendChild(copy)
+      }
+      el.dataset.mmdMarker = current
+      el.setAttribute('marker-end', 'url(#' + copyId + ')')
     }
 
     // one-shot pulse that travels along an edge in its drawn direction
@@ -430,15 +469,32 @@ var mmd = (() => {
     var focused = null
     var focus = (id, reach = null) => {
       svg.querySelectorAll('.mmd-on, .mmd-selected, .mmd-peek').forEach((el) => el.classList.remove('mmd-on', 'mmd-selected', 'mmd-peek'))
+      // the label colour comes from a stylesheet scoped by the svg id, only inline !important outranks it
+      svg.querySelectorAll('.edgeLabel span, .edgeLabel p').forEach((el) => {
+        el.style.removeProperty('color')
+        el.style.removeProperty('font-weight')
+      })
       svg.querySelectorAll('.mmd-flow').forEach((el) => el.remove())
+      edges.forEach((edge) => {
+        tint(edge, false)
+        delete edge.el.dataset.mmdDir
+      })
       focused = id
       svg.classList.toggle('mmd-focus', !!id)
       if (id) {
         var {shown, used} = trace(id, reach)
         used.forEach((edge, index) => {
-          edge.el.classList.add('mmd-on')
-          edge.label && edge.label.classList.add('mmd-on')
           var dir = reach === 'up' ? 'in' : reach === 'down' ? 'out' : edge.from === id ? 'out' : 'in'
+          edge.el.dataset.mmdDir = dir
+          edge.el.classList.add('mmd-on')
+          tint(edge, true, dir)
+          if (edge.label) {
+            edge.label.classList.add('mmd-on')
+            edge.label.querySelectorAll('span, p').forEach((el) => {
+              el.style.setProperty('color', document.documentElement.classList.contains('_mermaid-dark') ? '#f5f5f5' : '#2d3142', 'important')
+              el.style.setProperty('font-weight', '600', 'important')
+            })
+          }
           flow(edge, dir, Math.min(index, 8) * 0.06)
         })
         nodes.forEach(({el, id: nodeId}) => el.classList.toggle('mmd-on', shown.has(nodeId)))
@@ -460,18 +516,34 @@ var mmd = (() => {
 
     // hover: light up the links of the node under the pointer
     var peeked = null
+    var hovered = []
     var peek = (hit) => {
       if (peeked === hit) return
-      svg.querySelectorAll('.mmd-hover').forEach((el) => el.classList.remove('mmd-hover'))
+      hovered.forEach((e) => {
+        e.el.classList.remove('mmd-hover')
+        if (!e.el.classList.contains('mmd-on')) {
+          tint(e, false)
+          delete e.el.dataset.mmdDir
+        }
+      })
+      hovered = []
       peeked = hit
       var node = hit && nodes.find((n) => n.el === hit)
       if (!node || focused) return
-      edges.forEach((e) => (e.from === node.id || e.to === node.id) && e.el.classList.add('mmd-hover'))
+      hovered = edges.filter((e) => e.from === node.id || e.to === node.id)
+      hovered.forEach((e) => {
+        var dir = e.from === node.id ? 'out' : 'in'
+        e.el.dataset.mmdDir = dir
+        e.el.classList.add('mmd-hover')
+        tint(e, true, dir)
+      })
     }
-    pre.addEventListener('mouseover', (e) => active() && nodes.length && peek(e.target.closest && e.target.closest('g.node')))
-    pre.addEventListener('mouseleave', () => peek(null))
+    pre.addEventListener('mouseover', (e) => active() && nodes.length && peek(e.target.closest && e.target.closest('g.node')), {signal})
+    pre.addEventListener('mouseleave', () => peek(null), {signal})
     var down = null
-    pre.addEventListener('pointerdown', (e) => (down = {x: e.clientX, y: e.clientY}))
+    // capture: panzoom stops pointerdown from bubbling in fullscreen, so a bubbling listener
+    // would keep the position of an older press and read every later click as a drag
+    pre.addEventListener('pointerdown', (e) => (down = {x: e.clientX, y: e.clientY}), {capture: true, signal})
     pre.addEventListener('click', (e) => {
       if (!active() || !nodes.length) return
       // a drag that ends on a node is a move, not a click
@@ -479,7 +551,7 @@ var mmd = (() => {
       var hit = e.target.closest && e.target.closest('g.node')
       var node = hit && nodes.find((n) => n.el === hit)
       focus(node && node.id !== focused ? node.id : null)
-    })
+    }, {signal})
 
     // find: type to match labels or ids, enter jumps to the first match
     var finder = document.createElement('input')
