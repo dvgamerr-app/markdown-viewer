@@ -167,6 +167,7 @@ var mmd = (() => {
     .edgeLabel foreignObject > div { transform: translateY(-12px); }
     line[id^=actor] { stroke: ${t.ruleSolid} !important; stroke-width: 1px !important; stroke-dasharray: 4 3; }
     .loopLine { stroke: ${t.ruleSolid} !important; stroke-dasharray: 4 3; }
+    .activation0, .activation1, .activation2 { fill: rgba(${t.inkRgb},0.06) !important; stroke: ${t.muted} !important; stroke-width: 0.8px !important; }
     .titleText, .pieTitleText { font-family: 'Instrument Serif', Georgia, serif !important; font-size: 22px !important; font-weight: 400 !important; }
     .sectionTitle, .tick text, .taskText, .taskTextOutsideRight, .taskTextOutsideLeft {
       font-family: ${mono} !important;
@@ -347,14 +348,14 @@ var mmd = (() => {
       el.setAttribute('marker-end', 'url(#' + copyId + ')')
     }
 
-    // one-shot pulse that travels along an edge in its drawn direction
-    var flow = (edge, dir, delay = 0) => {
+    // pulse that travels along an edge in its drawn direction, one-shot for previews, looping while a node stays focused
+    var flow = (edge, dir, delay = 0, loop = false) => {
       var line = edge.el.cloneNode(false)
       line.removeAttribute('id')
       line.removeAttribute('style')
       line.removeAttribute('marker-end')
       line.removeAttribute('marker-start')
-      line.setAttribute('class', 'mmd-flow')
+      line.setAttribute('class', loop ? 'mmd-flow mmd-loop' : 'mmd-flow')
       line.setAttribute('pathLength', '1')
       line.dataset.dir = dir
       line.style.animationDelay = delay + 's'
@@ -401,29 +402,38 @@ var mmd = (() => {
       if (!id) return
       var node = byId.get(id)
       var kind = kinds.find((k) => node.el.classList.contains(k)) || 'node'
+      var incoming = edges.filter((e) => e.to === id)
+      var outgoing = edges.filter((e) => e.from === id)
+
       var head = h('div', 'mmd-card-head')
       var copy = h('div', 'mmd-card-copy')
-      copy.append(h('span', 'mmd-card-eyebrow', 'Node'), h('strong', 'mmd-card-title', node.label))
+      copy.append(
+        h('span', 'mmd-card-eyebrow', kind === 'node' ? 'Node' : 'Node · ' + kind),
+        h('strong', 'mmd-card-title', node.label),
+        h('code', 'mmd-card-id', id)
+      )
       var close = h('button', 'mmd-card-close', '×')
       close.type = 'button'
       close.title = 'Close (Esc)'
+      close.setAttribute('aria-label', 'Close')
       close.addEventListener('click', () => focus(null))
       head.append(copy, close)
 
-      var meta = h('div', 'mmd-card-meta')
-      meta.append(h('span', 'mmd-chip', kind), h('code', 'mmd-chip', id))
-
-      var incoming = edges.filter((e) => e.to === id)
-      var outgoing = edges.filter((e) => e.from === id)
-      var summary = h('p', 'mmd-card-summary', incoming.length + ' in · ' + outgoing.length + ' out')
+      var stats = h('div', 'mmd-card-stats')
+      ;[['in', 'In', incoming.length], ['out', 'Out', outgoing.length]].forEach(([dir, text, count]) => {
+        var cell = h('div', 'mmd-stat')
+        cell.dataset.dir = dir
+        cell.append(h('span', 'mmd-card-label', text), h('strong', '', String(count)))
+        stats.appendChild(cell)
+      })
 
       var reachBar = h('div', 'mmd-card-reach')
-      reachBar.append(h('span', 'mmd-card-label', 'Reach'))
       ;[['up', 'Upstream'], ['down', 'Downstream']].forEach(([dir, text]) => {
         var count = trace(id, dir).shown.size - 1
         var btn = h('button', '')
         btn.type = 'button'
         btn.disabled = !count
+        btn.dataset.dir = dir === 'up' ? 'in' : 'out'
         btn.setAttribute('aria-pressed', String(reach === dir))
         btn.append(h('span', '', text), h('strong', '', String(count)))
         btn.addEventListener('click', () => focus(id, reach === dir ? null : dir))
@@ -463,7 +473,7 @@ var mmd = (() => {
         })
         list.appendChild(row)
       })
-      card.append(head, meta, summary, reachBar, list)
+      card.append(head, stats, reachBar, h('span', 'mmd-card-label mmd-card-section', 'Connections'), list)
     }
 
     var focused = null
@@ -495,7 +505,7 @@ var mmd = (() => {
               el.style.setProperty('font-weight', '600', 'important')
             })
           }
-          flow(edge, dir, Math.min(index, 8) * 0.06)
+          flow(edge, dir, Math.min(index, 6) * 0.2, true)
         })
         nodes.forEach(({el, id: nodeId}) => el.classList.toggle('mmd-on', shown.has(nodeId)))
         byId.get(id).el.classList.add('mmd-selected')
