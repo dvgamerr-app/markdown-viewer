@@ -4,21 +4,57 @@
 
 ### Directions and node shapes
 
+All 14 shape syntaxes in one chain. Node kinds use the viewer's diagram-design classes: `focal` (one only), `input`, `store`, `external`, `optional`, `security`.
+
 ```mermaid
 flowchart TD
-  A[Rectangle] --> B(Rounded)
+  A[Rectangle]:::input --> B(Rounded)
   B --> C([Stadium])
   C --> D[[Subroutine]]
-  D --> E[(Database)]
-  E --> F((Circle))
+  D --> E[(Database)]:::store
+  E --> F((Circle)):::focal
   F --> G>Asymmetric]
   G --> H{Decision}
-  H --> I{{Hexagon}}
-  I --> J[/Parallelogram/]
+  H --> I{{Hexagon}}:::optional
+  I --> J[/Parallelogram/]:::external
   J --> K[\Parallelogram alt\]
   K --> L[/Trapezoid\]
   L --> M[\Trapezoid alt/]
-  M --> N(((Double circle)))
+  M --> N(((Double circle))):::security
+```
+
+Shape carries type, as in the flowchart reference: stadium for start and end, rectangle for a step, diamond for a decision, labelled on every exit.
+
+```mermaid
+flowchart TD
+  start([Start]) --> check{Valid input?}
+  check -->|yes| work[Process request]:::focal
+  check -->|no| fail[Show error]
+  work --> save[(Save result)]:::store
+  save --> done([End])
+  fail --> done
+```
+
+### Directions
+
+```mermaid
+flowchart LR
+  A([LR]) --> B[Step] --> C{Check} --> D([End])
+```
+
+```mermaid
+flowchart RL
+  A([RL]) --> B[Step] --> C{Check} --> D([End])
+```
+
+```mermaid
+flowchart BT
+  A([BT]) --> B[Step] --> C{Check} --> D([End])
+```
+
+```mermaid
+flowchart TB
+  A([TB]) --> B[Step] --> C{Check} --> D([End])
 ```
 
 ### Edge types and labels
