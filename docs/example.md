@@ -123,15 +123,15 @@ Relative: [mermaid test](./mermaid.md)
 
 ## 6. Images
 
-![Alt text](icons/icon128.png "Image title")
+![Alt text](../icons/default/128x128.png "Image title")
 
-[![Linked image](icons/icon128.png)](https://example.com)
+[![Linked image](../icons/default/128x128.png)](https://example.com)
 
 Reference image: ![ref image][img1]
 
-[img1]: icons/icon128.png "Ref title"
+[img1]: ../icons/default/128x128.png "Ref title"
 
-Attrs on image: ![sized](icons/icon128.png){width=64 height=64}
+Attrs on image: ![sized](../icons/default/128x128.png){width=64 height=64}
 
 ## 7. Code
 
