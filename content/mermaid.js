@@ -692,12 +692,14 @@ var mmd = (() => {
     var isEr = kind === 'er'
     var isDbml = kind === 'dbml'
     var isJourney = kind === 'journey'
+    var isTimeline = kind === 'timeline'
     var isClass = kind === 'classDiagram'
-    // a journey is a chain of stages joined by the sentiment curve, it plays like a state machine
-    var isState = kind === 'stateDiagram' || isEr || isJourney
+    // a journey is a chain of stages joined by the sentiment curve, a timeline a chain of periods along its
+    // baseline: both play like a state machine
+    var isState = kind === 'stateDiagram' || isEr || isJourney || isTimeline
     // an entity model is not a flow, it has nothing to play: its relationships light up on hover instead
     var plays = isSequence || (isState && !isEr)
-    plays && button('play', isJourney ? 'Play journey (P)' : isState ? 'Play transitions (P)' : 'Play sequence (P)', () => pre._mmdSeqToggle && pre._mmdSeqToggle())
+    plays && button('play', isJourney ? 'Play journey (P)' : isTimeline ? 'Play timeline (P)' : isState ? 'Play transitions (P)' : 'Play sequence (P)', () => pre._mmdSeqToggle && pre._mmdSeqToggle())
     var find = button('find', 'Find node (/)', () => openFind())
     var mapButton = button('map', 'Overview map (M)', () => toggleMap())
     button('zoomIn', 'Zoom in (+)', () => panzoom.zoomIn())
@@ -727,14 +729,14 @@ var mmd = (() => {
     // state diagrams name nodes "state-<id>-<n>"; a composite state is a cluster, drawn apart from the nodes
     // but reached by transitions all the same. Notes are not part of the machine
     var nodes = Array.from(svg.querySelectorAll(isState ? 'g.node:not(.statediagram-note), g.statediagram-cluster' : 'g.node')).map((el) => {
-      var match = (isEr ? /^entity-(.+)-\d+$/ : isDbml ? /^dbml-(.+)-[0-9]+$/ : isJourney ? /^journey-(.+)-[0-9]+$/ : isState ? /^state-(.+)-\d+$/ : isClass ? /^classId-(.+)-\d+$/ : /^flowchart-(.+)-\d+$/).exec(local(el.id))
+      var match = (isEr ? /^entity-(.+)-\d+$/ : isDbml ? /^dbml-(.+)-[0-9]+$/ : isJourney ? /^journey-(.+)-[0-9]+$/ : isTimeline ? /^timeline-(.+)-[0-9]+$/ : isState ? /^state-(.+)-\d+$/ : isClass ? /^classId-(.+)-\d+$/ : /^flowchart-(.+)-\d+$/).exec(local(el.id))
       // an entity's text holds every attribute, its name is the first label
       var label = el.querySelector(isClass ? '.label-group' : ':scope > .cluster-label, :scope > .label.name') || el
       return {el, id: (match && match[1]) || '', label: isDbml && match ? match[1] : label.textContent.trim(), cluster: el.classList.contains('statediagram-cluster')}
     }).filter((n) => n.id)
     // a dbml diagram carries what its popup shows, the columns and the keys of every table
     var model = (() => {
-      var meta = (isDbml || isJourney) && svg.querySelector('metadata.dbml-model, metadata.journey-model')
+      var meta = (isDbml || isJourney || isTimeline) && svg.querySelector('metadata.dbml-model, metadata.journey-model, metadata.timeline-model')
       try {
         return meta ? JSON.parse(meta.textContent) : null
       }
@@ -743,7 +745,7 @@ var mmd = (() => {
       }
     })()
     nodes.forEach((n) => {
-      if (isJourney && model && model.nodes[n.id]) n.label = model.nodes[n.id].name
+      if ((isJourney || isTimeline) && model && model.nodes[n.id]) n.label = model.nodes[n.id].name
     })
     var kinds = ['focal', 'store', 'external', 'input', 'optional', 'security']
     var byId = new Map(nodes.map((n) => [n.id, n]))
@@ -1005,6 +1007,7 @@ var mmd = (() => {
       if (!id) return
       if (isDbml) return drawTable(id, reach)
       if (isJourney) return drawStage(id)
+      if (isTimeline) return drawPeriod(id)
       var node = byId.get(id)
       var kind = kinds.find((k) => node.el.classList.contains(k)) || 'node'
       var incoming = edges.filter((e) => e.to === id)
@@ -1275,7 +1278,6 @@ var mmd = (() => {
       var node = byId.get(id)
       var data = (model && model.nodes[id]) || {name: node.label, section: '', n: 0, score: 0, level: '', actors: [], prev: '', next: '', low: false}
       var before = model && model.nodes[data.prev]
-      var after = model && model.nodes[data.next]
 
       var head = h('div', 'mmd-card-head')
       var copy = h('div', 'mmd-card-copy')
@@ -1309,8 +1311,18 @@ var mmd = (() => {
           body.append(row)
         })
       }
+      chain(body, id, data, (other, back) => {
+        var delta = back ? data.score - other.score : other.score - data.score
+        return other.level + ' · ' + other.score + '/5 · ' + (delta > 0 ? 'rises ' : delta < 0 ? 'drops ' : 'holds ') + (delta ? Math.abs(delta) : '')
+      })
+      card.append(head, first, second, body)
+    }
+
+    // the neighbours of a link in a chain (a journey stage, a timeline period), click to move along
+    var chain = (body, id, data, say) => {
       body.append(h('span', 'mmd-card-label mmd-card-section', 'Path'))
-      ;[[data.prev, before, true], [data.next, after, false]].forEach(([otherId, other, back]) => {
+      ;[[data.prev, true], [data.next, false]].forEach(([otherId, back]) => {
+        var other = model && model.nodes[otherId]
         var target = byId.get(otherId)
         if (!other || !target) return
         var edge = edges.find((e) => (back ? e.from === otherId && e.to === id : e.from === id && e.to === otherId))
@@ -1318,8 +1330,7 @@ var mmd = (() => {
         row.type = 'button'
         row.dataset.dir = back ? 'in' : 'out'
         var text = h('span', 'mmd-row-copy')
-        var delta = back ? data.score - other.score : other.score - data.score
-        text.append(h('strong', '', other.name), h('small', '', other.level + ' · ' + other.score + '/5 · ' + (delta > 0 ? 'rises ' : delta < 0 ? 'drops ' : 'holds ') + (delta ? Math.abs(delta) : '')))
+        text.append(h('strong', '', other.name), h('small', '', say(other, back)))
         row.append(h('span', 'mmd-row-dir', back ? '←' : '→'), text)
         var preview = null
         var on = () => {
@@ -1341,7 +1352,48 @@ var mmd = (() => {
         })
         body.append(row)
       })
-      card.append(head, first, second, body)
+    }
+
+    // popup for a timeline period: what happened then and how far it sits from the periods around it
+    var drawPeriod = (id) => {
+      var node = byId.get(id)
+      var data = (model && model.nodes[id]) || {name: node.label, section: '', n: 0, events: [], major: false, gap: null, prev: '', next: ''}
+      var after = model && model.nodes[data.next]
+
+      var head = h('div', 'mmd-card-head')
+      var copy = h('div', 'mmd-card-copy')
+      copy.append(h('span', 'mmd-card-eyebrow', 'Period ' + data.n + (data.section ? ' · ' + data.section : '')), h('strong', 'mmd-card-title', data.name))
+      data.major && copy.append(h('span', 'mmd-card-note', 'Busiest period of the timeline'))
+      var close = h('button', 'mmd-card-close', '×')
+      close.type = 'button'
+      close.title = 'Close (Esc)'
+      close.setAttribute('aria-label', 'Close')
+      close.addEventListener('click', () => focus(null))
+      head.append(copy, close)
+
+      var stat = (text, value) => {
+        var cell = h('div', 'mmd-stat')
+        cell.append(h('span', 'mmd-card-label', text), h('strong', '', value))
+        return cell
+      }
+      var stats = h('div', 'mmd-card-stats mmd-auto')
+      stats.append(stat('Events', String(data.events.length)), stat('Since previous', data.gap == null ? '—' : '+' + data.gap))
+
+      var body = h('div', 'mmd-card-list mmd-card-body')
+      if (data.events.length) {
+        body.append(h('span', 'mmd-card-label mmd-card-section', 'Events'))
+        data.events.forEach((event) => {
+          var row = h('div', 'mmd-col')
+          row.append(h('strong', 'mmd-col-name', event))
+          body.append(row)
+        })
+      }
+      chain(body, id, data, (other, back) => {
+        var gap = back ? data.gap : after && after.gap
+        var count = other.events.length + (other.events.length === 1 ? ' event' : ' events')
+        return gap == null ? count : count + ' · ' + gap + (back ? ' before' : ' after')
+      })
+      card.append(head, stats, body)
     }
 
     var focused = null
@@ -2072,10 +2124,10 @@ var mmd = (() => {
       var text = node.textContent
       var id = 'mmd-' + ++sequence
       node.removeAttribute('data-processed')
-      // dbml and user journeys draw themselves, mermaid only gets what they hand back
+      // dbml, user journeys and timelines draw themselves, mermaid only gets what they hand back
       var custom = node.classList.contains('dbml')
         ? () => dbml.render(text, t, {sans, mono}, id)
-        : () => journey.render(text, t, {sans, mono}, id)
+        : () => journey.render(text, t, {sans, mono}, id) || timeline.render(text, t, {sans, mono}, id)
       var drawn = Promise.resolve().then(custom).then((svg) => (svg ? {svg} : mermaid.render(id, text)))
       return drawn.then(({svg, bindFunctions}) => {
         node.innerHTML = svg

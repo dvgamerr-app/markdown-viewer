@@ -8,6 +8,7 @@
 - update mermaid to v12.2.0
 - draw `dbml` fenced code blocks as table cards with constraint chips, schema groups and routed foreign keys, with hover pulses and a table popup in fullscreen
 - draw user journeys as a journey map: stage columns under a five level sentiment curve, the lowest stage in the accent, with hover, a stage popup and step by step playback
+- draw timelines on one hairline baseline: periods alternate above and below, years spaced by elapsed time, the busiest period in the accent, with a legend strip, a period popup and step by step playback
 - fullscreen mermaid viewer: find node, overview map, node focus popup, blue links into a node and orange links out
 - fix a second script injection resetting an already rendered page
 - bump markdown-it, fflate and prismjs to patched versions
