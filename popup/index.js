@@ -193,6 +193,29 @@ var Popup = () => {
     }
   }
 
+  var toggle = (tab, key, checked, onchange) =>
+    m('label.mdc-switch m-switch', {
+      onupdate: onupdate(tab, key),
+      title: state.description[tab][key]
+      },
+      m('input.mdc-switch__native-control', {type: 'checkbox', name: key, checked, onchange}),
+      m('.mdc-switch__background', m('.mdc-switch__knob')),
+      m('span.mdc-switch-label', key)
+    )
+
+  var flags = () => Object.keys(state.options)
+    .filter((key) => typeof state.options[key] === 'boolean')
+
+  var compilerSwitches = () =>
+    m('.scroll', {class: flags().length > 8 ? 'max' : ''},
+      flags().map((key) => toggle('compiler', key, state.options[key], events.compiler.options))
+    )
+
+  var contentSwitches = () =>
+    m('.scroll', Object.keys(state.content).map((key) =>
+      toggle('content', key, state.content[key], events.content)
+    ))
+
   var render = () =>
     m('#popup',
       m('header.popup-brand', m('img', {src: '/icons/nimbus.svg', width: 38, height: 38, alt: ''}), m('div', m('strong', 'Nimbus Markdown'), m('span', 'A calmer way to read.'))),
@@ -260,50 +283,13 @@ var Popup = () => {
               m('option', {selected: state.compiler === name}, name)
             )
           ),
-          m('.scroll', {
-            class: Object.keys(state.options)
-              .filter((key) => typeof state.options[key] === 'boolean')
-              .length > 8
-              ? 'max' : ''
-            },
-            Object.keys(state.options)
-            .filter((key) => typeof state.options[key] === 'boolean')
-            .map((key) =>
-              m('label.mdc-switch m-switch', {
-                onupdate: onupdate('compiler', key),
-                title: state.description.compiler[key]
-                },
-                m('input.mdc-switch__native-control', {
-                  type: 'checkbox',
-                  name: key,
-                  checked: state.options[key],
-                  onchange: events.compiler.options
-                }),
-                m('.mdc-switch__background', m('.mdc-switch__knob')),
-                m('span.mdc-switch-label', key)
-              )
-            )
-          )
+          compilerSwitches()
         ),
         // content
         m('.m-panel', {
           class: state.tab === 'content' ? 'is-active' : ''
           },
-          m('.scroll', Object.keys(state.content).map((key) =>
-            m('label.mdc-switch m-switch', {
-              onupdate: onupdate('content', key),
-              title: state.description.content[key]
-              },
-              m('input.mdc-switch__native-control', {
-                type: 'checkbox',
-                name: key,
-                checked: state.content[key],
-                onchange: events.content
-              }),
-              m('.mdc-switch__background', m('.mdc-switch__knob')),
-              m('span.mdc-switch-label', key)
-            ))
-          )
+          contentSwitches()
         )
       ),
 
@@ -372,51 +358,14 @@ var Popup = () => {
               m('option', {selected: state.compiler === name}, name)
             )
           ),
-          m('.scroll', {
-            class: Object.keys(state.options)
-              .filter((key) => typeof state.options[key] === 'boolean')
-              .length > 8
-              ? 'max' : ''
-            },
-            Object.keys(state.options)
-            .filter((key) => typeof state.options[key] === 'boolean')
-            .map((key) =>
-              m('label.mdc-switch m-switch', {
-                onupdate: onupdate('compiler', key),
-                title: state.description.compiler[key]
-                },
-                m('input.mdc-switch__native-control', {
-                  type: 'checkbox',
-                  name: key,
-                  checked: state.options[key],
-                  onchange: events.compiler.options
-                }),
-                m('.mdc-switch__background', m('.mdc-switch__knob')),
-                m('span.mdc-switch-label', key)
-              )
-            )
-          )
+          compilerSwitches()
         ),
       ),
 
       m('.col-xxl-4.col-xl-4.col-lg-6.col-md-6.col-sm-12',
         m('h3', 'Content'),
         m('.bs-callout m-content',
-          m('.scroll', Object.keys(state.content).map((key) =>
-            m('label.mdc-switch m-switch', {
-              onupdate: onupdate('content', key),
-              title: state.description.content[key]
-              },
-              m('input.mdc-switch__native-control', {
-                type: 'checkbox',
-                name: key,
-                checked: state.content[key],
-                onchange: events.content
-              }),
-              m('.mdc-switch__background', m('.mdc-switch__knob')),
-              m('span.mdc-switch-label', key)
-            ))
-          )
+          contentSwitches()
         ),
       ),
     )

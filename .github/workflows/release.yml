@@ -28,6 +28,7 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: package.json
+          no-cache: true
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
       # The committed version is a 0.0 placeholder; the tag is the source of truth.
@@ -45,12 +46,14 @@ jobs:
       - name: Unit and integration tests
         run: bun run test:ci
       - name: Pack chrome and firefox
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
           mkdir -p release
           bun run build:dist
-          cp dist/nimbus-markdown.zip release/nimbus-markdown-chrome-${{ github.ref_name }}.zip
+          cp dist/nimbus-markdown.zip "release/nimbus-markdown-chrome-$TAG.zip"
           bun run build:dist:firefox
-          cp dist/nimbus-markdown.zip release/nimbus-markdown-firefox-${{ github.ref_name }}.zip
+          cp dist/nimbus-markdown.zip "release/nimbus-markdown-firefox-$TAG.zip"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: nimbus-markdown-${{ github.ref_name }}

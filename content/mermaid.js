@@ -172,7 +172,7 @@ var mmd = (() => {
     line[id^=actor] { stroke: ${t.ruleSolid} !important; stroke-width: 1px !important; stroke-dasharray: 4 3; }
     .loopLine { stroke: rgba(${t.inkRgb},0.22) !important; stroke-dasharray: 4 3; }
     /* sequence: names in sans, labels in muted mono, fragments as ink-wash frames with a mono operator tab,
-       activation bars as thin muted rails, notes neutral so accent stays free for the focal message */
+      activation bars as thin muted rails, notes neutral so accent stays free for the focal message */
     text.actor, text.actor > tspan { font-size: 13px !important; font-weight: 600; }
     .messageText { fill: ${t.muted} !important; }
     .noteText, .noteText > tspan { font-size: 12px !important; fill: ${t.ink} !important; }
@@ -191,7 +191,7 @@ var mmd = (() => {
     .grid .tick line { stroke: ${t.rule} !important; }
 
     /* class: one hairline box with rounded corners, names centred in sans, members in mono, stereotypes as
-       tracked mono eyebrows, compartments split by hairlines, abstract names in italic */
+      tracked mono eyebrows, compartments split by hairlines, abstract names in italic */
     .mmd-class-box { fill: ${t.node}; stroke: ${t.ink}; stroke-width: 1px; }
     .focal .mmd-class-box { fill: ${t.accentTint}; stroke: ${t.accent}; stroke-width: 1.2px; }
     .mmd-class-head { fill: transparent; stroke: none; }
@@ -223,7 +223,7 @@ var mmd = (() => {
     [id$=aggregationStart] path, [id$=aggregationEnd] path { fill: ${t.paper} !important; stroke: ${t.ink} !important; stroke-width: 1px; }
 
     /* state: rounded hairline boxes, a filled ink dot to start and a ringed dot to end, transitions named by
-       tracked mono caps, composite states as dashed frames with a mono tab, bars and diamonds in ink */
+      tracked mono caps, composite states as dashed frames with a mono tab, bars and diamonds in ink */
     .statediagram-state rect.basic { rx: 8px; ry: 8px; }
     .state-start { fill: ${t.ink} !important; stroke: ${t.ink} !important; r: 6px; }
     [id*=root_end] .outer-path path[stroke]:not([stroke=none]) { stroke: ${t.ink} !important; stroke-width: 1px !important; }
@@ -240,8 +240,8 @@ var mmd = (() => {
     .statediagram-note foreignObject :is(div, span, p) { font-size: 12px !important; color: ${t.ink} !important; }
 
     /* er: drawn again after layout, as in the skill's reference. An entity is a box with a tinted header (a mono
-       type tag over the name), attributes in mono with the type on the right, # for a primary key and an arrow for a
-       foreign key. Relationships are plain hairlines with the cardinality written out at both ends */
+      type tag over the name), attributes in mono with the type on the right, # for a primary key and an arrow for a
+      foreign key. Relationships are plain hairlines with the cardinality written out at both ends */
     .mmd-er-node > .label, .mmd-er-node > .outer-path, .mmd-er-node > rect.label-container, .mmd-er-node > .divider, .mmd-er-node > [class^=row-rect] { display: none; }
     .relationshipLine { marker-start: none !important; marker-end: none !important; }
     .mmd-er-node:not([data-mmd-seq=now]) > .mmd-er-fill { fill: ${t.node} !important; stroke: none !important; }
