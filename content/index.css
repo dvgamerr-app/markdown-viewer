@@ -442,11 +442,13 @@ pre:not(.mmd-fullscreen) > .mmd-find,
   color: #dedede;
 }
 /*mermaid measures each diagram in a temporary element appended to the body. While the page is still
-  hidden that element would be drawn on screen with unstyled boxes: park it out of view, size unchanged*/
+  hidden that element would be drawn on screen with unstyled boxes: park it out of view. A gantt takes its width from
+  this element, a shrink-wrapped one squeezes the chart into a sliver, so give it the width of the page*/
 body > div[id^="dmmd-"] {
   position: fixed !important;
   top: 0 !important;
   left: -100000px !important;
+  width: 100vw !important;
   pointer-events: none;
 }
 /*node focus: dim everything but the node and its direct links*/

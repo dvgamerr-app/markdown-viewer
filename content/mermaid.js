@@ -21,7 +21,7 @@ var mmd = (() => {
       rule: 'rgba(45,49,66,0.12)', ruleSolid: '#bfc0c0',
       accent: '#eb6c36', accentTint: 'rgba(235,108,54,0.08)', link: '#2e5aa8',
       series: ['#7c8f6f', '#5e7a9b', '#b8915a', '#9c6b50', '#6e6479'],
-      inkRgb: '45,49,66', accentRgb: '235,108,54',
+      inkRgb: '45,49,66', accentRgb: '235,108,54', mutedRgb: '79,93,117',
       // the colours of prism.css, the code blocks of the page: operator, function and class-name, keyword, punctuation, constant
       syn: {vis: '#9a6e3a', fn: '#dd4a68', type: '#dd4a68', keyword: '#07a', punct: '#999', constant: '#905'}
     },
@@ -32,7 +32,7 @@ var mmd = (() => {
       rule: 'rgba(245,245,245,0.12)', ruleSolid: '#404040',
       accent: '#79b1f9', accentTint: 'rgba(121,177,249,0.10)', link: '#79b1f9',
       series: ['#69ba7c', '#79b1f9', '#dcaf61', '#f07f77', '#a3a3a3'],
-      inkRgb: '245,245,245', accentRgb: '121,177,249',
+      inkRgb: '245,245,245', accentRgb: '121,177,249', mutedRgb: '222,222,222',
       // the colours of prism-okaidia.css
       syn: {vis: '#f8f8f2', fn: '#e6db74', type: '#e6db74', keyword: '#66d9ef', punct: '#f8f8f2', constant: '#f92672'}
     }
@@ -287,6 +287,32 @@ var mmd = (() => {
     .mmd-er-card.mmd-on text { fill: ${t.accent}; }
     .mmd-er-card text { font-family: ${mono}; font-size: 10px; font-weight: 600; fill: ${t.muted}; text-anchor: middle; }
     .mmd-er-card rect { fill: ${t.paper}; stroke: none; }
+
+    /* gantt: rows are ink-wash phase zones, bars are hairline muted boxes with their names in sans, phases and the
+      time axis in mono eyebrows. The critical path is the focal accent, done work recedes, the active task takes an ink
+      outline, a milestone is a solid ink diamond and weekends are a faint wash */
+    .exclude-range { fill: rgba(${t.inkRgb},0.035) !important; stroke: none !important; }
+    .section0, .section2 { fill: rgba(${t.inkRgb},0.03) !important; }
+    .section1, .section3 { fill: transparent !important; }
+    .grid .tick line { stroke-dasharray: 3 3; }
+    .grid .domain { stroke: ${t.ruleSolid} !important; }
+    .grid .tick text { fill: ${t.soft} !important; font-size: 10px !important; letter-spacing: 0.06em; }
+    .sectionTitle { font-size: 9px !important; letter-spacing: 0.14em; text-transform: uppercase; fill: ${t.soft} !important; }
+    rect.task { rx: 4px; ry: 4px; stroke-width: 1px !important; }
+    rect.task:is(.task0, .task1, .task2, .task3) { fill: rgba(${t.mutedRgb},0.15) !important; stroke: ${t.muted} !important; }
+    rect.task:is(.done0, .done1, .done2, .done3) { fill: rgba(${t.inkRgb},0.05) !important; stroke: ${t.ruleSolid} !important; }
+    rect.task:is(.active0, .active1, .active2, .active3) { fill: ${t.node} !important; stroke: ${t.ink} !important; stroke-width: 1.4px !important; }
+    rect.task:is(.crit0, .crit1, .crit2, .crit3, .activeCrit0, .activeCrit1, .activeCrit2, .activeCrit3, .doneCrit0, .doneCrit1, .doneCrit2, .doneCrit3) {
+      fill: ${t.accentTint} !important; stroke: ${t.accent} !important;
+    }
+    rect.task:is(.activeCrit0, .activeCrit1, .activeCrit2, .activeCrit3) { stroke-width: 1.6px !important; }
+    rect.task.milestone { fill: ${t.ink} !important; stroke: ${t.ink} !important; rx: 2px; ry: 2px; }
+    rect.task.vert { fill: ${t.muted} !important; stroke: none !important; opacity: 0.6; }
+    .taskText, .taskTextOutsideRight, .taskTextOutsideLeft { font-family: ${sans} !important; font-size: 11px !important; font-weight: 600 !important; fill: ${t.ink} !important; }
+    .taskText.clickable, .taskText.clickable:hover { fill: ${t.ink} !important; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
+    .doneText0, .doneText1, .doneText2, .doneText3 { fill: ${t.muted} !important; }
+    .milestoneText, .vertText { font-family: ${mono} !important; font-size: 10px !important; font-weight: 400 !important; letter-spacing: 0.06em; fill: ${t.soft} !important; font-style: normal !important; }
+    .today line { stroke: ${t.accent} !important; stroke-width: 1px !important; stroke-dasharray: 4 3; }
 
     .focal > rect, .focal > polygon, .focal > circle, .focal > path {
       fill: ${t.accentTint} !important; stroke: ${t.accent} !important; stroke-width: 1.2px !important;
@@ -2038,7 +2064,7 @@ var mmd = (() => {
       sequence: {actorMargin: 64, boxMargin: 12, noteMargin: 12, messageMargin: 40, mirrorActors: false, activationWidth: 8},
       state: {padding: 12},
       er: {fontSize: 12, entityPadding: 4},
-      gantt: {barHeight: 20, barGap: 8, fontSize: 11, sectionFontSize: 11}
+      gantt: {barHeight: 24, barGap: 12, leftPadding: 90, fontSize: 11, sectionFontSize: 9}
     }
     mermaid.initialize(config)
     // render from textContent: mermaid.init reads innerHTML and its entity decoding fails in Firefox content scripts
