@@ -624,10 +624,12 @@ var mmd = (() => {
     })()
     var isEr = kind === 'er'
     var isDbml = kind === 'dbml'
-    var isState = kind === 'stateDiagram' || isEr
+    var isJourney = kind === 'journey'
+    // a journey is a chain of stages joined by the sentiment curve, it plays like a state machine
+    var isState = kind === 'stateDiagram' || isEr || isJourney
     // an entity model is not a flow, it has nothing to play: its relationships light up on hover instead
     var plays = isSequence || (isState && !isEr)
-    plays && button('play', isState ? 'Play transitions (P)' : 'Play sequence (P)', () => pre._mmdSeqToggle && pre._mmdSeqToggle())
+    plays && button('play', isJourney ? 'Play journey (P)' : isState ? 'Play transitions (P)' : 'Play sequence (P)', () => pre._mmdSeqToggle && pre._mmdSeqToggle())
     var find = button('find', 'Find node (/)', () => openFind())
     var mapButton = button('map', 'Overview map (M)', () => toggleMap())
     button('zoomIn', 'Zoom in (+)', () => panzoom.zoomIn())
@@ -657,14 +659,14 @@ var mmd = (() => {
     // state diagrams name nodes "state-<id>-<n>"; a composite state is a cluster, drawn apart from the nodes
     // but reached by transitions all the same. Notes are not part of the machine
     var nodes = Array.from(svg.querySelectorAll(isState ? 'g.node:not(.statediagram-note), g.statediagram-cluster' : 'g.node')).map((el) => {
-      var match = (isEr ? /^entity-(.+)-\d+$/ : isDbml ? /^dbml-(.+)-[0-9]+$/ : isState ? /^state-(.+)-\d+$/ : /^flowchart-(.+)-\d+$/).exec(local(el.id))
+      var match = (isEr ? /^entity-(.+)-\d+$/ : isDbml ? /^dbml-(.+)-[0-9]+$/ : isJourney ? /^journey-(.+)-[0-9]+$/ : isState ? /^state-(.+)-\d+$/ : /^flowchart-(.+)-\d+$/).exec(local(el.id))
       // an entity's text holds every attribute, its name is the first label
       var label = el.querySelector(':scope > .cluster-label, :scope > .label.name') || el
       return {el, id: (match && match[1]) || '', label: isDbml && match ? match[1] : label.textContent.trim(), cluster: el.classList.contains('statediagram-cluster')}
     }).filter((n) => n.id)
     // a dbml diagram carries what its popup shows, the columns and the keys of every table
     var model = (() => {
-      var meta = isDbml && svg.querySelector('metadata.dbml-model')
+      var meta = (isDbml || isJourney) && svg.querySelector('metadata.dbml-model, metadata.journey-model')
       try {
         return meta ? JSON.parse(meta.textContent) : null
       }
@@ -672,6 +674,9 @@ var mmd = (() => {
         return null
       }
     })()
+    nodes.forEach((n) => {
+      if (isJourney && model && model.nodes[n.id]) n.label = model.nodes[n.id].name
+    })
     var kinds = ['focal', 'store', 'external', 'input', 'optional', 'security']
     var byId = new Map(nodes.map((n) => [n.id, n]))
     // node ids may hold underscores, so split "L_<from>_<to>_<n>" at the point where both sides are known nodes
@@ -813,6 +818,7 @@ var mmd = (() => {
       card.hidden = !id
       if (!id) return
       if (isDbml) return drawTable(id, reach)
+      if (isJourney) return drawStage(id)
       var node = byId.get(id)
       var kind = kinds.find((k) => node.el.classList.contains(k)) || 'node'
       var incoming = edges.filter((e) => e.to === id)
@@ -1050,6 +1056,80 @@ var mmd = (() => {
         })
       }
       card.append(head, counts, links, reachBar(id, reach), body)
+    }
+
+    // popup for a journey stage: where it sits on the sentiment scale and how the neighbouring stages change it
+    var drawStage = (id) => {
+      var node = byId.get(id)
+      var data = (model && model.nodes[id]) || {name: node.label, section: '', n: 0, score: 0, level: '', actors: [], prev: '', next: '', low: false}
+      var before = model && model.nodes[data.prev]
+      var after = model && model.nodes[data.next]
+
+      var head = h('div', 'mmd-card-head')
+      var copy = h('div', 'mmd-card-copy')
+      copy.append(h('span', 'mmd-card-eyebrow', 'Stage ' + data.n + (data.section ? ' · ' + data.section : '')), h('strong', 'mmd-card-title', data.name))
+      data.low && copy.append(h('span', 'mmd-card-note', 'Lowest point of the journey'))
+      var close = h('button', 'mmd-card-close', '×')
+      close.type = 'button'
+      close.title = 'Close (Esc)'
+      close.setAttribute('aria-label', 'Close')
+      close.addEventListener('click', () => focus(null))
+      head.append(copy, close)
+
+      var stat = (dir, text, value) => {
+        var cell = h('div', 'mmd-stat')
+        if (dir) cell.dataset.dir = dir
+        cell.append(h('span', 'mmd-card-label', text), h('strong', '', value))
+        return cell
+      }
+      var step = (to) => (before ? (to - before.score > 0 ? '+' : to - before.score < 0 ? '−' : '') + Math.abs(to - before.score) : '—')
+      var first = h('div', 'mmd-card-stats mmd-auto')
+      first.append(stat('', 'Level', data.level), stat('', 'Score', data.score + '/5'))
+      var second = h('div', 'mmd-card-stats mmd-auto')
+      second.append(stat(before && data.score > before.score ? 'in' : before && data.score < before.score ? 'out' : '', 'Change', step(data.score)), stat('', 'Actors', String(data.actors.length)))
+
+      var body = h('div', 'mmd-card-list mmd-card-body')
+      if (data.actors.length) {
+        body.append(h('span', 'mmd-card-label mmd-card-section', 'Actors'))
+        data.actors.forEach((actor) => {
+          var row = h('div', 'mmd-col')
+          row.append(h('strong', 'mmd-col-name', actor))
+          body.append(row)
+        })
+      }
+      body.append(h('span', 'mmd-card-label mmd-card-section', 'Path'))
+      ;[[data.prev, before, true], [data.next, after, false]].forEach(([otherId, other, back]) => {
+        var target = byId.get(otherId)
+        if (!other || !target) return
+        var edge = edges.find((e) => (back ? e.from === otherId && e.to === id : e.from === id && e.to === otherId))
+        var row = h('button', 'mmd-row')
+        row.type = 'button'
+        row.dataset.dir = back ? 'in' : 'out'
+        var text = h('span', 'mmd-row-copy')
+        var delta = back ? data.score - other.score : other.score - data.score
+        text.append(h('strong', '', other.name), h('small', '', other.level + ' · ' + other.score + '/5 · ' + (delta > 0 ? 'rises ' : delta < 0 ? 'drops ' : 'holds ') + (delta ? Math.abs(delta) : '')))
+        row.append(h('span', 'mmd-row-dir', back ? '←' : '→'), text)
+        var preview = null
+        var on = () => {
+          if (!edge) return
+          edge.el.classList.add('mmd-peek')
+          preview = flow(edge, back ? 'in' : 'out')
+        }
+        var off = () => {
+          edge && edge.el.classList.remove('mmd-peek')
+          preview && preview.remove()
+        }
+        row.addEventListener('mouseenter', on)
+        row.addEventListener('focus', on)
+        row.addEventListener('mouseleave', off)
+        row.addEventListener('blur', off)
+        row.addEventListener('click', () => {
+          focus(otherId)
+          center(target.el)
+        })
+        body.append(row)
+      })
+      card.append(head, first, second, body)
     }
 
     var focused = null
@@ -1759,10 +1839,10 @@ var mmd = (() => {
       var text = node.textContent
       var id = 'mmd-' + ++sequence
       node.removeAttribute('data-processed')
-      // dbml draws itself, mermaid only gets what it hands back
+      // dbml and user journeys draw themselves, mermaid only gets what they hand back
       var custom = node.classList.contains('dbml')
         ? () => dbml.render(text, t, {sans, mono}, id)
-        : () => null
+        : () => journey.render(text, t, {sans, mono}, id)
       var drawn = Promise.resolve().then(custom).then((svg) => (svg ? {svg} : mermaid.render(id, text)))
       return drawn.then(({svg, bindFunctions}) => {
         node.innerHTML = svg
