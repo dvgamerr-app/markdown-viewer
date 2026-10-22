@@ -623,6 +623,7 @@ var mmd = (() => {
       return (drawn && drawn.getAttribute('aria-roledescription')) || ''
     })()
     var isEr = kind === 'er'
+    var isDbml = kind === 'dbml'
     var isState = kind === 'stateDiagram' || isEr
     // an entity model is not a flow, it has nothing to play: its relationships light up on hover instead
     var plays = isSequence || (isState && !isEr)
@@ -656,11 +657,21 @@ var mmd = (() => {
     // state diagrams name nodes "state-<id>-<n>"; a composite state is a cluster, drawn apart from the nodes
     // but reached by transitions all the same. Notes are not part of the machine
     var nodes = Array.from(svg.querySelectorAll(isState ? 'g.node:not(.statediagram-note), g.statediagram-cluster' : 'g.node')).map((el) => {
-      var match = (isEr ? /^entity-(.+)-\d+$/ : isState ? /^state-(.+)-\d+$/ : /^flowchart-(.+)-\d+$/).exec(local(el.id))
+      var match = (isEr ? /^entity-(.+)-\d+$/ : isDbml ? /^dbml-(.+)-[0-9]+$/ : isState ? /^state-(.+)-\d+$/ : /^flowchart-(.+)-\d+$/).exec(local(el.id))
       // an entity's text holds every attribute, its name is the first label
       var label = el.querySelector(':scope > .cluster-label, :scope > .label.name') || el
-      return {el, id: (match && match[1]) || '', label: label.textContent.trim(), cluster: el.classList.contains('statediagram-cluster')}
+      return {el, id: (match && match[1]) || '', label: isDbml && match ? match[1] : label.textContent.trim(), cluster: el.classList.contains('statediagram-cluster')}
     }).filter((n) => n.id)
+    // a dbml diagram carries what its popup shows, the columns and the keys of every table
+    var model = (() => {
+      var meta = isDbml && svg.querySelector('metadata.dbml-model')
+      try {
+        return meta ? JSON.parse(meta.textContent) : null
+      }
+      catch (err) {
+        return null
+      }
+    })()
     var kinds = ['focal', 'store', 'external', 'input', 'optional', 'security']
     var byId = new Map(nodes.map((n) => [n.id, n]))
     // node ids may hold underscores, so split "L_<from>_<to>_<n>" at the point where both sides are known nodes
@@ -698,7 +709,7 @@ var mmd = (() => {
       return from && to && (isState || from !== to) ? {from, to} : null
     }
     var edges = Array.from(svg.querySelectorAll('path.flowchart-link, path.transition, path.relationshipLine')).map((el) => {
-      var pair = ends(el.id) || reach(el)
+      var pair = el.dataset.from ? {from: el.dataset.from, to: el.dataset.to} : ends(el.id) || reach(el)
       if (!pair) return null
       var label = svg.querySelector('.edgeLabel [data-id="' + local(el.id) + '"]')
       var extras = Array.from(svg.querySelectorAll('.mmd-er-card')).filter((g) => g.getAttribute('data-edge') === el.getAttribute('data-id'))
@@ -801,6 +812,7 @@ var mmd = (() => {
       card.replaceChildren()
       card.hidden = !id
       if (!id) return
+      if (isDbml) return drawTable(id, reach)
       var node = byId.get(id)
       var kind = kinds.find((k) => node.el.classList.contains(k)) || 'node'
       var incoming = edges.filter((e) => e.to === id)
@@ -877,8 +889,172 @@ var mmd = (() => {
       card.append(head, stats, reachBar, h('span', 'mmd-card-label mmd-card-section', 'Connections'), list)
     }
 
+    var reachBar = (id, reach) => {
+      var bar = h('div', 'mmd-card-reach')
+      ;[['up', 'Upstream'], ['down', 'Downstream']].forEach(([dir, text]) => {
+        var count = trace(id, dir).shown.size - 1
+        var btn = h('button', '')
+        btn.type = 'button'
+        btn.disabled = !count
+        btn.dataset.dir = dir === 'up' ? 'in' : 'out'
+        btn.setAttribute('aria-pressed', String(reach === dir))
+        btn.append(h('span', '', text), h('strong', '', String(count)))
+        btn.addEventListener('click', () => focus(id, reach === dir ? null : dir))
+        bar.appendChild(btn)
+      })
+      return bar
+    }
+
+    // dbml: hover a table, a column or a line and the links through it light up with a pulse and the key columns
+    // they join, click a table for a popup with its columns, indexes and relations
+    var hotD = {edges: [], rows: [], flows: []}
+    var rowsOf = (nodeId, col) => {
+      var n = byId.get(nodeId)
+      return n ? Array.from(n.el.querySelectorAll('.dbml-row')).filter((r) => r.dataset.col === col) : []
+    }
+    var lightD = (picks, extra) => {
+      hotD.edges.forEach((e) => {
+        e.el.classList.remove('mmd-hover')
+        if (!e.el.classList.contains('mmd-on')) {
+          tint(e, false)
+          delete e.el.dataset.mmdDir
+        }
+      })
+      hotD.rows.forEach((r) => r.classList.remove('dbml-hot'))
+      hotD.flows.forEach((f) => f.remove())
+      var rows = new Set(extra)
+      var flows = []
+      picks.forEach(({edge, dir}) => {
+        var meta = model && model.links[local(edge.el.id)]
+        if (meta) rowsOf(meta.child, meta.childCol).concat(rowsOf(meta.parent, meta.parentCol)).forEach((r) => rows.add(r))
+        edge.el.dataset.mmdDir = dir
+        edge.el.classList.add('mmd-hover')
+        tint(edge, true, dir)
+        flows.push(flow(edge, dir, 0, true))
+      })
+      rows.forEach((r) => r.classList.add('dbml-hot'))
+      hotD = {edges: picks.map((p) => p.edge), rows: Array.from(rows), flows}
+    }
+    // like every other motion, only in fullscreen: inline the diagram stays still
+    var hoverD = (target) => {
+      if (!active()) return
+      if (focused) return lightD([], [])
+      var find = (sel) => target && target.closest && target.closest(sel)
+      var line = find('.dbml-hit-line')
+      if (line) {
+        var edge = edges.find((e) => local(e.el.id) === line.dataset.link)
+        return lightD(edge ? [{edge, dir: 'out'}] : [], [])
+      }
+      var el = find('g.node')
+      var node = el && nodes.find((n) => n.el === el)
+      if (!node) return lightD([], [])
+      var row = find('.dbml-row')
+      var meta = (e) => (model && model.links[local(e.el.id)]) || {}
+      var picks = edges.flatMap((e) => {
+        if (row && !((e.from === node.id && meta(e).childCol === row.dataset.col) || (e.to === node.id && meta(e).parentCol === row.dataset.col))) return []
+        return e.from === node.id || e.to === node.id ? [{edge: e, dir: e.from === node.id ? 'out' : 'in'}] : []
+      })
+      lightD(picks, row ? [row] : [])
+    }
+    pre.addEventListener('mouseover', (e) => isDbml && hoverD(e.target), {signal})
+    pre.addEventListener('mouseleave', () => isDbml && lightD([], []), {signal})
+
+    // popup for a table: what it holds (columns, indexes) and how it is linked
+    var drawTable = (id, reach) => {
+      var node = byId.get(id)
+      var data = (model && model.nodes[id]) || {kind: 'table', title: node.label, cols: [], indexes: [], note: ''}
+      var incoming = edges.filter((e) => e.to === id)
+      var outgoing = edges.filter((e) => e.from === id)
+
+      var head = h('div', 'mmd-card-head')
+      var copy = h('div', 'mmd-card-copy')
+      copy.append(h('span', 'mmd-card-eyebrow', data.kind === 'enum' ? 'Enum' : 'Table'), h('strong', 'mmd-card-title', data.title))
+      data.note && copy.append(h('span', 'mmd-card-note', data.note))
+      var close = h('button', 'mmd-card-close', '×')
+      close.type = 'button'
+      close.title = 'Close (Esc)'
+      close.setAttribute('aria-label', 'Close')
+      close.addEventListener('click', () => focus(null))
+      head.append(copy, close)
+
+      var stat = (dir, text, count) => {
+        var cell = h('div', 'mmd-stat')
+        if (dir) cell.dataset.dir = dir
+        cell.append(h('span', 'mmd-card-label', text), h('strong', '', String(count)))
+        return cell
+      }
+      var counts = h('div', 'mmd-card-stats mmd-auto')
+      counts.append(stat('', data.kind === 'enum' ? 'Values' : 'Columns', data.cols.length))
+      data.kind !== 'enum' && counts.append(stat('', 'Indexes', data.indexes.length))
+      var links = h('div', 'mmd-card-stats mmd-auto')
+      links.append(stat('in', 'Referenced by', incoming.length), stat('out', 'References', outgoing.length))
+
+      var body = h('div', 'mmd-card-list mmd-card-body')
+      var section = (text) => body.append(h('span', 'mmd-card-label mmd-card-section', text))
+      section(data.kind === 'enum' ? 'Values' : 'Columns')
+      data.cols.forEach((col) => {
+        var row = h('div', 'mmd-col')
+        var line = h('div', 'mmd-col-line')
+        line.append(h('strong', 'mmd-col-name', col.name))
+        ;(col.chips || []).forEach((chip) => line.append(h('span', 'mmd-chip', chip)))
+        col.type && line.append(h('code', 'mmd-col-type', col.type))
+        row.append(line)
+        var sub = [col.inc && 'auto increment', col.def && 'default ' + col.def, col.note].filter(Boolean).join(' · ')
+        sub && row.append(h('small', 'mmd-col-sub', sub))
+        body.append(row)
+      })
+      if (data.indexes.length) {
+        section('Indexes')
+        data.indexes.forEach((ix) => {
+          var row = h('div', 'mmd-col')
+          var line = h('div', 'mmd-col-line')
+          line.append(h('strong', 'mmd-col-name', ix.name))
+          ix.unique && line.append(h('span', 'mmd-chip', 'UQ'))
+          row.append(line, h('small', 'mmd-col-sub', '(' + ix.cols.join(', ') + ')'))
+          body.append(row)
+        })
+      }
+      if (incoming.length + outgoing.length) {
+        section('Relations')
+        incoming.concat(outgoing.filter((e) => !incoming.includes(e))).forEach((edge) => {
+          var out = edge.from === id
+          var otherId = out ? edge.to : edge.from
+          var other = byId.get(otherId)
+          if (!other) return
+          var meta = (model && model.links[local(edge.el.id)]) || {}
+          var row = h('button', 'mmd-row')
+          row.type = 'button'
+          row.dataset.dir = out ? 'out' : 'in'
+          var text = h('span', 'mmd-row-copy')
+          text.append(h('strong', '', other.label))
+          text.append(h('small', '', (out ? 'this.' + meta.childCol + ' → ' + other.label + '.' + meta.parentCol : other.label + '.' + meta.childCol + ' → this.' + meta.parentCol) + (meta.label ? ' · ' + meta.label.toLowerCase() : '')))
+          row.append(h('span', 'mmd-row-dir', out ? '→' : '←'), text)
+          var preview = null
+          var on = () => {
+            edge.el.classList.add('mmd-peek')
+            preview = flow(edge, out ? 'out' : 'in')
+          }
+          var off = () => {
+            edge.el.classList.remove('mmd-peek')
+            preview && preview.remove()
+          }
+          row.addEventListener('mouseenter', on)
+          row.addEventListener('focus', on)
+          row.addEventListener('mouseleave', off)
+          row.addEventListener('blur', off)
+          row.addEventListener('click', () => {
+            focus(otherId)
+            center(other.el)
+          })
+          body.append(row)
+        })
+      }
+      card.append(head, counts, links, reachBar(id, reach), body)
+    }
+
     var focused = null
     var focus = (id, reach = null) => {
+      isDbml && lightD([], [])
       svg.querySelectorAll('.mmd-on, .mmd-selected, .mmd-peek').forEach((el) => el.classList.remove('mmd-on', 'mmd-selected', 'mmd-peek'))
       // the label colour comes from a stylesheet scoped by the svg id, only inline !important outranks it
       svg.querySelectorAll('.edgeLabel span, .edgeLabel p').forEach((el) => {
@@ -950,7 +1126,7 @@ var mmd = (() => {
         tint(e, true, dir)
       })
     }
-    pre.addEventListener('mouseover', (e) => !isEr && active() && nodes.length && peek(e.target.closest && e.target.closest('g.node')), {signal})
+    pre.addEventListener('mouseover', (e) => !isEr && !isDbml && active() && nodes.length && peek(e.target.closest && e.target.closest('g.node')), {signal})
     pre.addEventListener('mouseleave', () => peek(null), {signal})
 
     // entity model: hover a relationship, a key row or an entity and the relationships through it light up with the
@@ -1553,7 +1729,7 @@ var mmd = (() => {
     }
     running = true
     if (loaded) {
-      var definitions = walk(/<pre><code class="mermaid">([\s\S]+?)<\/code><\/pre>/gi, state.html)
+      var definitions = walk(/<pre><code class="mermaid(?: dbml)?">([\s\S]+?)<\/code><\/pre>/gi, state.html)
 
       Array.from(document.querySelectorAll('pre code.mermaid')).forEach((diagram, index) => {
         diagram.removeAttribute('data-processed')
@@ -1583,7 +1759,12 @@ var mmd = (() => {
       var text = node.textContent
       var id = 'mmd-' + ++sequence
       node.removeAttribute('data-processed')
-      return mermaid.render(id, text).then(({svg, bindFunctions}) => {
+      // dbml draws itself, mermaid only gets what it hands back
+      var custom = node.classList.contains('dbml')
+        ? () => dbml.render(text, t, {sans, mono}, id)
+        : () => null
+      var drawn = Promise.resolve().then(custom).then((svg) => (svg ? {svg} : mermaid.render(id, text)))
+      return drawn.then(({svg, bindFunctions}) => {
         node.innerHTML = svg
         node.setAttribute('data-processed', 'true')
         bindFunctions && bindFunctions(node)

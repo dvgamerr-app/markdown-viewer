@@ -6,6 +6,7 @@
 - markdown-it as the only compiler
 - build with a single bun script
 - update mermaid to v12.2.0
+- draw `dbml` fenced code blocks as table cards with constraint chips, schema groups and routed foreign keys, with hover pulses and a table popup in fullscreen
 - fullscreen mermaid viewer: find node, overview map, node focus popup, blue links into a node and orange links out
 - fix a second script injection resetting an already rendered page
 - bump markdown-it, fflate and prismjs to patched versions

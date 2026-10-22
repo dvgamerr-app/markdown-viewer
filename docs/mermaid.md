@@ -7,6 +7,7 @@ Each diagram type lives in its own file under [mermaid/](./mermaid/), so it can 
 - [Class Diagram](./mermaid/class.md)
 - [State Diagram](./mermaid/state.md)
 - [Entity Relationship Diagram](./mermaid/er.md)
+- [DBML](./dbml.md) (not mermaid, drawn by the extension itself)
 - [User Journey](./mermaid/journey.md)
 - [Gantt](./mermaid/gantt.md)
 - [Pie Chart](./mermaid/pie.md)

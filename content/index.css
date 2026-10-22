@@ -762,6 +762,76 @@ pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-peek {
   font: 400 10px/1.4 var(--mono);
   color: var(--c-soft);
 }
+/*dbml: a table popup lists columns, indexes and relations, a hovered column lights up with the links through it*/
+.mmd-card-stats.mmd-auto {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+.mmd-card-note {
+  font: 400 11px/1.4 var(--sans);
+  color: var(--c-soft);
+}
+.mmd-card-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.mmd-card-body .mmd-card-section {
+  margin: 0 -8px 0 -12px;
+}
+.mmd-col {
+  display: grid;
+  gap: 1px;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+.mmd-col:hover {
+  background: var(--c-tint);
+}
+.mmd-col-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.mmd-col-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.mmd-chip {
+  flex: none;
+  padding: 0 5px;
+  border: 1px solid var(--c-rule-solid);
+  border-radius: 3px;
+  font: 500 9px/14px var(--mono);
+  letter-spacing: .04em;
+  color: var(--c-soft);
+}
+.mmd-col-type {
+  flex: none;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 400 11px/1.4 var(--mono);
+  color: var(--c-soft);
+  white-space: nowrap;
+}
+.mmd-col-sub {
+  display: block;
+  font: 400 10px/1.4 var(--mono);
+  color: var(--c-soft);
+  overflow-wrap: anywhere;
+}
+.dbml-hit {
+  transition: fill .16s ease;
+}
+.dbml-row.dbml-hot .dbml-hit {
+  fill: rgba(235, 108, 54, .16);
+}
+.dbml-hit-line {
+  pointer-events: stroke;
+}
 /*sequence playback: ordered messages, a token on the current one, the rest dimmed*/
 svg.mmd-seq [data-mmd-seq=wait] {
   opacity: .15;
