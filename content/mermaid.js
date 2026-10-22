@@ -22,7 +22,8 @@ var mmd = (() => {
       accent: '#eb6c36', accentTint: 'rgba(235,108,54,0.08)', link: '#2e5aa8',
       series: ['#7c8f6f', '#5e7a9b', '#b8915a', '#9c6b50', '#6e6479'],
       inkRgb: '45,49,66', accentRgb: '235,108,54',
-      syn: {vis: '#9a6e3a', fn: '#dd4a68', type: '#0077aa', punct: '#7a8399', constant: '#990055'}
+      // the colours of prism.css, the code blocks of the page: operator, function and class-name, keyword, punctuation, constant
+      syn: {vis: '#9a6e3a', fn: '#dd4a68', type: '#dd4a68', keyword: '#07a', punct: '#999', constant: '#905'}
     },
     dark: {
       // nimbus-dark palette (scripts/nimbus/dark.css) as hex, mermaid cannot parse oklch
@@ -32,7 +33,8 @@ var mmd = (() => {
       accent: '#79b1f9', accentTint: 'rgba(121,177,249,0.10)', link: '#79b1f9',
       series: ['#69ba7c', '#79b1f9', '#dcaf61', '#f07f77', '#a3a3a3'],
       inkRgb: '245,245,245', accentRgb: '121,177,249',
-      syn: {vis: '#f92672', fn: '#e6db74', type: '#66d9ef', punct: '#a3a3a3', constant: '#ae81ff'}
+      // the colours of prism-okaidia.css
+      syn: {vis: '#f8f8f2', fn: '#e6db74', type: '#e6db74', keyword: '#66d9ef', punct: '#f8f8f2', constant: '#f92672'}
     }
   }
 
@@ -193,10 +195,10 @@ var mmd = (() => {
     /* class: one hairline box with rounded corners, names centred in sans, members in mono, stereotypes as
       tracked mono eyebrows, compartments split by hairlines, abstract names in italic */
     .mmd-class-box { fill: ${t.node}; stroke: ${t.ink}; stroke-width: 1px; }
-    .focal .mmd-class-box { fill: ${t.accentTint}; stroke: ${t.accent}; stroke-width: 1.2px; }
+    .focal .mmd-class-box { fill: ${t.accentTint}; stroke: ${t.accent} !important; stroke-width: 1px; }
     .mmd-class-head { fill: transparent; stroke: none; }
     .focal .mmd-class-head { fill: ${t.accentTint}; }
-    .relation.mmd-focal-edge { stroke: ${t.accent} !important; }
+    .relation.mmd-focal-edge:not(.mmd-on, .mmd-hover, .mmd-peek) { stroke: ${t.accent} !important; }
     /* relationship names are small tracked mono caps, as in the skill's reference */
     .edgeLabel .label[data-id^=id_] :is(span, p) { font-size: 10px !important; letter-spacing: 0.1em; text-transform: uppercase; }
     .node .divider path { stroke: rgba(${t.inkRgb},0.22) !important; stroke-width: 1px !important; }
@@ -214,13 +216,25 @@ var mmd = (() => {
     .node foreignObject span.tok.tok-vis { color: ${t.syn.vis} !important; }
     .node foreignObject span.tok.tok-fn { color: ${t.syn.fn} !important; }
     .node foreignObject span.tok.tok-type { color: ${t.syn.type} !important; }
+    .node foreignObject span.tok.tok-keyword { color: ${t.syn.keyword} !important; }
     .node foreignObject span.tok.tok-punct { color: ${t.syn.punct} !important; }
     .node foreignObject span.tok.tok-constant { color: ${t.syn.constant} !important; }
     .node.note rect, .node.note path { fill: rgba(${t.inkRgb},0.03) !important; stroke: ${t.ruleSolid} !important; }
     .node.note foreignObject :is(div, span, p) { font-size: 12px !important; color: ${t.ink} !important; }
-    [id$=extensionStart] path, [id$=extensionEnd] path { fill: ${t.paper} !important; stroke: ${t.ink} !important; stroke-width: 1px; }
-    [id$=compositionStart] path, [id$=compositionEnd] path { fill: ${t.ink} !important; stroke: ${t.ink} !important; }
-    [id$=aggregationStart] path, [id$=aggregationEnd] path { fill: ${t.paper} !important; stroke: ${t.ink} !important; stroke-width: 1px; }
+    /* heads are drawn in the colour of their line: triangle and diamonds ink, open arrows muted, one hairline */
+    .marker.classDiagram :is(path, polygon, circle) { stroke-width: 1px !important; }
+    .marker.extension:not(.mmd-focal-head) :is(path, polygon, circle) { fill: ${t.paper} !important; stroke: ${t.ink} !important; }
+    .marker.composition :is(path, polygon, circle) { fill: ${t.ink} !important; stroke: ${t.ink} !important; }
+    .marker.aggregation :is(path, polygon, circle) { fill: ${t.paper} !important; stroke: ${t.ink} !important; }
+    .marker.dependency :is(path, polygon, circle) { fill: none !important; stroke: ${t.muted} !important; }
+    /* a triangle or diamond line is ink like its head, association and dependency stay muted with an open head;
+      the focal class's inheritance lines take the accent on the line and on a copy of the head */
+    .relation.mmd-strong:not(.mmd-on, .mmd-hover, .mmd-peek) { stroke: ${t.ink} !important; }
+    .relation.mmd-focal-edge:not(.mmd-on, .mmd-hover, .mmd-peek) { stroke: ${t.accent} !important; }
+    .relation[class*=dashed] { stroke-dasharray: 4 3 !important; }
+    .relation.mmd-strong[class*=dashed] { stroke-dasharray: 5 4 !important; }
+    .node.focal .annotation-group foreignObject :is(div, span, p) { color: ${t.accent} !important; }
+    .mmd-focal-head :is(path, polygon) { fill: ${t.paper} !important; stroke: ${t.accent} !important; }
 
     /* state: rounded hairline boxes, a filled ink dot to start and a ringed dot to end, transitions named by
       tracked mono caps, composite states as dashed frames with a mono tab, bars and diamonds in ink */
@@ -334,8 +348,35 @@ var mmd = (() => {
       var touches = new RegExp('^id_(?:' + name + '_.+|.+_' + name + ')_\\d+$')
       svg.querySelectorAll('path.relation').forEach((edge) => {
         var heads = (edge.getAttribute('marker-start') || '') + (edge.getAttribute('marker-end') || '')
-        if (/extension/.test(heads) && touches.test(edge.getAttribute('data-id') || '')) edge.classList.add('mmd-focal-edge')
+        if (/extension/.test(heads) && touches.test(edge.getAttribute('data-id') || '')) {
+          edge.classList.add('mmd-focal-edge')
+          ;['marker-start', 'marker-end'].forEach((attr) => {
+            var match = /extension/.test(edge.getAttribute(attr) || '') && /#([^")]+)/.exec(edge.getAttribute(attr))
+            var source = match && svg.querySelector('[id="' + match[1] + '"]')
+            if (!source) return
+            var copyId = match[1] + '-focal'
+            if (!svg.querySelector('[id="' + copyId + '"]')) {
+              var copy = source.cloneNode(true)
+              copy.id = copyId
+              copy.classList.add('mmd-focal-head')
+              // the head takes the colour the line is drawn in
+              var colour = getComputedStyle(edge).stroke
+              var fills = Array.from(source.querySelectorAll('path, polygon, circle')).map((p) => getComputedStyle(p).fill)
+              copy.querySelectorAll('path, polygon, circle').forEach((p, i) => {
+                p.style.setProperty('stroke', colour, 'important')
+                p.style.setProperty('fill', fills[i], 'important')
+              })
+              source.parentNode.appendChild(copy)
+            }
+            edge.setAttribute(attr, 'url(#' + copyId + ')')
+          })
+        }
       })
+    })
+    // inheritance, realization, composition and aggregation lines are ink to match their heads
+    svg.querySelectorAll('path.relation').forEach((edge) => {
+      var heads = (edge.getAttribute('marker-start') || '') + (edge.getAttribute('marker-end') || '')
+      if (/extension|composition|aggregation/.test(heads)) edge.classList.add('mmd-strong')
     })
   }
 
@@ -508,7 +549,7 @@ var mmd = (() => {
     }
     var text = (value) => document.createTextNode(value)
     // List<T>, Map<K, V>: the brackets are punctuation, the names are types
-    var type = (value) => value.split(/([<>,[\]~])/).filter(Boolean).map((part) => (/^[<>,[\]~]$/.test(part) ? span('punct', part) : /^\s+$/.test(part) ? text(part) : span('type', part)))
+    var type = (value) => value.split(/([<>,[\]~])/).filter(Boolean).map((part) => (/^[<>,[\]~]$/.test(part) ? span('punct', part) : /^\s+$/.test(part) ? text(part) : span(/^(void|int|long|short|byte|float|double|boolean|bool|char|number|any|var|null|true|false)$/.test(part) ? 'keyword' : 'type', part)))
     var join = (items, glue) => items.reduce((all, item, i) => (i ? all.concat(glue(), item) : all.concat(item)), [])
     var param = (value) => {
       var words = value.trim().split(/\s+/)
@@ -625,6 +666,7 @@ var mmd = (() => {
     var isEr = kind === 'er'
     var isDbml = kind === 'dbml'
     var isJourney = kind === 'journey'
+    var isClass = kind === 'classDiagram'
     // a journey is a chain of stages joined by the sentiment curve, it plays like a state machine
     var isState = kind === 'stateDiagram' || isEr || isJourney
     // an entity model is not a flow, it has nothing to play: its relationships light up on hover instead
@@ -659,9 +701,9 @@ var mmd = (() => {
     // state diagrams name nodes "state-<id>-<n>"; a composite state is a cluster, drawn apart from the nodes
     // but reached by transitions all the same. Notes are not part of the machine
     var nodes = Array.from(svg.querySelectorAll(isState ? 'g.node:not(.statediagram-note), g.statediagram-cluster' : 'g.node')).map((el) => {
-      var match = (isEr ? /^entity-(.+)-\d+$/ : isDbml ? /^dbml-(.+)-[0-9]+$/ : isJourney ? /^journey-(.+)-[0-9]+$/ : isState ? /^state-(.+)-\d+$/ : /^flowchart-(.+)-\d+$/).exec(local(el.id))
+      var match = (isEr ? /^entity-(.+)-\d+$/ : isDbml ? /^dbml-(.+)-[0-9]+$/ : isJourney ? /^journey-(.+)-[0-9]+$/ : isState ? /^state-(.+)-\d+$/ : isClass ? /^classId-(.+)-\d+$/ : /^flowchart-(.+)-\d+$/).exec(local(el.id))
       // an entity's text holds every attribute, its name is the first label
-      var label = el.querySelector(':scope > .cluster-label, :scope > .label.name') || el
+      var label = el.querySelector(isClass ? '.label-group' : ':scope > .cluster-label, :scope > .label.name') || el
       return {el, id: (match && match[1]) || '', label: isDbml && match ? match[1] : label.textContent.trim(), cluster: el.classList.contains('statediagram-cluster')}
     }).filter((n) => n.id)
     // a dbml diagram carries what its popup shows, the columns and the keys of every table
@@ -681,7 +723,8 @@ var mmd = (() => {
     var byId = new Map(nodes.map((n) => [n.id, n]))
     // node ids may hold underscores, so split "L_<from>_<to>_<n>" at the point where both sides are known nodes
     var ends = (id) => {
-      var match = /^L_(.+)_\d+$/.exec(local(id))
+      // a class relation is named "id_<from>_<to>_<n>"
+      var match = /^(?:L|id)_(.+)_\d+$/.exec(local(id))
       var parts = match ? match[1].split('_') : []
       for (var i = 1; i < parts.length; i++) {
         var from = parts.slice(0, i).join('_')
@@ -713,9 +756,12 @@ var mmd = (() => {
       // a state may loop back to itself
       return from && to && (isState || from !== to) ? {from, to} : null
     }
-    var edges = Array.from(svg.querySelectorAll('path.flowchart-link, path.transition, path.relationshipLine')).map((el) => {
-      var pair = el.dataset.from ? {from: el.dataset.from, to: el.dataset.to} : ends(el.id) || reach(el)
+    var edges = Array.from(svg.querySelectorAll('path.flowchart-link, path.transition, path.relationshipLine, path.relation')).map((el) => {
+      var pair = el.dataset.from ? {from: el.dataset.from, to: el.dataset.to} : ends(el.id) || ends(el.getAttribute('data-id') || '') || reach(el)
       if (!pair) return null
+      // the id names the classes in written order but the arrow runs towards the head: "A <|-- B" goes from B to A
+      var tail = (attr) => /^url\(/.test(el.getAttribute(attr) || '') || !!el.dataset[attr === 'marker-end' ? 'mmdMarker' : 'mmdMarkerStart']
+      if (el.classList.contains('relation') && tail('marker-start') && !tail('marker-end')) pair = {from: pair.to, to: pair.from}
       var label = svg.querySelector('.edgeLabel [data-id="' + local(el.id) + '"]')
       var extras = Array.from(svg.querySelectorAll('.mmd-er-card')).filter((g) => g.getAttribute('data-edge') === el.getAttribute('data-id'))
       return {el, from: pair.from, to: pair.to, label: label ? label.closest('.edgeLabel') : null, extras}
@@ -752,10 +798,12 @@ var mmd = (() => {
           var copy = source.cloneNode(true)
           copy.id = copyId
           // open shapes (a crow's foot) stay unfilled, a detached copy has no computed style so ask the source
-          var originals = source.querySelectorAll('path, circle')
-          copy.querySelectorAll('path, circle').forEach((p, i) => {
+          var originals = source.querySelectorAll('path, polygon, circle')
+          copy.querySelectorAll('path, polygon, circle').forEach((p, i) => {
             var style = getComputedStyle(originals[i])
-            if (style.fill !== 'none') p.style.setProperty('fill', lit(dir), 'important')
+            // a hollow head (triangle, hollow diamond) keeps its paper fill, only its outline lights up
+            var hollow = /extension|aggregation/.test(source.getAttribute('class') || '')
+            if (style.fill !== 'none') p.style.setProperty('fill', hollow ? style.fill : lit(dir), 'important')
             if (style.stroke !== 'none') p.style.setProperty('stroke', lit(dir), 'important')
           })
           source.parentNode.appendChild(copy)
@@ -765,19 +813,99 @@ var mmd = (() => {
       })
     }
 
-    // pulse that travels along an edge in its drawn direction, one-shot for previews, looping while a node stays focused
-    var flow = (edge, dir, delay = 0, loop = false) => {
-      var line = edge.el.cloneNode(false)
-      line.removeAttribute('id')
-      line.removeAttribute('style')
-      line.removeAttribute('marker-end')
-      line.removeAttribute('marker-start')
-      line.setAttribute('class', loop ? 'mmd-flow mmd-loop' : 'mmd-flow')
-      line.setAttribute('pathLength', '1')
-      line.dataset.dir = dir
-      line.style.animationDelay = delay + 's'
-      edge.el.parentNode.appendChild(line)
-      return line
+    // streak that travels along an edge in its drawn direction, one-shot for previews, looping while a node stays focused
+    // stacked dashes share one head but differ in length, so the streak thins out behind a bright core
+    // each dash is stroked with its own gradient that runs clear at the tail and solid at the head, it fades on one side only
+    var comet = [['glow', 1], ['tail', 1], ['body', 0.75], ['head', 0.5], ['core', 0.3]]
+    var NS = 'http://www.w3.org/2000/svg'
+    var flowSeq = 0
+    // reverse runs it from the end of the path back to the start, over takes the clock for a one-shot
+    var flow = (edge, dir, delay = 0, loop = false, {reverse, over = 1400, color = ''} = {}) => {
+      // a streak runs towards the arrowhead: a class relation like "A <|-- B" has its head at the start of the path
+      if (reverse === undefined) {
+        var tip = (attr) => /^url\(/.test(edge.el.getAttribute?.(attr) || '') && !/none/.test(edge.el.getAttribute(attr))
+        reverse = tip('marker-start') && !tip('marker-end')
+      }
+      var group = document.createElementNS(NS, 'g')
+      group.setAttribute('class', loop ? 'mmd-flow mmd-loop' : 'mmd-flow')
+      group.dataset.dir = dir
+      // a class relation keeps its own colour while it plays
+      if (!color && edge.el.classList && edge.el.classList.contains('relation')) color = getComputedStyle(edge.el).stroke
+      color && group.style.setProperty('--c', color)
+      // real lengths, not pathLength: a scaled or non-scaling stroke does not reliably honour pathLength for dashes
+      var length = 0
+      try { length = edge.el.getTotalLength() } catch {}
+      if (!length) return group
+      // a long streak, about half the edge, between 80px and 260px but never longer than a short edge
+      var span = Math.min(length * 0.8, Math.max(80, Math.min(260, length * 0.5)))
+      var defs = document.createElementNS(NS, 'defs')
+      group.appendChild(defs)
+      edge.el.parentNode.appendChild(group)
+      var layers = comet.map(([part, share]) => {
+        var fade = document.createElementNS(NS, 'linearGradient')
+        fade.id = 'mmd-flow-fade-' + ++flowSeq
+        fade.setAttribute('class', 'mmd-flow-' + part + '-fade')
+        fade.setAttribute('gradientUnits', 'userSpaceOnUse')
+        ;[[0, 0], [1, 1]].forEach(([offset, opacity]) => {
+          var stop = document.createElementNS(NS, 'stop')
+          stop.setAttribute('offset', offset)
+          stop.setAttribute('stop-opacity', opacity)
+          fade.appendChild(stop)
+        })
+        defs.appendChild(fade)
+        var line = edge.el.cloneNode(false)
+        line.removeAttribute('id')
+        line.removeAttribute('style')
+        line.removeAttribute('marker-end')
+        line.removeAttribute('marker-start')
+        line.removeAttribute('pathLength')
+        // a playing edge carries its step state, which would restyle the copy
+        line.removeAttribute('data-mmd-seq')
+        line.removeAttribute('data-mmd-kind')
+        line.setAttribute('class', 'mmd-flow-' + part)
+        line.style.setProperty('stroke', 'url(#' + fade.id + ')', 'important')
+        var len = span * share
+        line.style.strokeDasharray = len + ' ' + (length + span) * 2
+        group.appendChild(line)
+        return {line, fade, len}
+      })
+      // a point on the edge, carried straight on past either end so the gradient keeps its span there
+      var at = (d) => {
+        var clamped = Math.max(0, Math.min(length, d))
+        var p = edge.el.getPointAtLength(clamped)
+        if (clamped === d) return p
+        var q = edge.el.getPointAtLength(d < 0 ? Math.min(length, 1) : Math.max(0, length - 1))
+        var dx = p.x - q.x
+        var dy = p.y - q.y
+        var n = Math.hypot(dx, dy) || 1
+        var over = Math.abs(d - clamped)
+        return {x: p.x + (dx / n) * over, y: p.y + (dy / n) * over}
+      }
+      // dashoffset and gradient both follow the head, so they move together frame by frame
+      // the streak enters from before the source and runs past the end so it drains wholly into the target
+      var duration = loop ? 2400 : over
+      var start = performance.now() + delay * 1000
+      var ease = (t) => (1 - Math.cos(Math.PI * t)) / 2
+      var frame = (now) => {
+        if (!group.isConnected) return
+        var t = Math.max(0, now - start) / duration
+        if (!loop && t >= 1) return group.remove()
+        var run = ease(t % 1)
+        var head = reverse ? length - run * (length + span) : run * (length + span)
+        layers.forEach(({line, fade, len}) => {
+          var from = at(reverse ? head + len : head - len)
+          var to = at(head)
+          line.style.strokeDashoffset = -(reverse ? head : head - len)
+          fade.setAttribute('x1', from.x)
+          fade.setAttribute('y1', from.y)
+          fade.setAttribute('x2', to.x)
+          fade.setAttribute('y2', to.y)
+        })
+        requestAnimationFrame(frame)
+      }
+      // the stylesheet hides the comet under reduced motion, so there is nothing to drive
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) frame(performance.now())
+      return group
     }
 
     // the edges and nodes reached from a node: direct links, or everything up/downstream of it
@@ -808,6 +936,38 @@ var mmd = (() => {
       return {shown, used}
     }
 
+    // what a class box says in programming terms: name, kind, fields and methods
+    var classModel = (node) => {
+      var lines = (sel) => Array.from(node.el.querySelectorAll(sel + ' p')).map((p) => p.textContent.trim()).filter(Boolean)
+      var note = node.el.querySelector('.annotation-group')
+      var tag = note ? note.textContent.replace(/[«»<>]/g, '').trim().toLowerCase() : ''
+      var kinds = {interface: 'Interface', abstract: 'Abstract class', enumeration: 'Enum', enum: 'Enum', service: 'Class · service'}
+      return {
+        name: node.label,
+        kind: kinds[tag] || (tag ? 'Class · ' + tag : 'Class'),
+        attributes: lines('.members-group'),
+        methods: lines('.methods-group')
+      }
+    }
+    // a class line read from one class: the verb it speaks, who the other end is, and whether it points to a parent
+    var relation = (edge, id) => {
+      var el = edge.el
+      var heads = [el.dataset.mmdMarkerStart || el.getAttribute('marker-start') || '', el.dataset.mmdMarker || el.getAttribute('marker-end') || ''].join(' ')
+      var dashed = /dashed/.test(el.getAttribute('class') || '')
+      var out = edge.from === id
+      var other = byId.get(out ? edge.to : edge.from)
+      if (!other) return null
+      var pick = (a, b) => (out ? a : b)
+      if (/extension/.test(heads)) return dashed
+        ? {group: 'hierarchy', up: out, verb: pick('Implements', 'Implemented by'), other}
+        : {group: 'hierarchy', up: out, verb: pick('Extends', 'Extended by'), other}
+      // the diamond sits on the whole, the line is read from the part to the whole
+      if (/composition/.test(heads)) return {group: 'structure', verb: pick('Part of', 'Composed of'), other}
+      if (/aggregation/.test(heads)) return {group: 'structure', verb: pick('Held by', 'Has'), other}
+      if (/dependency/.test(heads)) return {group: 'uses', verb: dashed ? pick('Uses', 'Used by') : pick('Refers to', 'Referred by'), other}
+      return {group: 'uses', verb: 'Linked to', other}
+    }
+
     // popup card for the focused node: kind, links, up/downstream reach, clickable relations
     var card = h('div', 'mmd-card')
     card.hidden = true
@@ -826,7 +986,16 @@ var mmd = (() => {
 
       var head = h('div', 'mmd-card-head')
       var copy = h('div', 'mmd-card-copy')
-      copy.append(
+      var model = isClass ? classModel(node) : null
+      if (model) {
+        var supers = incoming.concat(outgoing).map((e) => relation(e, id)).filter((x) => x && x.group === 'hierarchy' && x.up)
+        copy.append(
+          h('span', 'mmd-card-eyebrow', model.kind + (kind === 'focal' ? ' · focal' : '')),
+          h('strong', 'mmd-card-title', model.name),
+          h('span', 'mmd-card-note', supers.map((x) => x.verb.toLowerCase() + ' ' + x.other.label).join(' · ') || 'no parent')
+        )
+      }
+      else copy.append(
         h('span', 'mmd-card-eyebrow', kind === 'node' ? 'Node' : 'Node · ' + kind),
         h('strong', 'mmd-card-title', node.label),
         h('code', 'mmd-card-id', id)
@@ -859,7 +1028,23 @@ var mmd = (() => {
         reachBar.appendChild(btn)
       })
 
-      var list = h('div', 'mmd-card-list')
+      var list = h('div', 'mmd-card-list' + (model ? ' mmd-card-body' : ''))
+      if (model) {
+        var members = (title, lines) => {
+          if (!lines.length) return
+          list.append(h('span', 'mmd-card-label mmd-card-section', title + ' · ' + lines.length))
+          lines.forEach((line) => {
+            var row = h('div', 'mmd-col')
+            var code = h('code', 'mmd-member')
+            code.append(...(highlight(line) || [document.createTextNode(line)]))
+            row.appendChild(code)
+            list.appendChild(row)
+          })
+        }
+        members('Attributes', model.attributes)
+        members('Methods', model.methods)
+        list.append(h('span', 'mmd-card-label mmd-card-section', 'Relations · ' + (incoming.length + outgoing.length)))
+      }
       incoming.concat(outgoing.filter((e) => !incoming.includes(e))).forEach((edge) => {
         var out = edge.from === id
         var otherId = out ? edge.to : edge.from
@@ -870,7 +1055,8 @@ var mmd = (() => {
         row.dataset.dir = out ? 'out' : 'in'
         var text = h('span', 'mmd-row-copy')
         text.append(h('strong', '', other.label))
-        var via = edge.label && edge.label.textContent.trim()
+        var rel = model && relation(edge, id)
+        var via = rel ? rel.verb : edge.label && edge.label.textContent.trim()
         via && text.append(h('small', '', via))
         row.append(h('span', 'mmd-row-dir', out ? '→' : '←'), text)
         var preview = null
@@ -892,7 +1078,7 @@ var mmd = (() => {
         })
         list.appendChild(row)
       })
-      card.append(head, stats, reachBar, h('span', 'mmd-card-label mmd-card-section', 'Connections'), list)
+      card.append(head, stats, reachBar, ...(model ? [] : [h('span', 'mmd-card-label mmd-card-section', 'Connections')]), list)
     }
 
     var reachBar = (id, reach) => {
@@ -1232,12 +1418,16 @@ var mmd = (() => {
           edge.extras.forEach((el) => el.classList.remove('mmd-on'))
         })
         hot.rows.forEach((row) => [row.rect].concat(row.texts).forEach((el) => el.classList.remove('mmd-hit')))
-        svg.querySelectorAll('.mmd-flow').forEach((el) => el.remove())
+        // mouseover fires at every element the pointer crosses, so the same edges arrive again and again:
+        // their comets keep running instead of starting over from the source each time
+        var same = edgesOn.length === hot.edges.length && edgesOn.every((edge) => hot.edges.includes(edge))
+        same || svg.querySelectorAll('.mmd-flow').forEach((el) => el.remove())
         hot = {edges: edgesOn, rows: rowsOn}
         edgesOn.forEach((edge) => {
           edge.el.classList.add('mmd-hover')
           edge.extras.forEach((el) => el.classList.add('mmd-on'))
-          flow(edge, 'out', 0, true)
+          // the comet wears the highlight colour the line has just taken
+          same || flow(edge, 'out', 0, true, {color: getComputedStyle(edge.el).stroke})
         })
         rowsOn.forEach((row) => [row.rect].concat(row.texts).forEach((el) => el.classList.add('mmd-hit')))
       }
@@ -1280,7 +1470,8 @@ var mmd = (() => {
       if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4) return
       var hit = e.target.closest && e.target.closest('g.node')
       var node = hit && nodes.find((n) => n.el === hit)
-      focus(node && node.id !== focused ? node.id : null)
+      // while playing a click only closes an open node, it does not open another
+      focus(node && node.id !== focused && !seqBusy() ? node.id : null)
     }, {signal})
 
     // find: type to match labels or ids, enter jumps to the first match
@@ -1387,9 +1578,11 @@ var mmd = (() => {
     // the ones still to come stay dimmed, and the run ends with the whole diagram shown again
     var seqStop = () => {}
     var seqKey = () => false
+    // a node focus and a playing step both light the edges, so while a run is on they would fight over the highlight
+    var seqBusy = () => false
     if (plays) {
-      var TRAVEL = 480
-      var HOLD = 720
+      var TRAVEL = 1100
+      var HOLD = 1500
       var calm = !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
       var sequenceSteps = () => {
       var msgs = Array.from(svg.querySelectorAll('.messageLine0, .messageLine1')).map((line) => {
@@ -1580,10 +1773,12 @@ var mmd = (() => {
         lost: dark() ? '#f07f77' : '#c0392b',
         plain: dark() ? '#79b1f9' : '#2e5aa8',
       })[kind]
+      var tinting = false
       var light = (step, on) => {
         step.tinted.forEach(({attr, original}) => step.line.setAttribute(attr, original))
         step.tinted = []
-        if (!on) return
+        // the arrowheads keep their colour too
+        if (!on || !tinting) return
         ;['marker-start', 'marker-end'].forEach((attr) => {
           var original = step.line.getAttribute(attr)
           var match = /#([^")]+)/.exec(original || '')
@@ -1629,8 +1824,16 @@ var mmd = (() => {
           var length = line.getTotalLength()
           point = (t) => line.getPointAtLength(length * t)
         }
-        // each head is travelled towards from the opposite end, two heads send one token from each end past each other
+        // each head is travelled towards from the opposite end, two heads send one comet from each end past each other
         var ways = step.from && step.to ? [1, -1] : [step.from ? -1 : 1]
+        if (!calm) {
+          ways.forEach((way) => {
+            // the comet wears the colour the line already has
+            var comet = flow({el: line}, 'out', 0, false, {reverse: way < 0, over: TRAVEL, color: getComputedStyle(line).stroke})
+            parent.contains(comet) && drawn.push(comet)
+          })
+          return
+        }
         var tokens = ways.map((way) => {
           var token = document.createElementNS(ns, 'circle')
           token.setAttribute('class', 'mmd-token')
@@ -1668,6 +1871,7 @@ var mmd = (() => {
       var go = (i) => {
         clearTimeout(timer)
         clearToken()
+        focused && focus(null)
         player.hidden = false
         svg.classList.add('mmd-seq')
         at = Math.max(0, Math.min(i, steps.length - 1))
@@ -1714,6 +1918,7 @@ var mmd = (() => {
         if (by > 0 && at >= steps.length - 1 && at >= 0) return finish()
         go(at < 0 ? 0 : at >= steps.length ? steps.length - 1 : at + by)
       }
+      seqBusy = () => at >= 0 && at < steps.length
       seqStop = () => {
         playing = false
         clearTimeout(timer)
@@ -1763,6 +1968,8 @@ var mmd = (() => {
       code.style.userSelect = svg.style.userSelect = on ? 'none' : ''
       panzoom.reset({animate: false})
       if (!on) {
+        // a run in progress (or its dimmed end state) must not outlive fullscreen
+        seqStop()
         focus(null)
         closeFind()
         isEr && light([], [])
