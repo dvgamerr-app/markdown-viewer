@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name"            : "Nimbus Markdown",
-  "version"         : "6.0",
+  "version"         : "0.0",
   "description"     : "Dark Mode • Themes • Autoreload • Mermaid Diagrams • MathJax • ToC • Syntax Highlighting",
 
   "homepage_url": "https://github.com/dvgamerr-app/nimbus-markdown",

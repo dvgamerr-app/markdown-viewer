@@ -441,9 +441,21 @@ pre:not(.mmd-fullscreen) > .mmd-find,
 ._mermaid-dark .mmd-toolbar .mmd-level {
   color: #dedede;
 }
+/*mermaid measures each diagram in a temporary element appended to the body. While the page is still
+  hidden that element would be drawn on screen with unstyled boxes: park it out of view, size unchanged*/
+body > div[id^="dmmd-"] {
+  position: fixed !important;
+  top: 0 !important;
+  left: -100000px !important;
+  pointer-events: none;
+}
 /*node focus: dim everything but the node and its direct links*/
 svg.mmd-focus .node:not(.mmd-on),
 svg.mmd-focus path.flowchart-link:not(.mmd-on),
+svg.mmd-focus path.transition:not(.mmd-on),
+svg.mmd-focus path.relationshipLine:not(.mmd-on),
+svg.mmd-focus g.mmd-er-card:not(.mmd-on),
+svg.mmd-focus g.statediagram-cluster:not(.mmd-on),
 svg.mmd-focus g.edgeLabel:not(.mmd-on) {
   opacity: .15;
 }
@@ -457,6 +469,8 @@ g.node.mmd-match > :is(rect, polygon, circle, path) {
 /*hover / focus motion*/
 pre.mmd-fullscreen svg g.node,
 pre.mmd-fullscreen svg path.flowchart-link,
+pre.mmd-fullscreen svg path.transition,
+pre.mmd-fullscreen svg path.relationshipLine,
 pre.mmd-fullscreen svg g.edgeLabel {
   transition: opacity .18s ease, filter .18s ease;
 }
@@ -472,20 +486,38 @@ pre.mmd-fullscreen svg g.node.mmd-selected {
   filter: drop-shadow(0 0 10px #eb6c36);
 }
 pre.mmd-fullscreen svg path.flowchart-link.mmd-hover,
+pre.mmd-fullscreen svg path.transition.mmd-hover,
+pre.mmd-fullscreen svg path.relationshipLine.mmd-hover,
 pre.mmd-fullscreen svg path.flowchart-link.mmd-on,
-pre.mmd-fullscreen svg path.flowchart-link.mmd-peek {
+pre.mmd-fullscreen svg path.transition.mmd-on,
+pre.mmd-fullscreen svg path.relationshipLine.mmd-on,
+pre.mmd-fullscreen svg path.flowchart-link.mmd-peek,
+pre.mmd-fullscreen svg path.transition.mmd-peek,
+pre.mmd-fullscreen svg path.relationshipLine.mmd-peek {
   stroke: #eb6c36 !important;
   stroke-width: 2.2px !important;
 }
 /*links into the node are blue, links out of it stay orange*/
 pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-hover,
+pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-hover,
+pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-hover,
 pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-on,
-pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek {
+pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-on,
+pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-on,
+pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek,
+pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-peek,
+pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-peek {
   stroke: #2e5aa8 !important;
 }
 ._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-hover,
+._mermaid-dark pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-hover,
+._mermaid-dark pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-hover,
 ._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-on,
-._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek {
+._mermaid-dark pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-on,
+._mermaid-dark pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-on,
+._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek,
+._mermaid-dark pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-peek,
+._mermaid-dark pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-peek {
   stroke: #79b1f9 !important;
 }
 .mmd-flow {
@@ -497,6 +529,10 @@ pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek {
   vector-effect: non-scaling-stroke;
   pointer-events: none;
   animation: mmd-flow 1.2s linear 1 both;
+}
+.mmd-flow.mmd-loop {
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
 }
 .mmd-flow[data-dir=out] {
   stroke: #eb6c36 !important;
@@ -515,164 +551,469 @@ pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek {
   85% { opacity: 1; }
   to { stroke-dashoffset: -0.925; opacity: 0; }
 }
-/*node popup card*/
+/*node popup card, diagram-design skin: flat paper, hairline rules, accent only on the focal marks*/
 .mmd-card {
+  --c-paper: #ffffff;
+  --c-ink: #2d3142;
+  --c-soft: #5a6580;
+  --c-rule: rgba(45, 49, 66, .12);
+  --c-rule-solid: #bfc0c0;
+  --c-accent: #bf4520;
+  --c-tint: rgba(191, 69, 32, .08);
+  --c-link: #2e5aa8;
+  --c-link-tint: rgba(46, 90, 168, .08);
+  --sans: "Geist", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
   position: absolute;
   top: 16px;
   left: 16px;
   z-index: 3;
   display: flex;
   flex-direction: column;
-  width: min(22rem, calc(100% - 32px - 220px));
+  width: min(20rem, calc(100% - 32px - 220px));
   max-height: calc(100% - 32px - 160px);
   overflow: hidden;
-  border: 1px solid #eb6c36;
-  border-radius: 10px;
-  background: #ffffff;
-  color: #2d3142;
+  border: 1px solid var(--c-rule-solid);
+  border-left: 3px solid var(--c-accent);
+  border-radius: 8px;
+  background: var(--c-paper);
+  color: var(--c-ink);
   /*the card sits inside the diagram <pre>, undo its monospace font and no-wrap text*/
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--sans);
   white-space: normal;
   text-align: left;
   font-size: 12px;
   line-height: 1.4;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, .22);
-  animation: mmd-card-in .18s ease-out;
+  box-shadow: 0 8px 24px rgba(45, 49, 66, .14);
+  animation: mmd-card-in .16s cubic-bezier(.2, .8, .2, 1);
+}
+._mermaid-dark .mmd-card {
+  --c-paper: #0f0f0f;
+  --c-ink: #f5f5f5;
+  --c-soft: #a3a3a3;
+  --c-rule: rgba(245, 245, 245, .12);
+  --c-rule-solid: #404040;
+  --c-accent: #eb6c36;
+  --c-tint: rgba(235, 108, 54, .12);
+  --c-link: #79b1f9;
+  --c-link-tint: rgba(121, 177, 249, .12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .6);
 }
 .mmd-card[hidden] {
   display: none;
 }
 @keyframes mmd-card-in {
-  from { opacity: 0; transform: translateY(6px) scale(.98); }
-}
-._mermaid-dark .mmd-card {
-  background: #0f0f0f;
-  color: #f5f5f5;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, .6);
+  from { opacity: 0; transform: translateY(4px); }
 }
 .mmd-card-head {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 12px 8px;
-  background: linear-gradient(120deg, rgba(235, 108, 54, .12), transparent 72%);
+  padding: 12px 12px 12px 16px;
+  border-bottom: 1px solid var(--c-rule);
 }
 .mmd-card-copy {
   display: grid;
+  gap: 2px;
   grid-template-columns: minmax(0, 1fr);
   min-width: 0;
 }
 .mmd-card-eyebrow,
 .mmd-card-label {
-  font: 600 10px/1.2 ui-monospace, monospace;
-  letter-spacing: .08em;
+  font: 500 9px/1.4 var(--mono);
+  letter-spacing: .18em;
   text-transform: uppercase;
-  color: #eb6c36;
+  color: var(--c-soft);
+}
+.mmd-card-eyebrow {
+  color: var(--c-accent);
 }
 .mmd-card-title {
-  font-size: 15px;
-  line-height: 1.35;
+  font: 600 14px/1.35 var(--sans);
   overflow-wrap: anywhere;
-  word-break: break-word;
 }
-.mmd-card-close {
-  flex: none;
+.mmd-card-id {
+  padding: 0;
+  background: none;
+  font: 400 10px/1.4 var(--mono);
+  color: var(--c-soft);
 }
 .mmd-card button {
   margin: 0;
-  border: 1px solid #bfc0c0;
+  border: 1px solid var(--c-rule-solid);
   border-radius: 6px;
   background: transparent;
   color: inherit;
   font: inherit;
   box-shadow: none;
   cursor: pointer;
-}
-._mermaid-dark .mmd-card button {
-  border-color: #404040;
+  transition: border-color .16s ease, color .16s ease, background-color .16s ease;
 }
 .mmd-card button:hover:not(:disabled) {
-  border-color: #eb6c36;
-  color: #eb6c36;
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+}
+.mmd-card button:focus-visible {
+  outline: 2px solid var(--c-link);
+  outline-offset: 1px;
 }
 .mmd-card button:disabled {
   opacity: .4;
   cursor: default;
 }
 .mmd-card-close {
+  flex: none;
   align-self: flex-start;
   width: 24px;
   height: 24px;
   padding: 0;
   line-height: 1;
 }
-.mmd-card-meta {
+.mmd-card-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--c-rule);
+}
+.mmd-stat {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 0 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 8px 12px 8px 16px;
 }
-.mmd-chip {
-  padding: 1px 7px;
-  border: 1px solid rgba(127, 127, 127, .35);
-  border-radius: 999px;
-  font: 11px/1.5 ui-monospace, monospace;
+.mmd-stat + .mmd-stat {
+  border-left: 1px solid var(--c-rule);
 }
-.mmd-card-summary {
-  margin: 8px 12px;
-  color: #7a8399;
+.mmd-stat strong {
+  font: 600 14px/1 var(--mono);
+}
+.mmd-stat[data-dir=in] strong {
+  color: var(--c-link);
+}
+.mmd-stat[data-dir=out] strong {
+  color: var(--c-accent);
 }
 .mmd-card-reach {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 12px 10px;
-  border-bottom: 1px solid rgba(127, 127, 127, .25);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 12px 12px 12px 16px;
 }
 .mmd-card-reach button {
   display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 6px;
-  padding: 3px 8px;
+  padding: 4px 8px;
+  font: 500 12px/1.4 var(--sans);
+}
+.mmd-card-reach button strong {
+  font: 600 12px/1.4 var(--mono);
 }
 .mmd-card-reach button[aria-pressed=true] {
-  border-color: #eb6c36;
-  background: rgba(235, 108, 54, .14);
-  color: #eb6c36;
+  border-color: var(--c-accent);
+  background: var(--c-tint);
+  color: var(--c-accent);
+}
+.mmd-card-reach button[data-dir=in][aria-pressed=true] {
+  border-color: var(--c-link);
+  background: var(--c-link-tint);
+  color: var(--c-link);
+}
+.mmd-card-section {
+  display: block;
+  padding: 8px 12px 4px 16px;
+  border-top: 1px solid var(--c-rule);
 }
 .mmd-card-list {
   overflow-y: auto;
-  padding: 6px;
+  padding: 0 8px 8px 12px;
 }
 .mmd-card .mmd-row {
   display: flex;
   align-items: baseline;
   gap: 8px;
   width: 100%;
-  padding: 5px 6px;
+  padding: 4px 6px;
   border-color: transparent;
+  border-radius: 4px;
   text-align: left;
 }
 .mmd-card .mmd-row:hover {
-  background: rgba(235, 108, 54, .1);
+  background: var(--c-tint);
+  color: inherit;
 }
 .mmd-row-dir {
-  font: 600 13px/1 ui-monospace, monospace;
-  color: #eb6c36;
+  flex: none;
+  width: 14px;
+  font: 600 12px/1 var(--mono);
+  color: var(--c-accent);
 }
 .mmd-row[data-dir=in] .mmd-row-dir {
-  color: #2e5aa8;
-}
-._mermaid-dark .mmd-row[data-dir=in] .mmd-row-dir {
-  color: #79b1f9;
+  color: var(--c-link);
 }
 .mmd-row-copy {
   display: grid;
   min-width: 0;
 }
+.mmd-row-copy strong {
+  font-weight: 600;
+}
 .mmd-row-copy small {
-  color: #7a8399;
+  font: 400 10px/1.4 var(--mono);
+  color: var(--c-soft);
+}
+/*dbml: a table popup lists columns, indexes and relations, a hovered column lights up with the links through it*/
+.mmd-card-stats.mmd-auto {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+.mmd-card-note {
+  font: 400 11px/1.4 var(--sans);
+  color: var(--c-soft);
+}
+.mmd-card-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.mmd-card-body .mmd-card-section {
+  margin: 0 -8px 0 -12px;
+}
+.mmd-col {
+  display: grid;
+  gap: 1px;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+.mmd-col:hover {
+  background: var(--c-tint);
+}
+.mmd-col-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.mmd-col-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.mmd-chip {
+  flex: none;
+  padding: 0 5px;
+  border: 1px solid var(--c-rule-solid);
+  border-radius: 3px;
+  font: 500 9px/14px var(--mono);
+  letter-spacing: .04em;
+  color: var(--c-soft);
+}
+.mmd-col-type {
+  flex: none;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 400 11px/1.4 var(--mono);
+  color: var(--c-soft);
+  white-space: nowrap;
+}
+.mmd-col-sub {
+  display: block;
+  font: 400 10px/1.4 var(--mono);
+  color: var(--c-soft);
+  overflow-wrap: anywhere;
+}
+.dbml-hit {
+  transition: fill .16s ease;
+}
+.dbml-row.dbml-hot .dbml-hit {
+  fill: rgba(235, 108, 54, .16);
+}
+.dbml-hit-line {
+  pointer-events: stroke;
+}
+/*sequence playback: ordered messages, a token on the current one, the rest dimmed*/
+svg.mmd-seq [data-mmd-seq=wait] {
+  opacity: .15;
+}
+svg [data-mmd-seq] {
+  transition: opacity .16s ease;
+}
+svg.mmd-seq line[data-mmd-seq=now],
+svg.mmd-seq path[data-mmd-seq=now] {
+  stroke: #eb6c36 !important;
+  stroke-width: 2px !important;
+}
+svg.mmd-seq text.messageText[data-mmd-seq=now] {
+  fill: #bf4520 !important;
+  font-weight: 600;
+}
+._mermaid-dark svg.mmd-seq text.messageText[data-mmd-seq=now] {
+  fill: #eb6c36 !important;
+}
+/*state playback: the state just reached is lit, the ones reached before keep their colours, the rest wait*/
+svg.mmd-seq g.node[data-mmd-seq=now] > :is(rect, circle, polygon, ellipse):not(.mmd-er-box, .mmd-er-fill) {
+  fill: rgba(235, 108, 54, .08) !important;
+  stroke: #eb6c36 !important;
+  stroke-width: 1.6px !important;
+}
+svg.mmd-seq g.node[data-mmd-seq=now] .outer-path path[stroke]:not([stroke=none]) {
+  stroke: #eb6c36 !important;
+}
+svg.mmd-seq g.node[data-mmd-seq=now] > .mmd-er-box {
+  stroke: #eb6c36 !important;
+  stroke-width: 1.6px !important;
+}
+svg.mmd-seq g.node[data-mmd-seq=now] > .mmd-er-fill {
+  fill: rgba(235, 108, 54, .08) !important;
+}
+svg.mmd-seq g.statediagram-cluster[data-mmd-seq=now] rect.outer {
+  stroke: #eb6c36 !important;
+  stroke-dasharray: none !important;
+}
+._mermaid-dark svg.mmd-seq g.node[data-mmd-seq=now] > :is(rect, circle, polygon, ellipse):not(.mmd-er-box, .mmd-er-fill) {
+  fill: rgba(235, 108, 54, .14) !important;
+}
+.mmd-token {
+  fill: #eb6c36;
+  pointer-events: none;
+}
+/*a lost message (cross) is red, a line without arrowheads is blue*/
+svg.mmd-seq line[data-mmd-seq=now][data-mmd-kind=lost],
+svg.mmd-seq path[data-mmd-seq=now][data-mmd-kind=lost] {
+  stroke: #c0392b !important;
+}
+svg.mmd-seq line[data-mmd-seq=now][data-mmd-kind=plain],
+svg.mmd-seq path[data-mmd-seq=now][data-mmd-kind=plain] {
+  stroke: #2e5aa8 !important;
+}
+svg.mmd-seq text.messageText[data-mmd-seq=now][data-mmd-kind=lost] {
+  fill: #c0392b !important;
+}
+svg.mmd-seq text.messageText[data-mmd-seq=now][data-mmd-kind=plain] {
+  fill: #2e5aa8 !important;
+}
+.mmd-token[data-kind=lost] {
+  fill: #c0392b;
+}
+._mermaid-dark svg.mmd-seq line[data-mmd-seq=now][data-mmd-kind=lost],
+._mermaid-dark svg.mmd-seq path[data-mmd-seq=now][data-mmd-kind=lost] {
+  stroke: #f07f77 !important;
+}
+._mermaid-dark svg.mmd-seq line[data-mmd-seq=now][data-mmd-kind=plain],
+._mermaid-dark svg.mmd-seq path[data-mmd-seq=now][data-mmd-kind=plain] {
+  stroke: #79b1f9 !important;
+}
+._mermaid-dark svg.mmd-seq text.messageText[data-mmd-seq=now][data-mmd-kind=lost] {
+  fill: #f07f77 !important;
+}
+._mermaid-dark svg.mmd-seq text.messageText[data-mmd-seq=now][data-mmd-kind=plain] {
+  fill: #79b1f9 !important;
+}
+._mermaid-dark .mmd-token[data-kind=lost] {
+  fill: #f07f77;
+}
+/*indeterminate progress: a bar slides along a line that has no direction*/
+.mmd-indet {
+  fill: none !important;
+  stroke: #2e5aa8 !important;
+  stroke-width: 3.2px !important;
+  stroke-linecap: round;
+  stroke-dasharray: 0.3 0.7;
+  stroke-dashoffset: 0.3;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+  animation: mmd-indet 1.2s linear infinite;
+}
+._mermaid-dark .mmd-indet {
+  stroke: #79b1f9 !important;
+}
+@keyframes mmd-indet {
+  from { stroke-dashoffset: 0.3; }
+  to { stroke-dashoffset: -1; }
+}
+.mmd-player {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 32px);
+  padding: 6px 8px;
+  border: 1px solid #bfc0c0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #2d3142;
+  transform: translateX(-50%);
+  font-family: "Geist", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  white-space: normal;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 8px 24px rgba(45, 49, 66, .14);
+}
+.mmd-player[hidden] {
+  display: none;
+}
+._mermaid-dark .mmd-player {
+  border-color: #404040;
+  background: #0f0f0f;
+  color: #f5f5f5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .6);
+}
+.mmd-player button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #bfc0c0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  cursor: pointer;
+}
+._mermaid-dark .mmd-player button {
+  border-color: #404040;
+}
+.mmd-player button:hover {
+  border-color: #eb6c36;
+  color: #eb6c36;
+}
+.mmd-player button:focus-visible {
+  outline: 2px solid #2e5aa8;
+  outline-offset: 1px;
+}
+.mmd-player .mmd-player-close {
+  width: 24px;
+  height: 24px;
+  font: 14px/1 inherit;
+}
+.mmd-player-count {
+  flex: none;
+  font: 600 11px/1 "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  color: #bf4520;
+}
+._mermaid-dark .mmd-player-count {
+  color: #eb6c36;
+}
+.mmd-player-caption {
+  min-width: 0;
+  max-width: 18rem;
+  overflow: hidden;
+  font: 400 11px/1.4 "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #5a6580;
+}
+._mermaid-dark .mmd-player-caption {
+  color: #a3a3a3;
 }
 @media (prefers-reduced-motion: reduce) {
+  .mmd-indet { animation: none; stroke-dasharray: none; }
   .mmd-flow { display: none; }
   .mmd-card { animation: none; }
 }

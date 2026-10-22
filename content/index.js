@@ -129,12 +129,12 @@ var render = (md) => {
       state.html = state.html.replace(
         /<code class="language-(?:mermaid|mmd)">/gi,
         '<code class="mermaid">'
-      )
+      ).replace(/<code class="language-dbml">/gi, '<code class="mermaid dbml">')
     }
     if (state.content.toc) {
       state.toc = toc.render(state.html)
     }
-    state.html = anchors(state.html)
+    state.html = externals(anchors(state.html))
     m.redraw()
   })
 }
@@ -214,6 +214,14 @@ var anchors = (html) =>
     header +
     '<a class="anchor" name="' + id + '" href="#' + id + '">' +
     '<span class="octicon octicon-link"></span></a>'
+  )
+
+// external links open in a new tab, anchors and relative links stay in place
+var externals = (html) =>
+  html.replace(/<a\s([^>]*?)>/gi, (tag, attrs) =>
+    /(^|\s)href=["'](?:https?:)?\/\//i.test(attrs) && !/(^|\s)target=/i.test(attrs)
+      ? '<a ' + attrs + ' target="_blank" rel="noopener noreferrer">'
+      : tag
   )
 
 var toc = (() => {

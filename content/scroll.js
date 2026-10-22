@@ -47,8 +47,9 @@ var scroll = (() => {
         }
         else {
           var timeout = setInterval(() => {
-            var svg = Array.from(document.querySelectorAll('code.mermaid svg'))
-            if (diagrams.length === svg.length) {
+            // a diagram that failed to render shows its error text instead of an svg, it is still done
+            var settled = Array.from(document.querySelectorAll('code.mermaid[data-processed]'))
+            if (diagrams.length === settled.length) {
               clearInterval(timeout)
               resolve()
             }
