@@ -323,17 +323,7 @@ var dbml = (() => {
     return table
   }
 
-  var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]))
-  var num = (v) => Math.round(v * 10) / 10
-
-  var ctx = (() => {
-    try {
-      return document.createElement('canvas').getContext('2d')
-    }
-    catch (err) {
-      return null
-    }
-  })()
+  var {esc, num, measure} = draw
 
   // the card metrics, in svg units
   var PAD = 14
@@ -376,11 +366,9 @@ var dbml = (() => {
   // dbml text -> svg markup. t: the style tokens of mermaid.js, fonts: {sans, mono}, id: unique per svg
   var render = (src, t, fonts, id) => {
     var model = parse(src)
-    var danger = t.paper === '#020202' ? '#f07f77' : '#c0401f'
+    var danger = t.danger
     var sans = fonts.sans
     var mono = fonts.mono
-    var measure = (s, size, family, weight, spacing) =>
-      (ctx ? (ctx.font = `${weight || 400} ${size}px ${family}`, ctx.measureText(s).width) : s.length * size * 0.6) + s.length * (spacing || 0)
 
     // every table and enum becomes a card
     var nodes = []

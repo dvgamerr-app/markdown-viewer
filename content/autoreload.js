@@ -15,7 +15,9 @@
 
   var xhr = new XMLHttpRequest()
   xhr.onreadystatechange = () => {
-    if (xhr.readyState === 4) {
+    // a server error or a dropped connection (status 0) is not the document: keep what is shown and try again on
+    // the next poll
+    if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
       response(xhr.responseText)
     }
   }

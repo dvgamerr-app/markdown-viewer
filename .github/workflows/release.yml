@@ -50,10 +50,9 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           mkdir -p release
-          bun run build:dist
-          cp dist/nimbus-markdown.zip "release/nimbus-markdown-chrome-$TAG.zip"
-          bun run build:dist:firefox
-          cp dist/nimbus-markdown.zip "release/nimbus-markdown-firefox-$TAG.zip"
+          bun run build:zip
+          cp dist/nimbus-markdown-chrome.zip "release/nimbus-markdown-chrome-$TAG.zip"
+          cp dist/nimbus-markdown-firefox.zip "release/nimbus-markdown-firefox-$TAG.zip"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: nimbus-markdown-${{ github.ref_name }}

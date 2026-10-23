@@ -1,5 +1,6 @@
 // Evaluate a content script with stubbed browser globals and return the names it declares.
-// Content scripts are plain `var` declarations sharing one scope, so they are run as a function body.
+// Content scripts are plain `var` declarations sharing one scope, so they are run as a function body; several files
+// run in the given order, as the extension injects them.
 import {readFileSync} from 'node:fs'
 import {join} from 'node:path'
 
@@ -26,7 +27,7 @@ export const stubs = (overrides = {}) => ({
 
 export const load = (file, names, overrides) => {
   const globals = stubs(overrides)
-  const source = readFileSync(join(root, file), 'utf8')
+  const source = [].concat(file).map((f) => readFileSync(join(root, f), 'utf8')).join('\n;')
   const body = `${source}\n;return {${names.join(', ')}}`
   return new Function(...Object.keys(globals), body)(...Object.values(globals))
 }

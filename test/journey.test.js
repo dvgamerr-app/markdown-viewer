@@ -1,8 +1,8 @@
 import {describe, expect, test} from 'bun:test'
 import {load} from './load.js'
 
-const {journey} = load('content/journey.js', ['journey'])
-const light = {paper: '#f5f5f5', node: '#fff', ink: '#2d3142', muted: '#4f5d75', soft: '#7a8399', rule: 'rgba(0,0,0,.1)', ruleSolid: '#bfc0c0', accent: '#bf4520', accentTint: 'rgba(191,69,32,.08)', inkRgb: '45,49,66'}
+const {journey} = load(['content/draw.js', 'content/journey.js'], ['journey'])
+const light = {paper: '#f5f5f5', node: '#fff', ink: '#2d3142', muted: '#4f5d75', soft: '#7a8399', rule: 'rgba(0,0,0,.1)', ruleSolid: '#bfc0c0', accent: '#bf4520', accentTint: 'rgba(191,69,32,.08)', accentText: '#bf4520', danger: '#c0401f', inkRgb: '45,49,66'}
 const fonts = {sans: 'sans-serif', mono: 'monospace'}
 
 const src = `journey

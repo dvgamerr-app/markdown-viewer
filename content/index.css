@@ -442,17 +442,20 @@ pre:not(.mmd-fullscreen) > .mmd-find,
   color: #dedede;
 }
 /*mermaid measures each diagram in a temporary element appended to the body. While the page is still
-  hidden that element would be drawn on screen with unstyled boxes: park it out of view, size unchanged*/
+  hidden that element would be drawn on screen with unstyled boxes: park it out of view. A gantt takes its width from
+  this element, a shrink-wrapped one squeezes the chart into a sliver, so give it the width of the page*/
 body > div[id^="dmmd-"] {
   position: fixed !important;
   top: 0 !important;
   left: -100000px !important;
+  width: 100vw !important;
   pointer-events: none;
 }
 /*node focus: dim everything but the node and its direct links*/
 svg.mmd-focus .node:not(.mmd-on),
 svg.mmd-focus path.flowchart-link:not(.mmd-on),
 svg.mmd-focus path.transition:not(.mmd-on),
+svg.mmd-focus path.relation:not(.mmd-on),
 svg.mmd-focus path.relationshipLine:not(.mmd-on),
 svg.mmd-focus g.mmd-er-card:not(.mmd-on),
 svg.mmd-focus g.statediagram-cluster:not(.mmd-on),
@@ -470,29 +473,35 @@ g.node.mmd-match > :is(rect, polygon, circle, path) {
 pre.mmd-fullscreen svg g.node,
 pre.mmd-fullscreen svg path.flowchart-link,
 pre.mmd-fullscreen svg path.transition,
+pre.mmd-fullscreen svg path.relation,
 pre.mmd-fullscreen svg path.relationshipLine,
 pre.mmd-fullscreen svg g.edgeLabel {
   transition: opacity .18s ease, filter .18s ease;
 }
-pre.mmd-fullscreen svg g.node:hover {
+/*a gantt task, a pie slice or a quadrant point does not glow, the pointer over a gantt drives its date cursor; a journey stage is a whole column
+  and is marked by its dot and the curve, never by a border or a glow*/
+pre.mmd-fullscreen svg g.node:not(.gantt-task, .journey-stage, .pie-slice, .quadrant-point):hover {
   filter: drop-shadow(0 0 7px #eb6c36);
 }
-pre.mmd-fullscreen svg g.node:hover > :is(rect, polygon, circle, path, ellipse),
-pre.mmd-fullscreen svg g.node.mmd-selected > :is(rect, polygon, circle, path, ellipse) {
+pre.mmd-fullscreen svg g.node:not(.gantt-task, .journey-stage, .pie-slice, .quadrant-point):hover > :is(rect, polygon, circle, path, ellipse),
+pre.mmd-fullscreen svg g.node.mmd-selected:not(.journey-stage, .pie-slice, .quadrant-point) > :is(rect, polygon, circle, path, ellipse) {
   stroke: #eb6c36 !important;
   stroke-width: 2px !important;
 }
-pre.mmd-fullscreen svg g.node.mmd-selected {
+pre.mmd-fullscreen svg g.node.mmd-selected:not(.journey-stage, .pie-slice, .quadrant-point) {
   filter: drop-shadow(0 0 10px #eb6c36);
 }
 pre.mmd-fullscreen svg path.flowchart-link.mmd-hover,
 pre.mmd-fullscreen svg path.transition.mmd-hover,
+pre.mmd-fullscreen svg path.relation.mmd-hover,
 pre.mmd-fullscreen svg path.relationshipLine.mmd-hover,
 pre.mmd-fullscreen svg path.flowchart-link.mmd-on,
 pre.mmd-fullscreen svg path.transition.mmd-on,
+pre.mmd-fullscreen svg path.relation.mmd-on,
 pre.mmd-fullscreen svg path.relationshipLine.mmd-on,
 pre.mmd-fullscreen svg path.flowchart-link.mmd-peek,
 pre.mmd-fullscreen svg path.transition.mmd-peek,
+pre.mmd-fullscreen svg path.relation.mmd-peek,
 pre.mmd-fullscreen svg path.relationshipLine.mmd-peek {
   stroke: #eb6c36 !important;
   stroke-width: 2.2px !important;
@@ -500,57 +509,54 @@ pre.mmd-fullscreen svg path.relationshipLine.mmd-peek {
 /*links into the node are blue, links out of it stay orange*/
 pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-hover,
 pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-hover,
+pre.mmd-fullscreen svg path.relation[data-mmd-dir=in].mmd-hover,
 pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-hover,
 pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-on,
 pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-on,
+pre.mmd-fullscreen svg path.relation[data-mmd-dir=in].mmd-on,
 pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-on,
 pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek,
 pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-peek,
+pre.mmd-fullscreen svg path.relation[data-mmd-dir=in].mmd-peek,
 pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-peek {
   stroke: #2e5aa8 !important;
 }
 ._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-hover,
 ._mermaid-dark pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-hover,
+._mermaid-dark pre.mmd-fullscreen svg path.relation[data-mmd-dir=in].mmd-hover,
 ._mermaid-dark pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-hover,
 ._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-on,
 ._mermaid-dark pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-on,
+._mermaid-dark pre.mmd-fullscreen svg path.relation[data-mmd-dir=in].mmd-on,
 ._mermaid-dark pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-on,
 ._mermaid-dark pre.mmd-fullscreen svg path.flowchart-link[data-mmd-dir=in].mmd-peek,
 ._mermaid-dark pre.mmd-fullscreen svg path.transition[data-mmd-dir=in].mmd-peek,
+._mermaid-dark pre.mmd-fullscreen svg path.relation[data-mmd-dir=in].mmd-peek,
 ._mermaid-dark pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-peek {
   stroke: #79b1f9 !important;
 }
+/*streak: every layer is one dash centred on the same spot, each fades from clear at both ends to solid in the middle*/
 .mmd-flow {
-  fill: none !important;
-  stroke-width: 3.2px !important;
-  stroke-linecap: round;
-  stroke-dasharray: 0.075 0.925;
-  stroke-dashoffset: 0.075;
-  vector-effect: non-scaling-stroke;
+  --c: #eb6c36;
   pointer-events: none;
-  animation: mmd-flow 1.2s linear 1 both;
+  filter: drop-shadow(0 0 2px var(--c));
 }
-.mmd-flow.mmd-loop {
-  animation-duration: 3s;
-  animation-iteration-count: infinite;
+.mmd-flow[data-dir=in] { --c: #2e5aa8; }
+._mermaid-dark .mmd-flow[data-dir=in] { --c: #79b1f9; }
+.mmd-flow > :is(path, line) {
+  fill: none !important;
+  stroke-linecap: round;
 }
-.mmd-flow[data-dir=out] {
-  stroke: #eb6c36 !important;
-  filter: drop-shadow(0 0 3px #eb6c36);
-}
-.mmd-flow[data-dir=in] {
-  stroke: #2e5aa8 !important;
-  filter: drop-shadow(0 0 3px #2e5aa8);
-}
-._mermaid-dark .mmd-flow[data-dir=in] {
-  stroke: #79b1f9 !important;
-  filter: drop-shadow(0 0 3px #79b1f9);
-}
-@keyframes mmd-flow {
-  from { stroke-dashoffset: 0.075; opacity: 1; }
-  85% { opacity: 1; }
-  to { stroke-dashoffset: -0.925; opacity: 0; }
-}
+/*the colour holds the whole streak, the middle heats up to near white (on a light page white would vanish, so it stays the colour)*/
+.mmd-flow stop { stop-color: var(--c); }
+._mermaid-dark .mmd-flow .mmd-flow-body-fade stop { stop-color: color-mix(in srgb, var(--c) 55%, #fff); }
+._mermaid-dark .mmd-flow .mmd-flow-head-fade stop { stop-color: color-mix(in srgb, var(--c) 25%, #fff); }
+._mermaid-dark .mmd-flow .mmd-flow-core-fade stop { stop-color: #fff; }
+.mmd-flow > .mmd-flow-glow { stroke-width: 10px !important; stroke-opacity: .14; }
+.mmd-flow > .mmd-flow-tail { stroke-width: 2.6px !important; stroke-opacity: .7; }
+.mmd-flow > .mmd-flow-body { stroke-width: 3px !important; stroke-opacity: .85; }
+.mmd-flow > .mmd-flow-head { stroke-width: 3.4px !important; }
+.mmd-flow > .mmd-flow-core { stroke-width: 2.2px !important; }
 /*node popup card, diagram-design skin: flat paper, hairline rules, accent only on the focal marks*/
 .mmd-card {
   --c-paper: #ffffff;
@@ -772,6 +778,13 @@ pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-peek {
   font: 400 11px/1.4 var(--sans);
   color: var(--c-soft);
 }
+/*a few sentences on the node, as prose: what a timeline period brings and where it sits*/
+.mmd-card-desc {
+  margin: 0;
+  padding: 2px 6px 8px;
+  font: 400 12px/1.5 var(--sans);
+  color: var(--c-ink);
+}
 .mmd-card-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -839,20 +852,16 @@ svg.mmd-seq [data-mmd-seq=wait] {
 svg [data-mmd-seq] {
   transition: opacity .16s ease;
 }
+/*the message being played keeps its own colours, the comet and a heavier line mark it*/
 svg.mmd-seq line[data-mmd-seq=now],
 svg.mmd-seq path[data-mmd-seq=now] {
-  stroke: #eb6c36 !important;
   stroke-width: 2px !important;
 }
 svg.mmd-seq text.messageText[data-mmd-seq=now] {
-  fill: #bf4520 !important;
   font-weight: 600;
 }
-._mermaid-dark svg.mmd-seq text.messageText[data-mmd-seq=now] {
-  fill: #eb6c36 !important;
-}
 /*state playback: the state just reached is lit, the ones reached before keep their colours, the rest wait*/
-svg.mmd-seq g.node[data-mmd-seq=now] > :is(rect, circle, polygon, ellipse):not(.mmd-er-box, .mmd-er-fill) {
+svg.mmd-seq g.node:not(.journey-stage)[data-mmd-seq=now] > :is(rect, circle, polygon, ellipse):not(.mmd-er-box, .mmd-er-fill) {
   fill: rgba(235, 108, 54, .08) !important;
   stroke: #eb6c36 !important;
   stroke-width: 1.6px !important;
@@ -871,47 +880,12 @@ svg.mmd-seq g.statediagram-cluster[data-mmd-seq=now] rect.outer {
   stroke: #eb6c36 !important;
   stroke-dasharray: none !important;
 }
-._mermaid-dark svg.mmd-seq g.node[data-mmd-seq=now] > :is(rect, circle, polygon, ellipse):not(.mmd-er-box, .mmd-er-fill) {
+._mermaid-dark svg.mmd-seq g.node:not(.journey-stage)[data-mmd-seq=now] > :is(rect, circle, polygon, ellipse):not(.mmd-er-box, .mmd-er-fill) {
   fill: rgba(235, 108, 54, .14) !important;
 }
 .mmd-token {
   fill: #eb6c36;
   pointer-events: none;
-}
-/*a lost message (cross) is red, a line without arrowheads is blue*/
-svg.mmd-seq line[data-mmd-seq=now][data-mmd-kind=lost],
-svg.mmd-seq path[data-mmd-seq=now][data-mmd-kind=lost] {
-  stroke: #c0392b !important;
-}
-svg.mmd-seq line[data-mmd-seq=now][data-mmd-kind=plain],
-svg.mmd-seq path[data-mmd-seq=now][data-mmd-kind=plain] {
-  stroke: #2e5aa8 !important;
-}
-svg.mmd-seq text.messageText[data-mmd-seq=now][data-mmd-kind=lost] {
-  fill: #c0392b !important;
-}
-svg.mmd-seq text.messageText[data-mmd-seq=now][data-mmd-kind=plain] {
-  fill: #2e5aa8 !important;
-}
-.mmd-token[data-kind=lost] {
-  fill: #c0392b;
-}
-._mermaid-dark svg.mmd-seq line[data-mmd-seq=now][data-mmd-kind=lost],
-._mermaid-dark svg.mmd-seq path[data-mmd-seq=now][data-mmd-kind=lost] {
-  stroke: #f07f77 !important;
-}
-._mermaid-dark svg.mmd-seq line[data-mmd-seq=now][data-mmd-kind=plain],
-._mermaid-dark svg.mmd-seq path[data-mmd-seq=now][data-mmd-kind=plain] {
-  stroke: #79b1f9 !important;
-}
-._mermaid-dark svg.mmd-seq text.messageText[data-mmd-seq=now][data-mmd-kind=lost] {
-  fill: #f07f77 !important;
-}
-._mermaid-dark svg.mmd-seq text.messageText[data-mmd-seq=now][data-mmd-kind=plain] {
-  fill: #79b1f9 !important;
-}
-._mermaid-dark .mmd-token[data-kind=lost] {
-  fill: #f07f77;
 }
 /*indeterminate progress: a bar slides along a line that has no direction*/
 .mmd-indet {
@@ -1184,3 +1158,24 @@ img.emojione {
   /* prevent img stretch */
   width: auto;
 }
+/*class diagram: hover and focus keep the colours of the design, no glow*/
+pre.mmd-fullscreen svg[aria-roledescription=classDiagram] g.node:hover,
+pre.mmd-fullscreen svg[aria-roledescription=classDiagram] g.node.mmd-selected {
+  filter: none;
+}
+
+/*class popup: members read like code*/
+.mmd-member {
+  font: 400 11px/1.5 var(--mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.mmd-card .tok-vis { color: #9a6e3a; }
+.mmd-card .tok-fn, .mmd-card .tok-type { color: #dd4a68; }
+.mmd-card .tok-keyword { color: #07a; }
+.mmd-card .tok-punct { color: #999; }
+.mmd-card .tok-constant { color: #905; }
+._mermaid-dark .mmd-card .tok-vis, ._mermaid-dark .mmd-card .tok-punct { color: #f8f8f2; }
+._mermaid-dark .mmd-card .tok-fn, ._mermaid-dark .mmd-card .tok-type { color: #e6db74; }
+._mermaid-dark .mmd-card .tok-keyword { color: #66d9ef; }
+._mermaid-dark .mmd-card .tok-constant { color: #f92672; }
