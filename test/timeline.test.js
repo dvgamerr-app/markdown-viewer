@@ -12,7 +12,7 @@ const src = `timeline
     2004 : Facebook : Google : Orkut
   section Growth
     2010 : Instagram
-         : Pinterest
+        : Pinterest
 `
 const dots = (svg) => [...svg.matchAll(/<circle cx="([\d.]+)" cy="[\d.]+" r="[46]"/g)].map((m) => parseFloat(m[1]))
 const info = (svg) => JSON.parse(/<metadata class="timeline-model">([^<]*)<\/metadata>/.exec(svg)[1].replaceAll('&quot;', '"').replaceAll('&amp;', '&'))
