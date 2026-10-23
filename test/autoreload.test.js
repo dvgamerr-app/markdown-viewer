@@ -2,18 +2,18 @@ import {describe, expect, test} from 'bun:test'
 import {load} from './load.js'
 
 // Run content/autoreload.js against a stubbed chrome.runtime and capture the polling interval.
-const start = (runtime) => {
+const start = (runtime, {protocol = 'file:', xhr} = {}) => {
   const calls = {cleared: 0, rendered: []}
   let poll = null
   const state = {reload: {ms: 1000, md: false}}
   load('content/autoreload.js', [], {
     state,
     chrome: {runtime},
-    location: {protocol: 'file:', href: 'file:///doc.md'},
+    location: {protocol, href: protocol + '///doc.md'},
     render: (md) => calls.rendered.push(md),
     setInterval: (fn) => (poll = fn, 1),
     clearInterval: () => calls.cleared++,
-    XMLHttpRequest: function () {},
+    XMLHttpRequest: function () { return xhr || {} },
   })
   return {calls, poll: () => poll(), state}
 }
@@ -52,5 +52,21 @@ describe('autoreload', () => {
   test('stops polling when the background does not answer', () => {
     const {calls} = start({id: 'ext', lastError: {message: 'Receiving end does not exist.'}, sendMessage: (msg, cb) => cb(undefined)})
     expect(calls.cleared).toBe(1)
+  })
+
+  test('a failed fetch over http keeps the document and keeps polling', () => {
+    const xhr = {open () {}, send () { this.onreadystatechange() }}
+    const reply = (status, responseText) => Object.assign(xhr, {readyState: 4, status, responseText})
+    reply(200, 'a')
+    const {calls, poll} = start({}, {protocol: 'https:', xhr})
+    for (const [status, text] of [[503, 'Service Unavailable'], [0, ''], [404, 'Not Found']]) {
+      reply(status, text)
+      poll()
+    }
+    expect(calls.rendered).toEqual([])
+    reply(200, 'b')
+    poll()
+    expect(calls.rendered).toEqual(['b'])
+    expect(calls.cleared).toBe(0)
   })
 })
