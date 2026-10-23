@@ -776,6 +776,13 @@ pre.mmd-fullscreen svg path.relationshipLine[data-mmd-dir=in].mmd-peek {
   font: 400 11px/1.4 var(--sans);
   color: var(--c-soft);
 }
+/*a few sentences on the node, as prose: what a timeline period brings and where it sits*/
+.mmd-card-desc {
+  margin: 0;
+  padding: 2px 6px 8px;
+  font: 400 12px/1.5 var(--sans);
+  color: var(--c-ink);
+}
 .mmd-card-body {
   flex: 1 1 auto;
   min-height: 0;

@@ -100,6 +100,33 @@ var timeline = (() => {
   var EVENTS = 4
   var TRACK = 1.12
 
+  // "a", "a and b", "a, b and c"
+  var list = (items) => (items.length > 1 ? items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1] : items[0] || '')
+
+  // what happened in period i, in words: what it brings, where it sits among its neighbours and how much of the
+  // timeline it holds. Years read as years, other numbers as plain steps
+  var story = (periods, i, {numeric, values, major, total}) => {
+    var p = periods[i]
+    var before = periods[i - 1]
+    var after = periods[i + 1]
+    var years = numeric && values.every((v) => Number.isInteger(v) && v >= 1000 && v <= 2999)
+    var span = (a, b) => {
+      var gap = Math.round((values[b] - values[a]) * 10) / 10
+      return years ? gap + (gap === 1 ? ' year' : ' years') : numeric ? gap + ' steps' : ''
+    }
+    var named = (q) => q.label + (q.events.length ? ' (' + list(q.events) + ')' : '')
+    var out = [p.events.length ? `${p.label} brings ${list(p.events)}.` : `${p.label} is marked with no events.`]
+    if (p.section) out.push(`It falls in ${p.section}.`)
+    if (!before && !after) out.push('It is the only period on the timeline.')
+    else if (!before) out.push(`It opens the timeline, ${numeric ? span(i, i + 1) + ' before' : 'ahead of'} ${named(after)}.`)
+    else if (!after) out.push(`It closes the timeline, ${numeric ? span(i - 1, i) + ' after' : 'following'} ${named(before)}.`)
+    else if (numeric) out.push(`It comes ${span(i - 1, i)} after ${named(before)} and ${span(i, i + 1)} before ${named(after)}.`)
+    else out.push(`It follows ${named(before)} and leads to ${named(after)}.`)
+    if (i === major) out.push(`The busiest period: ${p.events.length} of the ${total} events on the timeline happen here.`)
+    else if (p.events.length && total > p.events.length) out.push(`It holds ${p.events.length} of the ${total} events on the timeline.`)
+    return out.join(' ')
+  }
+
   // timeline source -> svg markup, or '' when mermaid should draw it. t: the style tokens of mermaid.js, fit: the
   // width the axis may stretch to
   var render = (src, t, fonts, id, fit) => {
@@ -263,15 +290,16 @@ var timeline = (() => {
     var width = fit && right + MARGIN <= fit + 4 ? Math.floor(fit) : grid(right + MARGIN)
     var height = grid(y)
 
+    var total = periods.reduce((sum, p) => sum + p.events.length, 0)
     var info = {axis: [num(capL), num(capR)], nodes: {}}
     periods.forEach((p, i) => {
       info.nodes['p' + i] = {
         name: p.label, section: p.section, n: i + 1, events: p.events, major: i === major, x: num(xs[i]),
         gap: numeric && i ? num(values[i] - values[i - 1]) : null,
-        prev: i ? 'p' + (i - 1) : '', next: i < n - 1 ? 'p' + (i + 1) : ''
+        prev: i ? 'p' + (i - 1) : '', next: i < n - 1 ? 'p' + (i + 1) : '',
+        story: story(periods, i, {numeric, values, major, total})
       }
     })
-    var total = periods.reduce((sum, p) => sum + p.events.length, 0)
     var summary = `${model.title || 'Timeline'}: ${n} periods from ${periods[0].label} to ${periods[n - 1].label}, ${total} events` +
       (major >= 0 ? `, busiest at ${periods[major].label}` : '')
 

@@ -156,3 +156,21 @@ describe('timeline motion', () => {
     expect(timeline.motion(stub(timeline.render(flat, light, fonts, 'm')).svg).steps.length).toBeLessThanOrEqual(8)
   })
 })
+
+describe('timeline story', () => {
+  const nodes = info(timeline.render(src, light, fonts, 't-10')).nodes
+
+  test('years read as years between the neighbours', () => {
+    expect(nodes.p1.story).toBe('2004 brings Facebook, Google and Orkut. It falls in Early. It comes 2 years after 2002 (LinkedIn) and 6 years before 2010 (Instagram and Pinterest). The busiest period: 3 of the 6 events on the timeline happen here.')
+  })
+
+  test('the ends open and close the timeline', () => {
+    expect(nodes.p0.story).toContain('It opens the timeline, 2 years before 2004')
+    expect(nodes.p2.story).toContain('It closes the timeline, 6 years after 2004')
+  })
+
+  test('words follow and lead without a distance', () => {
+    const words = info(timeline.render('timeline\n  Alpha : a\n  Beta\n  Gamma : c', light, fonts, 't-11')).nodes
+    expect(words.p1.story).toBe('Beta is marked with no events. It follows Alpha (a) and leads to Gamma (c).')
+  })
+})

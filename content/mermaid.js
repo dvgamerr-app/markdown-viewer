@@ -1383,6 +1383,7 @@ var mmd = (() => {
       stats.append(stat('Events', String(data.events.length)), stat('Since previous', data.gap == null ? '—' : '+' + data.gap))
 
       var body = h('div', 'mmd-card-list mmd-card-body')
+      if (data.story) body.append(h('span', 'mmd-card-label mmd-card-section', 'What happened'), h('p', 'mmd-card-desc', data.story))
       if (data.events.length) {
         body.append(h('span', 'mmd-card-label mmd-card-section', 'Events'))
         data.events.forEach((event) => {
