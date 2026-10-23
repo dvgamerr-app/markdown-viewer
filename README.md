@@ -95,13 +95,13 @@ Or open the ready-made examples: [docs/showcase](docs/showcase/) and every diagr
 ## How it works
 
 ```text
- .md file or allowed site
+  .md file or allowed site
           │
- background worker ── detects Markdown by path or content type
+  background worker ── detects Markdown by path or content type
           │
- content script ──── markdown-it ─► mermaid · dbml · prism · mathjax
+  content script ──── markdown-it ─► mermaid · dbml · prism · mathjax
           │
- themed page with a table of contents and the fullscreen diagram viewer
+  themed page with a table of contents and the fullscreen diagram viewer
 ```
 
 Plain JavaScript, Manifest V3, Mithril for the settings pages, built into `dist/` with a single Bun script.
