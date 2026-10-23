@@ -6,7 +6,7 @@ on:
     paths:
       - "site/**"
       - "docs/screenshots/**"
-      - "store-assets/marquee-promo-1400x560.png"
+      - "docs/store/marquee-promo-1400x560.png"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -39,7 +39,7 @@ jobs:
           cp -r site/. _site/
           cp docs/screenshots/0*.png docs/screenshots/fullscreen-*.gif _site/screenshots/
           cp icons/default/128x128.png _site/icon.png
-          cp store-assets/marquee-promo-1400x560.png _site/og.png
+          cp docs/store/marquee-promo-1400x560.png _site/og.png
 
       - name: Configure Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0

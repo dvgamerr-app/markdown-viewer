@@ -10,7 +10,8 @@
     "build:dist": "bun scripts/build.mjs chrome",
     "build:dist:firefox": "bun scripts/build.mjs firefox",
     "build:zip": "bun scripts/build.mjs firefox zip && bun scripts/build.mjs chrome zip",
-    "build:themes": "bun scripts/build.mjs chrome themes"
+    "build:themes": "bun scripts/build.mjs chrome themes",
+    "build:store": "bun scripts/store-assets.mjs"
   },
   "dependencies": {
     "@material/button": "0.37.1",
@@ -43,5 +44,8 @@
     "prismjs": "1.30.0",
     "sass": "1.77.8",
     "terser": "5.30.3"
+  },
+  "devDependencies": {
+    "playwright": "1.58.2"
   }
 }
