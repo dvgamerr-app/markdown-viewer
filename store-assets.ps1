@@ -27,37 +27,44 @@ function Canvas($w,$h,$name,$draw) {
 Canvas 128 128 'store-icon-128.png' { param($g)
   Picture $g 'icons/default/128x128.png' 0 0 128 128
 }
-Canvas 1280 800 'screenshot-01-settings.png' { param($g)
-  Text $g 'Make Markdown feel like home.' 38 55 22 '#eef3dc' $true
-  Text $g 'Themes, reading width, and rendering options in one place.' 19 57 77 '#b9cdb6'
-  Picture $g 'docs/screenshots/settings-preview.png' 160 117 960 675
+Canvas 1280 800 'screenshot-01-flowchart.png' { param($g)
+  Text $g 'Mermaid diagrams you can explore.' 38 55 22 '#eef3dc' $true
+  Text $g 'Open any diagram fullscreen: zoom, find a node, see what flows in and out.' 19 57 77 '#b9cdb6'
+  Picture $g 'docs/screenshots/01-flowchart-fullscreen.png' 120 140 1040 650
 }
-Canvas 1280 800 'screenshot-02-dark-mode.png' { param($g)
-  Text $g 'A calmer space. Day or night.' 38 55 22 '#eef3dc' $true
-  Text $g 'Switch the settings interface to dark mode.' 19 57 77 '#b9cdb6'
-  Picture $g 'docs/screenshots/settings-dark-preview.png' 160 117 960 675
+Canvas 1280 800 'screenshot-02-sequence.png' { param($g)
+  Text $g 'Sequence diagrams, day or night.' 38 55 22 '#eef3dc' $true
+  Text $g 'Diagrams follow the theme you read in, light or dark.' 19 57 77 '#b9cdb6'
+  Picture $g 'docs/screenshots/02-sequence-dark.png' 120 140 1040 650
 }
-Canvas 1280 800 'screenshot-03-quick-controls.png' { param($g)
-  Picture $g 'icons/default/128x128.png' 65 90 80 80
-  Text $g 'Nimbus Markdown' 36 62 195 '#eef3dc' $true
-  Text $g "Your preview.`nYour preferences." 34 62 267 '#eef3dc' $true
-  Text $g "Quick access to themes`nand content options." 22 65 388 '#b9cdb6'
-  Picture $g 'docs/screenshots/popup-preview.png' 445 100 342 540
-  Picture $g 'docs/screenshots/popup-content-preview.png' 836 160 342 540
+Canvas 1280 800 'screenshot-03-journey.png' { param($g)
+  Text $g 'Journeys and timelines that play.' 38 55 22 '#eef3dc' $true
+  Text $g 'Step through a user journey or a release history, one stage at a time.' 19 57 77 '#b9cdb6'
+  Picture $g 'docs/screenshots/03-journey.png' 120 140 1040 650
+}
+Canvas 1280 800 'screenshot-04-dbml.png' { param($g)
+  Text $g 'Database schemas from DBML.' 38 55 22 '#eef3dc' $true
+  Text $g 'Tables, keys and relations drawn straight from a dbml code block.' 19 57 77 '#b9cdb6'
+  Picture $g 'docs/screenshots/04-dbml-dark.png' 120 140 1040 650
+}
+Canvas 1280 800 'screenshot-05-document.png' { param($g)
+  Text $g 'Markdown, beautifully rendered.' 38 55 22 '#eef3dc' $true
+  Text $g 'Tables, code, math and a table of contents for every document.' 19 57 77 '#b9cdb6'
+  Picture $g 'docs/screenshots/05-table-code.png' 120 140 1040 650
 }
 Canvas 440 280 'small-promo-440x280.png' { param($g)
   Picture $g 'icons/default/128x128.png' 28 26 64 64
   Text $g 'Nimbus Markdown' 28 26 108 '#eef3dc' $true
-  Text $g "Markdown,`nbeautifully readable." 25 27 151 '#eef3dc'
-  Text $g 'Themes / Diagrams / Math / Code' 16 28 240 '#b9cdb6'
+  Text $g "Markdown,`nbeautifully rendered." 25 27 151 '#eef3dc'
+  Text $g 'Mermaid / DBML / Math / Code' 16 28 240 '#b9cdb6'
 }
 Canvas 1400 560 'marquee-promo-1400x560.png' { param($g)
   Picture $g 'icons/default/128x128.png' 65 58 82 82
   Text $g 'NIMBUS MARKDOWN' 21 169 84 '#b9cdb6' $true
-  Text $g "Markdown,`nbeautifully readable." 54 60 173 '#eef3dc' $true
-  Text $g 'Local files. Your favorite sites. Your own style.' 23 65 343 '#b9cdb6'
-  Text $g 'Themes / Mermaid / MathJax / Syntax highlighting' 20 65 443 '#b9cdb6'
-  Picture $g 'docs/screenshots/settings-dark-preview.png' 726 76 640 450
+  Text $g "Markdown,`nbeautifully rendered." 54 60 173 '#eef3dc' $true
+  Text $g 'Mermaid diagrams you can explore in fullscreen.' 23 65 343 '#b9cdb6'
+  Text $g 'Flowcharts / Sequences / Journeys / DBML' 20 65 443 '#b9cdb6'
+  Picture $g 'docs/screenshots/01-flowchart-fullscreen.png' 726 80 640 400
 }
 Get-ChildItem $out -Filter '*.png' | ForEach-Object {
   $im = [System.Drawing.Image]::FromFile($_.FullName)

@@ -108,13 +108,15 @@ No login required. In chrome://extensions, open Nimbus Markdown > Details and en
 | --- | --- | --- |
 | Store icon | `store-assets/store-icon-128.png` | 128×128 |
 | Global promo video | เว้นว่าง หากยังไม่มีวิดีโอ YouTube | — |
-| Screenshots ลำดับ 1 | `store-assets/screenshot-01-settings.png` | 1280×800 |
-| Screenshots ลำดับ 2 | `store-assets/screenshot-02-dark-mode.png` | 1280×800 |
-| Screenshots ลำดับ 3 | `store-assets/screenshot-03-quick-controls.png` | 1280×800 |
+| Screenshots ลำดับ 1 | `store-assets/screenshot-01-flowchart.png` | 1280×800 |
+| Screenshots ลำดับ 2 | `store-assets/screenshot-02-sequence.png` | 1280×800 |
+| Screenshots ลำดับ 3 | `store-assets/screenshot-03-journey.png` | 1280×800 |
+| Screenshots ลำดับ 4 | `store-assets/screenshot-04-dbml.png` | 1280×800 |
+| Screenshots ลำดับ 5 | `store-assets/screenshot-05-document.png` | 1280×800 |
 | Small promo tile | `store-assets/small-promo-440x280.png` | 440×280 |
 | Marquee promo tile | `store-assets/marquee-promo-1400x560.png` | 1400×560 |
 
-ภาพหน้าจอชุดนี้แสดงหน้าตั้งค่าและ popup พร้อมข้อความประกอบ ไม่ใช่ภาพเอกสาร Markdown ที่เรนเดอร์ สร้างซ้ำได้ด้วย `./store-assets.ps1`
+ภาพหน้าจอเป็นการ render เอกสาร Markdown ตัวอย่างใน `docs/showcase/` (ข้อมูล mock) โดยเน้น Mermaid diagram ภาพต้นทางอยู่ที่ `docs/screenshots/` สร้างซ้ำได้ด้วย `./store-assets.ps1`
 
 ## Store listing
 
@@ -124,18 +126,26 @@ Nimbus Markdown
 
 ### Short description
 
-Render Markdown with dark mode, themes, Mermaid diagrams, math formulas, syntax highlighting, and automatic reload.
+Read Markdown in Chrome with Mermaid diagrams you can explore in fullscreen, DBML schemas, math, code highlighting and 30+ themes.
 
 ### Detailed description
 
-Nimbus Markdown turns Markdown files into readable, themed documents directly in your browser. Preview local files and Markdown URLs on websites you choose to enable.
+Nimbus Markdown turns Markdown files into readable, themed documents directly in your browser, and makes their Mermaid diagrams something you can explore. Preview local files and Markdown URLs on websites you choose to enable.
+
+EXPLORE DIAGRAMS IN FULLSCREEN
+
+• Zoom and move around any Mermaid diagram.
+• Find a node by name and open an overview map.
+• Hover a node to light its links: blue into it, orange out of it. Click it for its connections.
+• Play sequence, state, journey and timeline diagrams step by step.
+• DBML code blocks are drawn as database schemas with keys and relations.
 
 FEATURES
 
 • Light and dark themes, with over 30 themes and custom theme support.
 • GitHub Flavored Markdown, including tables, task lists, and strikethrough.
 • Syntax highlighting for fenced code blocks.
-• Mermaid diagrams and MathJax formulas.
+• MathJax formulas.
 • A table of contents for navigating long documents.
 • Automatic reload for local files and local development previews.
 • Raw and rendered Markdown views.
