@@ -1418,7 +1418,8 @@ var mmd = (() => {
       if (id) {
         var {shown, used} = trace(id, reach)
         used.forEach((edge, index) => {
-          var dir = reach === 'up' ? 'in' : reach === 'down' ? 'out' : edge.from === id ? 'out' : 'in'
+          // time runs one way: both sides of a timeline period light as one stretch, left to right
+          var dir = isTimeline || reach === 'down' ? 'out' : reach === 'up' ? 'in' : edge.from === id ? 'out' : 'in'
           edge.el.dataset.mmdDir = dir
           edge.el.classList.add('mmd-on')
           edge.extras.forEach((el) => el.classList.add('mmd-on'))
@@ -1430,8 +1431,20 @@ var mmd = (() => {
               el.style.setProperty('font-weight', '600', 'important')
             })
           }
-          flow(edge, dir, Math.min(index, 6) * 0.2, true)
+          isTimeline || flow(edge, dir, Math.min(index, 6) * 0.2, true)
         })
+        // one comet runs the whole stretch through the period, from the one before it to the one after
+        if (isTimeline && used.length) {
+          var xs = used.flatMap((edge) => [edge.el.getPointAtLength(0).x, edge.el.getPointAtLength(edge.el.getTotalLength()).x])
+          var y = used[0].el.getPointAtLength(0).y
+          var span = document.createElementNS(NS, 'path')
+          span.setAttribute('class', 'mmd-flow')
+          span.setAttribute('d', 'M' + Math.min(...xs) + ',' + y + 'H' + Math.max(...xs))
+          span.setAttribute('fill', 'none')
+          span.setAttribute('stroke', 'none')
+          used[0].el.parentNode.appendChild(span)
+          flow({el: span}, 'out', 0, true)
+        }
         nodes.forEach(({el, id: nodeId}) => el.classList.toggle('mmd-on', shown.has(nodeId)))
         byId.get(id).el.classList.add('mmd-selected')
       }
@@ -1467,7 +1480,7 @@ var mmd = (() => {
       if (!node || focused) return
       hovered = edges.filter((e) => e.from === node.id || e.to === node.id)
       hovered.forEach((e) => {
-        var dir = e.from === node.id ? 'out' : 'in'
+        var dir = isTimeline || e.from === node.id ? 'out' : 'in'
         e.el.dataset.mmdDir = dir
         e.el.classList.add('mmd-hover')
         tint(e, true, dir)

@@ -278,7 +278,7 @@ var timeline = (() => {
     return [`<svg xmlns="http://www.w3.org/2000/svg" id="${id}" width="100%" style="max-width: ${width}px;" viewBox="0 0 ${width} ${height}" ` +
       `role="graphics-document document" aria-roledescription="timeline" font-family="${esc(sans)}">`,
       `<title>${esc(model.title || 'Timeline')}</title><desc>${esc(summary)}</desc>`,
-      `<style>${motionCss('#' + id)}</style>`,
+      `<style>${motionCss('#' + id, t)}</style>`,
       body.join(''), segments.join(''), marks.join(''), legend.join(''),
       `<metadata class="timeline-model">${esc(JSON.stringify(info))}</metadata>`, '</svg>'].join('')
   }
@@ -286,8 +286,16 @@ var timeline = (() => {
   // playback, the skill's step mode: the figure is complete until a run starts. In a run an ink stroke draws along
   // the baseline to the period in play, which is ringed while its drop draws out of the dot and its label rises off
   // the baseline. Periods behind stay, periods ahead wait faint. The run ends on the complete figure.
-  // One clock: 160ms fast, 480ms step, every delay a multiple of 160ms
-  var motionCss = (root) => `
+  // One clock: 160ms fast, 480ms step, every delay a multiple of 160ms.
+  // The viewer's hover and focus skin every node with a glow and an accent outline; a period has no box to outline,
+  // so it takes its ring instead: ink under the pointer or a find match, the accent while it is the one in focus
+  var motionCss = (root, t) => `
+    ${root} g.node, ${root} g.node:hover, ${root} g.node.mmd-selected { filter: none !important; }
+    ${root} g.node > .timeline-hit { stroke: none !important; fill: transparent !important; }
+    ${root} g.node > circle:not(.tl-ring) { stroke: none !important; }
+    ${root} g.node > .tl-ring { stroke: ${t.ink} !important; stroke-width: 1px !important; fill: none !important; }
+    ${root} g.node:hover > .tl-ring, ${root} g.node.mmd-match > .tl-ring, ${root} g.node.mmd-selected > .tl-ring { opacity: 1; }
+    ${root} g.node.mmd-selected > .tl-ring { stroke: ${t.accent} !important; stroke-width: 1.5px !important; }
     ${root} .tl-progress { stroke-dasharray: 1 1; stroke-dashoffset: 1; opacity: 0; pointer-events: none;
       transition: stroke-dashoffset 480ms cubic-bezier(.2,.8,.2,1), opacity 160ms linear; }
     ${root}.tl-motion .tl-progress { opacity: 1; }
