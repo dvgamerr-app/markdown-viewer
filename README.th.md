@@ -21,7 +21,7 @@
   <tr>
     <td><img src="docs/screenshots/01-flowchart-fullscreen.png" width="230" alt="popup ของ node ใน flowchart"></td>
     <td><img src="docs/screenshots/02-sequence-dark.png" width="230" alt="Sequence diagram ในธีมมืด"></td>
-    <td><img src="docs/screenshots/04-dbml-dark.png" width="230" alt="DBML schema แบบการ์ดตาราง"></td>
+    <td><img src="docs/screenshots/04-dbml.png" width="230" alt="DBML schema แบบการ์ดตาราง"></td>
   </tr>
 </table>
 

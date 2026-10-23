@@ -21,7 +21,7 @@ Open any `.md` file in Chrome and read it as a clean, themed document. Click ful
   <tr>
     <td><img src="docs/screenshots/01-flowchart-fullscreen.png" width="230" alt="Flowchart node popup in fullscreen"></td>
     <td><img src="docs/screenshots/02-sequence-dark.png" width="230" alt="Sequence diagram in the dark theme"></td>
-    <td><img src="docs/screenshots/04-dbml-dark.png" width="230" alt="DBML schema drawn as table cards"></td>
+    <td><img src="docs/screenshots/04-dbml.png" width="230" alt="DBML schema drawn as table cards"></td>
   </tr>
 </table>
 
