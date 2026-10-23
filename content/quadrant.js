@@ -4,7 +4,8 @@
 // not understood falls back to mermaid itself, see render()
 var quadrant = (() => {
   var parse = (src) => {
-    var lines = src.replace(/%%\{[\s\S]*?\}%%/g, '').split('\n')
+    var lines = draw.lines(src)
+    if (!lines) return null
     var model = {title: '', x: ['', ''], y: ['', ''], quadrants: ['', '', '', ''], points: []}
     var head = false
     var skip = false
@@ -65,21 +66,9 @@ var quadrant = (() => {
     return head ? model : null
   }
 
-  var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]))
-  var num = (v) => Math.round(v * 10) / 10
+  var {esc, num, measure} = draw
   // a colour from the source goes into an attribute, keep it to something that is a colour
   var colour = (v) => (/^(#[0-9a-f]{3,8}|[a-z]+|(rgb|hsl)a?\([\d\s.,%]+\))$/i.test(v || '') ? v : '')
-
-  var ctx = (() => {
-    try {
-      return document.createElement('canvas').getContext('2d')
-    }
-    catch (err) {
-      return null
-    }
-  })()
-  var measure = (s, size, family, weight) =>
-    ctx ? (ctx.font = `${weight || 400} ${size}px ${family}`, ctx.measureText(s).width) : s.length * size * 0.58
 
   var MARGIN = 32
   var W = 560
@@ -92,9 +81,8 @@ var quadrant = (() => {
     if (!model) return ''
     var sans = fonts.sans
     var mono = fonts.mono
-    var dark = t.paper === '#020202'
     var accent = t.accent
-    var accentText = dark ? t.accent : '#bf4520'
+    var accentText = t.accentText
     var eyebrow = (s) => s.toUpperCase()
     var tracked = (s, size) => measure(s, size, mono, 400) + s.length * size * 0.18
 
@@ -115,7 +103,7 @@ var quadrant = (() => {
     var py = (v) => y1 - PAD - v * (H - PAD * 2)
 
     // the "do first" cell is the only tinted one
-    body.push(`<rect x="${cx}" y="${y0}" width="${W / 2}" height="${H / 2}" fill="${accent}" fill-opacity="${dark ? 0.06 : 0.04}"/>`)
+    body.push(`<rect x="${cx}" y="${y0}" width="${W / 2}" height="${H / 2}" fill="${accent}" fill-opacity="${t.dark ? 0.06 : 0.04}"/>`)
 
     // the cross, with an open chevron at each end that carries a label
     var stroke = `rgba(${t.inkRgb},0.45)`

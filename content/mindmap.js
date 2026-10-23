@@ -30,7 +30,8 @@ var mindmap = (() => {
   }
 
   var parse = (src) => {
-    var lines = src.replace(/%%\{[\s\S]*?\}%%/g, '').split('\n')
+    var lines = draw.lines(src)
+    if (!lines) return null
     var head = false
     var root = null
     var stack = []
@@ -62,42 +63,7 @@ var mindmap = (() => {
     return head && root ? root : null
   }
 
-  var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]))
-  var num = (v) => Math.round(v * 10) / 10
-  var up4 = (v) => Math.ceil(v / 4) * 4
-
-  var ctx = (() => {
-    try {
-      return document.createElement('canvas').getContext('2d')
-    }
-    catch (err) {
-      return null
-    }
-  })()
-  var measure = (s, size, family, weight) =>
-    ctx ? (ctx.font = `${weight || 400} ${size}px ${family}`, ctx.measureText(s).width) : s.length * size * 0.58
-
-  // words onto lines no wider than max, the last line ends in an ellipsis when the text is cut
-  var wrap = (text, max, size, family, weight, limit) => {
-    var lines = []
-    var line = ''
-    text.split(/\s+/).filter(Boolean).forEach((word) => {
-      var next = line ? line + ' ' + word : word
-      if (!line || measure(next, size, family, weight) <= max) line = next
-      else {
-        lines.push(line)
-        line = word
-      }
-    })
-    if (line) lines.push(line)
-    if (lines.length > limit) {
-      lines.length = limit
-      var last = lines[limit - 1]
-      while (last.length > 1 && measure(last + '…', size, family, weight) > max) last = last.slice(0, -1)
-      lines[limit - 1] = last + '…'
-    }
-    return lines.length ? lines : ['']
-  }
+  var {esc, num, grid, measure, wrap} = draw
 
   var MARGIN = 32
   var LEVEL = 48
@@ -127,8 +93,8 @@ var mindmap = (() => {
       item.n = all.length
       all.push(item)
       item.lines = item.text.split(/<br\s*\/?>/i).flatMap((part) => wrap(part, type.max, type.size, sans, type.weight, 4)).slice(0, 4)
-      item.w = up4(Math.max(depth ? 64 : 96, Math.max(...item.lines.map((l) => measure(l, type.size, sans, type.weight))) + type.px * 2 + (depth === 1 ? 4 : 0) + (item.shape === 'hexagon' ? 12 : 0)))
-      item.h = up4(Math.max(depth ? 32 : 48, item.lines.length * type.line + type.py * 2))
+      item.w = grid(Math.max(depth ? 64 : 96, Math.max(...item.lines.map((l) => measure(l, type.size, sans, type.weight))) + type.px * 2 + (depth === 1 ? 4 : 0) + (item.shape === 'hexagon' ? 12 : 0)))
+      item.h = grid(Math.max(depth ? 32 : 48, item.lines.length * type.line + type.py * 2))
       item.children.forEach((child, i) => size(child, depth + 1, depth ? branch : i))
     }
     size(root, 0, -1)
@@ -212,8 +178,8 @@ var mindmap = (() => {
       i.y += dy
       i.cy += dy
     })
-    var width = up4(maxX - minX) + MARGIN * 2
-    var bottom = up4(maxY - minY) + MARGIN * 2
+    var width = grid(maxX - minX) + MARGIN * 2
+    var bottom = grid(maxY - minY) + MARGIN * 2
 
     // connectors: out of the parent's side, a bus halfway across the gap, into the child's near edge
     var lines = []

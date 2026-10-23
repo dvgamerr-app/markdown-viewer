@@ -1,8 +1,8 @@
 import {describe, expect, test} from 'bun:test'
 import {load} from './load.js'
 
-const {dbml} = load('content/dbml.js', ['dbml'])
-const light = {paper: '#f5f5f5', node: '#fff', ink: '#2d3142', muted: '#4f5d75', soft: '#7a8399', rule: 'rgba(0,0,0,.1)', ruleSolid: '#bfc0c0', inkRgb: '45,49,66'}
+const {dbml} = load(['content/draw.js', 'content/dbml.js'], ['dbml'])
+const light = {paper: '#f5f5f5', node: '#fff', ink: '#2d3142', muted: '#4f5d75', soft: '#7a8399', rule: 'rgba(0,0,0,.1)', ruleSolid: '#bfc0c0', accentText: '#bf4520', danger: '#c0401f', inkRgb: '45,49,66'}
 const fonts = {sans: 'sans-serif', mono: 'monospace'}
 
 describe('dbml parse', () => {

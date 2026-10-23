@@ -3,7 +3,8 @@
 // share (or the total with showData) in the centre. Syntax that is not understood falls back to mermaid itself, see render()
 var pie = (() => {
   var parse = (src) => {
-    var lines = src.replace(/%%\{[\s\S]*?\}%%/g, '').split('\n')
+    var lines = draw.lines(src)
+    if (!lines) return null
     var model = {title: '', showData: false, slices: []}
     var head = false
     var skip = false
@@ -38,23 +39,11 @@ var pie = (() => {
     return head && total > 0 ? model : null
   }
 
-  var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]))
-  var num = (v) => Math.round(v * 10) / 10
+  var {esc, num, measure} = draw
   // 65 -> 65, 7.5 -> 7.5, 0.04 -> 0.04: no trailing zeros
   var fmt = (v) => String(Math.abs(v) >= 10 ? Math.round(v * 10) / 10 : Math.round(v * 100) / 100)
   // shares carry one decimal at most
   var pct = (v) => String(Math.round(v * 10) / 10)
-
-  var ctx = (() => {
-    try {
-      return document.createElement('canvas').getContext('2d')
-    }
-    catch (err) {
-      return null
-    }
-  })()
-  var measure = (s, size, family, weight) =>
-    ctx ? (ctx.font = `${weight || 400} ${size}px ${family}`, ctx.measureText(s).width) : s.length * size * 0.58
 
   var MARGIN = 32
   var R = 120
@@ -68,9 +57,8 @@ var pie = (() => {
     if (!model) return ''
     var sans = fonts.sans
     var mono = fonts.mono
-    var dark = t.paper === '#020202'
     var accent = t.accent
-    var accentText = dark ? t.accent : '#bf4520'
+    var accentText = t.accentText
     var slices = model.slices.filter((s) => s.value > 0)
     var total = slices.reduce((sum, s) => sum + s.value, 0)
     // one accent: the largest slice, the first one when several tie

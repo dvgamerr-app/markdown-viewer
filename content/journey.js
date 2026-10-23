@@ -6,7 +6,8 @@ var journey = (() => {
   var LEVELS = ['LOW', 'MED-LOW', 'NEUTRAL', 'MED-HIGH', 'HIGH']
 
   var parse = (src) => {
-    var lines = src.replace(/%%\{[\s\S]*?\}%%/g, '').split('\n')
+    var lines = draw.lines(src)
+    if (!lines) return null
     var model = {title: '', sections: []}
     var head = false
     var section = null
@@ -49,41 +50,7 @@ var journey = (() => {
     return head && model.sections.some((s) => s.stages.length) ? model : null
   }
 
-  var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]))
-  var num = (v) => Math.round(v * 10) / 10
-
-  var ctx = (() => {
-    try {
-      return document.createElement('canvas').getContext('2d')
-    }
-    catch (err) {
-      return null
-    }
-  })()
-  var measure = (s, size, family, weight) =>
-    ctx ? (ctx.font = `${weight || 400} ${size}px ${family}`, ctx.measureText(s).width) : s.length * size * 0.58
-
-  // words onto lines no wider than max, the last line ends in an ellipsis when the text is cut
-  var wrap = (text, max, size, family, weight, limit) => {
-    var lines = []
-    var line = ''
-    text.split(/\s+/).filter(Boolean).forEach((word) => {
-      var next = line ? line + ' ' + word : word
-      if (!line || measure(next, size, family, weight) <= max) line = next
-      else {
-        lines.push(line)
-        line = word
-      }
-    })
-    if (line) lines.push(line)
-    if (lines.length > limit) {
-      lines.length = limit
-      var last = lines[limit - 1]
-      while (last.length > 1 && measure(last + '…', size, family, weight) > max) last = last.slice(0, -1)
-      lines[limit - 1] = last + '…'
-    }
-    return lines.length ? lines : ['']
-  }
+  var {esc, num, wrap} = draw
 
   var MARGIN = 24
   var LEFT = 64
@@ -109,7 +76,7 @@ var journey = (() => {
     var trough = lowest < Math.max(...stages.map((s) => s.score)) ? stages.findIndex((s) => s.score === lowest) : -1
     var accent = t.accent
     // the light accent is a bright orange for marks, text on paper needs the darker one
-    var accentText = t.paper === '#020202' ? t.accent : '#bf4520'
+    var accentText = t.accentText
     var level = (score) => LEVELS[score - 1]
     var out = []
     var y = MARGIN

@@ -1,8 +1,8 @@
 import {describe, expect, test} from 'bun:test'
 import {load} from './load.js'
 
-const {requirement} = load('content/requirement.js', ['requirement'])
-const light = {paper: '#f5f5f5', node: '#fff', ink: '#2d3142', muted: '#4f5d75', soft: '#7a8399', rule: 'rgba(0,0,0,.1)', ruleSolid: '#bfc0c0', accent: '#eb6c36', accentTint: 'rgba(235,108,54,.08)', link: '#2e5aa8', inkRgb: '45,49,66'}
+const {requirement} = load(['content/draw.js', 'content/requirement.js'], ['requirement'])
+const light = {paper: '#f5f5f5', node: '#fff', ink: '#2d3142', muted: '#4f5d75', soft: '#7a8399', rule: 'rgba(0,0,0,.1)', ruleSolid: '#bfc0c0', accent: '#eb6c36', accentTint: 'rgba(235,108,54,.08)', link: '#2e5aa8', accentText: '#bf4520', danger: '#c0401f', inkRgb: '45,49,66'}
 const fonts = {sans: 'sans-serif', mono: 'monospace'}
 
 const src = `requirementDiagram

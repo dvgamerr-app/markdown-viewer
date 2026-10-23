@@ -1,8 +1,8 @@
 import {describe, expect, test} from 'bun:test'
 import {load} from './load.js'
 
-const {gitgraph} = load('content/gitgraph.js', ['gitgraph'])
-const light = {paper: '#f5f5f5', paper2: '#ececec', node: '#fff', ink: '#2d3142', muted: '#4f5d75', soft: '#7a8399', rule: 'rgba(0,0,0,.1)', ruleSolid: '#bfc0c0', accent: '#eb6c36', accentTint: 'rgba(235,108,54,.08)', inkRgb: '45,49,66', series: ['#7c8f6f', '#5e7a9b', '#b8915a', '#9c6b50', '#6e6479']}
+const {gitgraph} = load(['content/draw.js', 'content/gitgraph.js'], ['gitgraph'])
+const light = {paper: '#f5f5f5', paper2: '#ececec', node: '#fff', ink: '#2d3142', muted: '#4f5d75', soft: '#7a8399', rule: 'rgba(0,0,0,.1)', ruleSolid: '#bfc0c0', accent: '#eb6c36', accentTint: 'rgba(235,108,54,.08)', accentText: '#bf4520', danger: '#c0401f', inkRgb: '45,49,66', series: ['#7c8f6f', '#5e7a9b', '#b8915a', '#9c6b50', '#6e6479']}
 const fonts = {sans: 'sans-serif', mono: 'monospace'}
 
 const src = `gitGraph
@@ -72,6 +72,15 @@ describe('gitgraph parse', () => {
 
 describe('gitgraph render', () => {
   const svg = gitgraph.render(src, light, fonts, 'g-1')
+
+  test('edges name commits by the same key as the nodes, ids that clean alike stay apart', () => {
+    const odd = gitgraph.render('gitGraph\n  commit id: "v1.0"\n  commit id: "a b"\n  commit id: "a_b"', light, fonts, 'g-9')
+    expect(odd).toContain('id="g-9-git-v1_0-0"')
+    expect(odd).toContain('id="g-9-git-a_b-0"')
+    expect(odd).toContain('id="g-9-git-a_b_2-0"')
+    expect(odd).toContain('data-from="v1_0" data-to="a_b"')
+    expect(odd).toContain('data-from="a_b" data-to="a_b_2"')
+  })
 
   test('a node per commit, a lane per branch', () => {
     expect(svg).toContain('aria-roledescription="gitGraph"')

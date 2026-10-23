@@ -34,8 +34,8 @@ var gitgraph = (() => {
       title = named ? unquote(named[1].trim()) : ''
       text = text.slice(front[0].length)
     }
-    if (/%%\{[\s\S]*?gitGraph[\s\S]*?\}%%/i.test(text)) return null
-    var lines = text.replace(/%%\{[\s\S]*?\}%%/g, '').split('\n')
+    var lines = draw.lines(text)
+    if (!lines) return null
     var model = {title, dir: 'LR', branches: [], commits: []}
     var branches = {}
     var byId = {}
@@ -117,27 +117,7 @@ var gitgraph = (() => {
     return head && model.commits.length ? model : null
   }
 
-  var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]))
-  var num = (v) => Math.round(v * 10) / 10
-  var up4 = (v) => Math.ceil(v / 4) * 4
-
-  var ctx = (() => {
-    try {
-      return document.createElement('canvas').getContext('2d')
-    }
-    catch (err) {
-      return null
-    }
-  })()
-  var measure = (s, size, family, weight, spacing) =>
-    (ctx ? (ctx.font = `${weight || 400} ${size}px ${family}`, ctx.measureText(s).width) : s.length * size * 0.58) + s.length * (spacing || 0)
-
-  // text cut to max px with an ellipsis
-  var fit = (s, max, size, family, weight, spacing) => {
-    if (measure(s, size, family, weight, spacing) <= max) return s
-    while (s.length > 1 && measure(s + '…', size, family, weight, spacing) > max) s = s.slice(0, -1)
-    return s + '…'
-  }
+  var {esc, num, grid, measure, fit} = draw
 
   // an orthogonal polyline with every corner rounded at r=8, less where a leg is too short for it
   var rounded = (points) => {
@@ -173,7 +153,7 @@ var gitgraph = (() => {
     var lr = model.dir === 'LR'
     var accent = t.accent
     // the light accent is a bright orange for marks, text on paper needs the darker one
-    var accentText = t.paper === '#020202' ? t.accent : '#bf4520'
+    var accentText = t.accentText
     var series = t.series || [t.muted]
     // a branch never wears the accent, in the dark skin one of the series colours is the accent itself
     var palette = [series[1], series[0], series[2], series[3], series[4]].filter((c) => c && c.toLowerCase() !== String(accent).toLowerCase())
@@ -188,8 +168,14 @@ var gitgraph = (() => {
       b.color = b.name === 'main' ? t.ink : palette[(b.index - 1 + palette.length) % palette.length]
     })
     var byId = {}
+    // the key the dom and the metadata use: an id may hold any character, two that clean to one key get a suffix
+    var keys = {}
     model.commits.forEach((c) => {
       byId[c.id] = c
+      var base = c.id.replace(/[^\w-]/g, '_')
+      c.key = base
+      for (var n = 2; keys[c.key]; n++) c.key = `${base}_${n}`
+      keys[c.key] = true
       c.lane = lane[c.branch]
       c.color = lanes[c.lane].color
       // cross-lane segments leaving each side of the dot, -1 toward the lane before, +1 toward the next. Several on
@@ -220,12 +206,12 @@ var gitgraph = (() => {
       }
     })
 
-    var tabW = lanes.map((b) => up4(measure(b.name, 9, mono, 600) + 20))
+    var tabW = lanes.map((b) => grid(measure(b.name, 9, mono, 600) + 20))
     model.commits.forEach((c) => {
       c.text = fit(c.label, LABEL, 8, mono, 400, 0.48)
       c.w = measure(c.text, 8, mono, 400, 0.48)
       c.chip = c.tag ? fit(c.tag, LABEL, 8, mono, 500, 0.48) : ''
-      c.chipW = c.tag ? up4(measure(c.chip, 8, mono, 500, 0.48) + 12) : 0
+      c.chipW = c.tag ? grid(measure(c.chip, 8, mono, 500, 0.48) + 12) : 0
     })
 
     var body = []
@@ -256,7 +242,7 @@ var gitgraph = (() => {
           var hi = Math.max(l.from.lane, c.lane)
           for (var k = lo; k <= hi; k++) if (k !== c.lane) need = Math.max(need, lastRight[k] + 8)
         })
-        x = up4(need)
+        x = grid(need)
         pos[c.id] = {x}
         c.left = x + left
         c.right = x + (shifted ? left + c.w : c.w / 2)
@@ -289,7 +275,7 @@ var gitgraph = (() => {
       var y = top
       lanes.forEach((b, i) => {
         y = i ? Math.max(y + below[i - 1] + above[i] + 16, laneAt[i - 1] + 56) : top + Math.max(above[0], TAB / 2)
-        laneAt[i] = up4(y)
+        laneAt[i] = grid(y)
         y = laneAt[i]
       })
       model.commits.forEach((c) => {
@@ -311,7 +297,7 @@ var gitgraph = (() => {
         var x = i
           ? laneAt[i - 1] + Math.max(rightW[i - 1] + leftW[i] + 24, tabW[i - 1] / 2 + tabW[i] / 2 + 16, 56)
           : MARGIN + Math.max(leftW[0], tabW[0] / 2)
-        laneAt[i] = up4(x)
+        laneAt[i] = grid(x)
       })
       model.commits.forEach((c, s) => {
         pos[c.id] = {x: laneAt[c.lane], y: y0 + s * ROW}
@@ -319,8 +305,8 @@ var gitgraph = (() => {
       right = laneAt[lanes.length - 1] + Math.max(rightW[lanes.length - 1], tabW[lanes.length - 1] / 2)
       bottom = y0 + (model.commits.length - 1) * ROW + 24
     }
-    var width = up4(Math.max(right + MARGIN, 320))
-    var height = up4(bottom + MARGIN)
+    var width = grid(Math.max(right + MARGIN, 320))
+    var height = grid(bottom + MARGIN)
 
     // lanes: a tab with the branch colour on its edge, then a dotted hairline the length of the graph
     lanes.forEach((b, i) => {
@@ -353,14 +339,14 @@ var gitgraph = (() => {
             : (o ? [a, {x: a.x, y: a.y + o}, {x: b.x, y: a.y + o}, b] : [a, {x: b.x, y: a.y}, b]))
           : rounded(lr ? [a, {x: b.x, y: a.y}, b] : [a, {x: a.x, y: b.y}, b])
       var cherry = l.kind === 'cherry'
-      lines.push({cherry, svg: `<path class="git-line relationshipLine" id="${id}-L-${k}" data-from="${esc(l.from.id)}" data-to="${esc(l.to.id)}" data-kind="${l.kind}" ` +
+      lines.push({cherry, svg: `<path class="git-line relationshipLine" id="${id}-L-${k}" data-from="${l.from.key}" data-to="${l.to.key}" data-kind="${l.kind}" ` +
         `d="${d}" fill="none" stroke="${l.color}" stroke-width="${cherry ? 1 : 2}"${cherry ? ' stroke-dasharray="4 3"' : ''} stroke-linecap="round"/>`})
     })
     body.push(...lines.filter((l) => l.cherry).map((l) => l.svg), ...lines.filter((l) => !l.cherry).map((l) => l.svg))
 
     var marks = model.commits.map((c) => {
       var p = pos[c.id]
-      var g = [`<g class="node git-commit" id="${id}-git-${esc(c.id.replace(/[^\w-]/g, '_'))}-0">`]
+      var g = [`<g class="node git-commit" id="${id}-git-${c.key}-0">`]
       if (c.type === 'HIGHLIGHT') {
         g.push(`<rect x="${p.x - 6}" y="${p.y - 6}" width="12" height="12" rx="2" fill="${t.paper}"/>`,
           `<rect x="${p.x - 6}" y="${p.y - 6}" width="12" height="12" rx="2" fill="${t.accentTint}" stroke="${accent}" stroke-width="1.5"/>`)
@@ -419,7 +405,7 @@ var gitgraph = (() => {
       nodes: {}
     }
     model.commits.forEach((c, i) => {
-      info.nodes[c.id.replace(/[^\w-]/g, '_')] = {
+      info.nodes[c.key] = {
         name: c.id, branch: c.branch, n: i + 1, type: c.type, tag: c.tag, parents: c.parents,
         merge: c.merge || '', cherry: c.cherry || ''
       }

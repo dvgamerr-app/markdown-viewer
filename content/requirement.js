@@ -19,7 +19,8 @@ var requirement = (() => {
   var unquote = (s) => s.trim().replace(/^"(.*)"$/, '$1').trim()
 
   var parse = (src) => {
-    var lines = src.replace(/%%\{[\s\S]*?\}%%/g, '').split('\n')
+    var lines = draw.lines(src)
+    if (!lines) return null
     var model = {nodes: [], links: []}
     var head = false
     var block = null
@@ -85,42 +86,7 @@ var requirement = (() => {
     return model.nodes.length ? model : null
   }
 
-  var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]))
-  var num = (v) => Math.round(v * 10) / 10
-  var snap = (v) => Math.ceil(v / 4) * 4
-
-  var ctx = (() => {
-    try {
-      return document.createElement('canvas').getContext('2d')
-    }
-    catch (err) {
-      return null
-    }
-  })()
-  var measure = (s, size, family, weight, spacing) =>
-    (ctx ? (ctx.font = `${weight || 400} ${size}px ${family}`, ctx.measureText(s).width) : s.length * size * 0.6) + s.length * (spacing || 0)
-
-  // words onto lines no wider than max, the last line ends in an ellipsis when the text is cut
-  var wrap = (text, max, size, family, weight, limit) => {
-    var lines = []
-    var line = ''
-    String(text).split(/\s+/).filter(Boolean).forEach((word) => {
-      var next = line ? line + ' ' + word : word
-      if (!line || measure(next, size, family, weight) <= max) line = next
-      else {
-        lines.push(line)
-        line = word
-      }
-    })
-    if (line) lines.push(line)
-    if (lines.length > limit) {
-      lines.length = limit
-      var last = lines[limit - 1]
-      while (last.length > 1 && measure(last + '…', size, family, weight) > max) last = last.slice(0, -1)
-      lines[limit - 1] = last + '…'
-    }
-    return lines.length ? lines : ['']
-  }
+  var {esc, num, grid, measure, wrap} = draw
 
   // a polyline with rounded corners
   var round = (points, radius) => {
@@ -159,9 +125,8 @@ var requirement = (() => {
     if (!model) return ''
     var sans = fonts.sans
     var mono = fonts.mono
-    var dark = t.paper === '#020202'
     // the light accent is a bright orange for marks, text on paper needs the darker one
-    var accentText = dark ? t.accent : '#bf4520'
+    var accentText = t.accentText
     var high = model.nodes.filter((n) => /^high$/i.test(n.risk || ''))
     // the accent goes to at most two cards, more high risks than that share an ink chip
     var hot = high.length && high.length <= 2
@@ -188,7 +153,7 @@ var requirement = (() => {
       })
       n.nameShown = wrap(n.name, n.w - 2 * PAD, 13, sans, 600, 1)[0]
       var count = n.rows.reduce((sum, r) => sum + r.lines.length, 0)
-      n.h = snap(count ? HEAD + ROWPAD + count * LINE + ROWPAD - 4 : HEAD)
+      n.h = grid(count ? HEAD + ROWPAD + count * LINE + ROWPAD - 4 : HEAD)
       n.out = []
       n.in = []
     })
@@ -404,9 +369,9 @@ var requirement = (() => {
     })
     placed.forEach((p) => (right = Math.max(right, p.x + p.w)))
     var minX = Math.min(MARGIN, ...placed.map((p) => p.x))
-    var offset = minX < MARGIN ? snap(MARGIN - minX) : 0
-    var width = snap(right + offset + MARGIN)
-    var height = snap(Math.max(...model.nodes.map((n) => n.y + n.h)) + MARGIN)
+    var offset = minX < MARGIN ? grid(MARGIN - minX) : 0
+    var width = grid(right + offset + MARGIN)
+    var height = grid(Math.max(...model.nodes.map((n) => n.y + n.h)) + MARGIN)
 
     // draw: lines first so they sit behind the cards, then the label masks, then the cards
     var out = [

@@ -4,7 +4,8 @@
 // is not understood falls back to mermaid itself, see render()
 var timeline = (() => {
   var parse = (src) => {
-    var lines = src.replace(/%%\{[\s\S]*?\}%%/g, '').split('\n')
+    var lines = draw.lines(src)
+    if (!lines) return null
     var model = {title: '', sections: []}
     var head = false
     var section = null
@@ -49,43 +50,7 @@ var timeline = (() => {
     return head && model.sections.some((s) => s.periods.length) ? model : null
   }
 
-  var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]))
-  var num = (v) => Math.round(v * 10) / 10
-  var grid = (v) => Math.ceil(v / 4) * 4
-
-  var ctx = (() => {
-    try {
-      return document.createElement('canvas').getContext('2d')
-    }
-    catch (err) {
-      return null
-    }
-  })()
-  // tracking is added per character, as the browser draws letter-spacing
-  var measure = (s, size, family, weight, tracking = 0) =>
-    (ctx ? (ctx.font = `${weight || 400} ${size}px ${family}`, ctx.measureText(s).width) : s.length * size * 0.6) + s.length * tracking
-
-  // words onto lines no wider than max, the last line ends in an ellipsis when the text is cut
-  var wrap = (text, max, size, family, weight, limit, tracking) => {
-    var lines = []
-    var line = ''
-    text.split(/\s+/).filter(Boolean).forEach((word) => {
-      var next = line ? line + ' ' + word : word
-      if (!line || measure(next, size, family, weight, tracking) <= max) line = next
-      else {
-        lines.push(line)
-        line = word
-      }
-    })
-    if (line) lines.push(line)
-    if (lines.length > limit) {
-      lines.length = limit
-      var last = lines[limit - 1]
-      while (last.length > 1 && measure(last + '…', size, family, weight, tracking) > max) last = last.slice(0, -1)
-      lines[limit - 1] = last + '…'
-    }
-    return lines.length ? lines : ['']
-  }
+  var {esc, num, grid, measure, wrap} = draw
 
   // the skill's type ramp: date eyebrow 8px mono tracked 0.14em, event names 12px sans 600 (14px on the milestone),
   // a 16px line pitch. Structure sits on the 4px grid
@@ -139,7 +104,7 @@ var timeline = (() => {
     var n = periods.length
     var accent = t.accent
     // the light accent is a bright orange for marks, text on paper needs the darker one
-    var accentText = t.paper === '#020202' ? t.accent : '#bf4520'
+    var accentText = t.accentText
     var faint = (alpha) => `rgba(${t.inkRgb},${alpha})`
 
     // the major milestone: the period with the most events, when one period has more than every other

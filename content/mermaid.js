@@ -20,6 +20,8 @@ var mmd = (() => {
       ink: '#2d3142', muted: '#4f5d75', soft: '#7a8399',
       rule: 'rgba(45,49,66,0.12)', ruleSolid: '#bfc0c0',
       accent: '#eb6c36', accentTint: 'rgba(235,108,54,0.08)', link: '#2e5aa8',
+      // the bright accent is for marks, text on paper takes the darker one
+      accentText: '#bf4520', danger: '#c0401f', dark: false,
       series: ['#7c8f6f', '#5e7a9b', '#b8915a', '#9c6b50', '#6e6479'],
       inkRgb: '45,49,66', accentRgb: '235,108,54', mutedRgb: '79,93,117',
       // the colours of prism.css, the code blocks of the page: operator, function and class-name, keyword, punctuation, constant
@@ -31,6 +33,7 @@ var mmd = (() => {
       ink: '#f5f5f5', muted: '#dedede', soft: '#a3a3a3',
       rule: 'rgba(245,245,245,0.12)', ruleSolid: '#404040',
       accent: '#79b1f9', accentTint: 'rgba(121,177,249,0.10)', link: '#79b1f9',
+      accentText: '#79b1f9', danger: '#f07f77', dark: true,
       series: ['#69ba7c', '#79b1f9', '#dcaf61', '#f07f77', '#a3a3a3'],
       inkRgb: '245,245,245', accentRgb: '121,177,249', mutedRgb: '222,222,222',
       // the colours of prism-okaidia.css
@@ -198,7 +201,6 @@ var mmd = (() => {
     .focal .mmd-class-box { fill: ${t.accentTint}; stroke: ${t.accent} !important; stroke-width: 1px; }
     .mmd-class-head { fill: transparent; stroke: none; }
     .focal .mmd-class-head { fill: ${t.accentTint}; }
-    .relation.mmd-focal-edge:not(.mmd-on, .mmd-hover, .mmd-peek) { stroke: ${t.accent} !important; }
     /* relationship names are small tracked mono caps, as in the skill's reference */
     .edgeLabel .label[data-id^=id_] :is(span, p) { font-size: 10px !important; letter-spacing: 0.1em; text-transform: uppercase; }
     .node .divider path { stroke: rgba(${t.inkRgb},0.22) !important; stroke-width: 1px !important; }
@@ -223,7 +225,7 @@ var mmd = (() => {
     .node.note foreignObject :is(div, span, p) { font-size: 12px !important; color: ${t.ink} !important; }
     /* heads are drawn in the colour of their line: triangle and diamonds ink, open arrows muted, one hairline */
     .marker.classDiagram :is(path, polygon, circle) { stroke-width: 1px !important; }
-    .marker.extension:not(.mmd-focal-head) :is(path, polygon, circle) { fill: ${t.paper} !important; stroke: ${t.ink} !important; }
+    .marker.extension :is(path, polygon, circle) { fill: ${t.paper} !important; stroke: ${t.ink} !important; }
     .marker.composition :is(path, polygon, circle) { fill: ${t.ink} !important; stroke: ${t.ink} !important; }
     .marker.aggregation :is(path, polygon, circle) { fill: ${t.paper} !important; stroke: ${t.ink} !important; }
     .marker.dependency :is(path, polygon, circle) { fill: none !important; stroke: ${t.muted} !important; }
@@ -234,7 +236,6 @@ var mmd = (() => {
     .relation[class*=dashed] { stroke-dasharray: 4 3 !important; }
     .relation.mmd-strong[class*=dashed] { stroke-dasharray: 5 4 !important; }
     .node.focal .annotation-group foreignObject :is(div, span, p) { color: ${t.accent} !important; }
-    .mmd-focal-head :is(path, polygon) { fill: ${t.paper} !important; stroke: ${t.accent} !important; }
 
     /* state: rounded hairline boxes, a filled ink dot to start and a ringed dot to end, transitions named by
       tracked mono caps, composite states as dashed frames with a mono tab, bars and diamonds in ink */
@@ -471,7 +472,6 @@ var mmd = (() => {
             if (!svg.querySelector('[id="' + copyId + '"]')) {
               var copy = source.cloneNode(true)
               copy.id = copyId
-              copy.classList.add('mmd-focal-head')
               // the head takes the colour the line is drawn in
               var colour = getComputedStyle(edge).stroke
               var fills = Array.from(source.querySelectorAll('path, polygon, circle')).map((p) => getComputedStyle(p).fill)
@@ -993,12 +993,25 @@ var mmd = (() => {
         group.appendChild(line)
         return {line, fade, len}
       })
+      // the edge sampled once into at most 256 points: a frame reads its positions from the table, asking the path on
+      // every frame for every layer of every lit edge stalls a large diagram
+      var pitch = Math.max(2, length / 256)
+      var count = Math.ceil(length / pitch)
+      var samples = null
+      var point = (d) => {
+        samples = samples || Array.from({length: count + 1}, (_, k) => edge.el.getPointAtLength(Math.min(k * pitch, length)))
+        var i = Math.min(Math.floor(d / pitch), count - 1)
+        var a = samples[i]
+        var b = samples[i + 1]
+        var f = (d - i * pitch) / Math.min(pitch, length - i * pitch)
+        return {x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f}
+      }
       // a point on the edge, carried straight on past either end so the gradient keeps its span there
       var at = (d) => {
         var clamped = Math.max(0, Math.min(length, d))
-        var p = edge.el.getPointAtLength(clamped)
+        var p = point(clamped)
         if (clamped === d) return p
-        var q = edge.el.getPointAtLength(d < 0 ? Math.min(length, 1) : Math.max(0, length - 1))
+        var q = point(d < 0 ? Math.min(length, 1) : Math.max(0, length - 1))
         var dx = p.x - q.x
         var dy = p.y - q.y
         var n = Math.hypot(dx, dy) || 1
@@ -1016,9 +1029,9 @@ var mmd = (() => {
         if (!loop && t >= 1) return group.remove()
         var run = ease(t % 1)
         var head = reverse ? length - run * (length + span) : run * (length + span)
+        var to = at(head)
         layers.forEach(({line, fade, len}) => {
           var from = at(reverse ? head + len : head - len)
-          var to = at(head)
           line.style.strokeDashoffset = -(reverse ? head : head - len)
           fade.setAttribute('x1', from.x)
           fade.setAttribute('y1', from.y)
@@ -1658,8 +1671,10 @@ var mmd = (() => {
       if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4) return
       var hit = e.target.closest && e.target.closest('g.node')
       var node = hit && nodes.find((n) => n.el === hit)
-      // while playing a click only closes an open node, it does not open another
-      focus(node && node.id !== focused && !seqBusy() ? node.id : null)
+      // while playing a click only closes an open node, it does not open another; a paused run gives way to the node
+      var open = node && node.id !== focused && !seqBusy()
+      open && seqStop()
+      focus(open ? node.id : null)
     }, {signal})
 
     // find: type to match labels or ids, enter jumps to the first match
@@ -1766,7 +1781,7 @@ var mmd = (() => {
     // the ones still to come stay dimmed, and the run ends with the whole diagram shown again
     var seqStop = () => {}
     var seqKey = () => false
-    // a node focus and a playing step both light the edges, so while a run is on they would fight over the highlight
+    // a node focus and a playing step both light the edges, so while a run plays they would fight over the highlight
     var seqBusy = () => false
     if (plays) {
       var TRAVEL = 1100
@@ -1793,7 +1808,7 @@ var mmd = (() => {
         var isLine = line.tagName.toLowerCase() === 'line'
         var begin = isLine ? {x: parseFloat(line.getAttribute('x1')), y: parseFloat(line.getAttribute('y1'))} : line.getPointAtLength(0)
         var end = isLine ? {x: parseFloat(line.getAttribute('x2'))} : begin
-        return {parts, line, kind, from, to, tinted: [], label: text ? text.textContent.trim() : '', x: [begin.x, end.x], y: begin.y}
+        return {parts, line, kind, from, to, label: text ? text.textContent.trim() : '', x: [begin.x, end.x], y: begin.y}
       })
 
       // messages that leave one lifeline for different targets, with nothing else reaching that lifeline in between,
@@ -1878,7 +1893,6 @@ var mmd = (() => {
             kind: 'head',
             from: null,
             to: edge.el.getAttribute('marker-end'),
-            tinted: [],
             edge
           }
           var parts = [edge.el, edge.label, ...edge.extras]
@@ -1937,7 +1951,6 @@ var mmd = (() => {
 
       var markSteps = (current) => steps.forEach((step, j) => {
         var state = current < 0 ? '' : j < current ? 'done' : j === current ? 'now' : 'wait'
-        step.msgs.forEach((msg) => light(msg, state === 'now'))
         step.parts.forEach((el) => {
           if (!el) return
           state ? el.setAttribute('data-mmd-seq', state) : el.removeAttribute('data-mmd-seq')
@@ -1959,41 +1972,6 @@ var mmd = (() => {
         cancelAnimationFrame(frame)
         drawn.forEach((el) => el.remove())
         drawn = []
-      }
-      // arrowheads and crosses are marker elements, so the current message gets a coloured copy of each
-      var dark = () => document.documentElement.classList.contains('_mermaid-dark')
-      var tone = (kind) => ({
-        head: '#eb6c36',
-        lost: dark() ? '#f07f77' : '#c0392b',
-        plain: dark() ? '#79b1f9' : '#2e5aa8',
-      })[kind]
-      var tinting = false
-      var light = (step, on) => {
-        step.tinted.forEach(({attr, original}) => step.line.setAttribute(attr, original))
-        step.tinted = []
-        // the arrowheads keep their colour too
-        if (!on || !tinting) return
-        ;['marker-start', 'marker-end'].forEach((attr) => {
-          var original = step.line.getAttribute(attr)
-          var match = /#([^")]+)/.exec(original || '')
-          if (!match) return
-          var copyId = match[1] + '-lit-' + step.kind
-          if (!svg.querySelector('[id="' + copyId + '"]')) {
-            var source = svg.querySelector('[id="' + match[1] + '"]')
-            if (!source) return
-            var copy = source.cloneNode(true)
-            copy.id = copyId
-            var originals = source.querySelectorAll('*')
-            copy.querySelectorAll('*').forEach((part, i) => {
-              var style = getComputedStyle(originals[i])
-              if (style.fill !== 'none') part.style.setProperty('fill', tone(step.kind), 'important')
-              if (style.stroke !== 'none') part.style.setProperty('stroke', tone(step.kind), 'important')
-            })
-            source.parentNode.appendChild(copy)
-          }
-          step.tinted.push({attr, original})
-          step.line.setAttribute(attr, 'url(#' + copyId + ')')
-        })
       }
       var travelOne = (step) => {
         var line = step.line
@@ -2049,6 +2027,8 @@ var mmd = (() => {
       var travel = (step) => {
         if (tl) return
         var places = step.msgs.map(travelOne).filter(Boolean)
+        // comets and bars run on their own, only the reduced-motion tokens are placed here
+        if (!places.length) return
         if (calm) return places.forEach((place) => place(1))
         var begin = performance.now()
         var tick = (now) => {
@@ -2113,7 +2093,7 @@ var mmd = (() => {
         if (by > 0 && at >= steps.length - 1 && at >= 0) return finish()
         go(at < 0 ? 0 : at >= steps.length ? steps.length - 1 : at + by)
       }
-      seqBusy = () => at >= 0 && at < steps.length
+      seqBusy = () => playing
       seqStop = () => {
         playing = false
         clearTimeout(timer)

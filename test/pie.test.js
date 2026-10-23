@@ -1,10 +1,10 @@
 import {describe, expect, test} from 'bun:test'
 import {load} from './load.js'
 
-const {pie} = load('content/pie.js', ['pie'])
+const {pie} = load(['content/draw.js', 'content/pie.js'], ['pie'])
 const series = ['#7c8f6f', '#5e7a9b', '#b8915a', '#9c6b50', '#6e6479']
-const light = {paper: '#f5f5f5', node: '#fff', ink: '#2d3142', muted: '#4f5d75', soft: '#7a8399', rule: 'rgba(0,0,0,.1)', ruleSolid: '#bfc0c0', accent: '#eb6c36', accentTint: 'rgba(235,108,54,.08)', inkRgb: '45,49,66', series}
-const dark = {...light, paper: '#020202', accent: '#79b1f9', series: ['#69ba7c', '#79b1f9', '#dcaf61', '#f07f77', '#a3a3a3']}
+const light = {paper: '#f5f5f5', node: '#fff', ink: '#2d3142', muted: '#4f5d75', soft: '#7a8399', rule: 'rgba(0,0,0,.1)', ruleSolid: '#bfc0c0', accent: '#eb6c36', accentTint: 'rgba(235,108,54,.08)', accentText: '#bf4520', danger: '#c0401f', inkRgb: '45,49,66', series}
+const dark = {...light, paper: '#020202', accent: '#79b1f9', accentText: '#79b1f9', dark: true, series: ['#69ba7c', '#79b1f9', '#dcaf61', '#f07f77', '#a3a3a3']}
 const fonts = {sans: 'sans-serif', mono: 'monospace'}
 
 const src = `pie showData
@@ -66,6 +66,10 @@ describe('pie render', () => {
   test('dark mode never repeats the accent in the palette', () => {
     const darkSvg = pie.render(src, dark, fonts, 'p-3')
     expect(darkSvg.match(/fill="#79b1f9" fill-opacity/g)).toHaveLength(1)
+  })
+
+  test('an init directive leaves the chart to mermaid', () => {
+    expect(pie.parse(`%%{init: {'pie': {'textPosition': 0.5}}}%%\n${src}`)).toBeNull()
   })
 
   test('a model for the popup', () => {

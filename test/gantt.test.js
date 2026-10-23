@@ -1,8 +1,8 @@
 import {describe, expect, test} from 'bun:test'
 import {load} from './load.js'
 
-const {gantt} = load('content/gantt.js', ['gantt'])
-const light = {paper: '#f5f5f5', node: '#fff', ink: '#2d3142', muted: '#4f5d75', soft: '#7a8399', rule: 'rgba(0,0,0,.1)', ruleSolid: '#bfc0c0', accent: '#eb6c36', accentTint: 'rgba(235,108,54,.08)', inkRgb: '45,49,66', mutedRgb: '79,93,117'}
+const {gantt} = load(['content/draw.js', 'content/gantt.js'], ['gantt'])
+const light = {paper: '#f5f5f5', node: '#fff', ink: '#2d3142', muted: '#4f5d75', soft: '#7a8399', rule: 'rgba(0,0,0,.1)', ruleSolid: '#bfc0c0', accent: '#eb6c36', accentTint: 'rgba(235,108,54,.08)', accentText: '#bf4520', danger: '#c0401f', inkRgb: '45,49,66', mutedRgb: '79,93,117'}
 const fonts = {sans: 'sans-serif', mono: 'monospace'}
 const day = (s) => Date.UTC(...s.split('-').map((v, i) => (i === 1 ? v - 1 : +v)))
 
@@ -49,6 +49,14 @@ describe('gantt parse', () => {
     expect(model.tasks[0].to).toBe(day('2026-01-13'))
   })
 
+  test('a bar that ends on a weekend stops at the last working day', () => {
+    // Monday plus five working days: the bar covers Mon-Fri, the next task waits until Monday
+    const model = gantt.parse('gantt\n  excludes weekends\n  A :2026-01-05, 5d\n  B :1d')
+    expect(model.tasks[0].until).toBe(day('2026-01-10'))
+    expect(model.tasks[0].to).toBe(day('2026-01-12'))
+    expect(model.tasks[1].from).toBe(day('2026-01-12'))
+  })
+
   test('after takes the latest of several tasks', () => {
     const model = gantt.parse('gantt\n  A :a, 2026-01-01, 2d\n  B :b, 2026-01-01, 5d\n  C :after a b, 1d')
     expect(model.tasks[2].from).toBe(day('2026-01-06'))
@@ -86,6 +94,12 @@ describe('gantt render', () => {
     expect(svg).toContain('>DESIGN<')
     expect(svg).toMatch(/>\d\d Jan</)
     expect(svg).toContain('<a href="https://example.com"')
+  })
+
+  test('a tick interval that never moves on or is too fine leaves the chart to mermaid', () => {
+    for (const tick of ['0month', '0day', '1millisecond']) {
+      expect(gantt.render(`gantt\n  tickInterval ${tick}\n  A :2026-01-01, 1d`, light, fonts, 'g-t')).toBe('')
+    }
   })
 
   test('the model rides along for the popup', () => {

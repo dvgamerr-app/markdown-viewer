@@ -35,7 +35,8 @@ var gantt = (() => {
   }
 
   var parse = (src) => {
-    var lines = src.replace(/%%\{[\s\S]*?\}%%/g, '').split('\n')
+    var lines = draw.lines(src)
+    if (!lines) return null
     var model = {title: '', dateFormat: 'YYYY-MM-DD', axisFormat: '', tickInterval: '', weekends: false, today: true, sections: [], links: {}}
     var head = false
     var section = null
@@ -121,9 +122,15 @@ var gantt = (() => {
       var length = duration(task.end)
       if (length !== null) {
         task.to = task.from + length
-        // excluded days do not count toward a duration, each one pushes the end a day further, as mermaid does
+        // excluded days do not count toward a duration, each one pushes the end a day further. As in mermaid the bar
+        // stops where the last working day ends (until), the next task still starts after the skipped days (to)
         if (model.weekends && length >= DAY) {
-          for (var at = task.from; at <= task.to; at += DAY) if (weekend(at)) task.to += DAY
+          var off = false
+          for (var at = task.from; at <= task.to; at += DAY) {
+            if (!off) task.until = task.to
+            off = weekend(at)
+            if (off) task.to += DAY
+          }
         }
       }
       else {
@@ -131,6 +138,7 @@ var gantt = (() => {
         if (task.to === null) return null
       }
       if (task.to < task.from) return null
+      if (task.until === undefined) task.until = task.to
       byId[task.id] = task
       previous = task
     }
@@ -138,28 +146,7 @@ var gantt = (() => {
     return model
   }
 
-  var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]))
-  var num = (v) => Math.round(v * 10) / 10
-  var grid = (v) => Math.ceil(v / 4) * 4
-
-  var ctx = (() => {
-    try {
-      return document.createElement('canvas').getContext('2d')
-    }
-    catch (err) {
-      return null
-    }
-  })()
-  var measure = (s, size, family, weight) =>
-    ctx ? (ctx.font = `${weight || 400} ${size}px ${family}`, ctx.measureText(s).width) : s.length * size * 0.58
-
-  // one line no wider than max, cut with an ellipsis
-  var fit = (text, max, size, family, weight) => {
-    if (measure(text, size, family, weight) <= max) return text
-    var cut = text
-    while (cut.length > 1 && measure(cut + '…', size, family, weight) > max) cut = cut.slice(0, -1)
-    return cut + '…'
-  }
+  var {esc, num, grid, measure, fit} = draw
 
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -174,14 +161,15 @@ var gantt = (() => {
     }[c] ?? all))
   }
 
-  // tick times between from and to: every n units, days and weeks on calendar boundaries (weeks start on Sunday)
-  var ticks = (interval, from, to) => {
+  // tick times between from and to: every n units, days and weeks on calendar boundaries (weeks start on Sunday).
+  // null past limit ticks: the walk stops there, a fine step over a long chart would otherwise freeze the page
+  var ticks = (interval, from, to, limit) => {
     var out = []
     var d = new Date(from)
     if (interval.unit === 'month') {
       var at = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)
       for (var i = 0; at <= to; i++) {
-        if (at >= from) out.push(at)
+        if (at >= from && out.push(at) > limit) return null
         at = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + (i + 1) * interval.n, 1)
       }
       return out
@@ -189,7 +177,7 @@ var gantt = (() => {
     var step = interval.n * (interval.unit === 'week' ? 7 * DAY : interval.unit === 'day' ? DAY : UNITS[interval.unit])
     var start = interval.unit === 'week' ? Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - d.getUTCDay())
       : interval.unit === 'day' ? Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) : Math.floor(from / step) * step
-    for (var t = start; t <= to; t += step) if (t >= from) out.push(t)
+    for (var t = start; t <= to; t += step) if (t >= from && out.push(t) > limit) return null
     return out
   }
 
@@ -210,14 +198,14 @@ var gantt = (() => {
     var mono = fonts.mono
     var accent = t.accent
     // the light accent is a bright orange for marks, text on paper needs the darker one
-    var accentText = t.paper === '#020202' ? t.accent : '#bf4520'
+    var accentText = t.accentText
     var has = (task, tag) => task.tags.includes(tag)
     var rows = model.tasks.filter((task) => !has(task, 'vert'))
     var verts = model.tasks.filter((task) => has(task, 'vert'))
     if (!rows.length) return ''
 
     var from = Math.min(...model.tasks.map((task) => task.from))
-    var to = Math.max(...model.tasks.map((task) => task.to))
+    var to = Math.max(...model.tasks.map((task) => task.until))
     if (to === from) to = from + DAY
     var span = to - from
 
@@ -235,7 +223,8 @@ var gantt = (() => {
     var interval = null
     if (model.tickInterval) {
       var match = /^(\d+)(millisecond|second|minute|hour|day|week|month)$/.exec(model.tickInterval)
-      if (!match) return ''
+      // a zero step never moves on
+      if (!match || !parseInt(match[1], 10)) return ''
       interval = {n: parseInt(match[1], 10), unit: INTERVAL[match[2]]}
     }
     else {
@@ -247,8 +236,8 @@ var gantt = (() => {
       var floor = /%[HM]/.test(format) ? 0 : /%[deaAj]/.test(format) ? DAY : /%[bBm]/.test(format) ? 30 * DAY : 365 * DAY
       interval = steps.find((s) => s.size >= floor && (s.size / span) * timeW >= label) || steps[steps.length - 1]
     }
-    var marks = ticks(interval, from, to)
-    if (marks.length > 60) return ''
+    var marks = ticks(interval, from, to, 60)
+    if (!marks) return ''
 
     var body = []
     var y = MARGIN
@@ -274,7 +263,8 @@ var gantt = (() => {
       y = bottom + ZONE_GAP
     })
     var chartBottom = y - ZONE_GAP
-    var now = Date.now()
+    // task dates are wall-clock times kept as UTC, as mermaid reads them in local time, so now is the local clock too
+    var now = Date.now() - new Date().getTimezoneOffset() * 60000
     var today = model.today && now >= from && now <= to
     var footer = verts.length || today ? 24 : 0
     var height = chartBottom + footer + MARGIN
@@ -320,7 +310,7 @@ var gantt = (() => {
       var link = model.links[task.id]
       g.push(link && /^https?:/i.test(link) ? `<a href="${esc(link)}" target="_blank" rel="noopener">${name}</a>` : name)
       var a = x(task.from)
-      var b = x(task.to)
+      var b = x(task.until)
       if (has(task, 'milestone')) {
         var cx = num((a + b) / 2)
         var cy = top + 20
@@ -365,7 +355,7 @@ var gantt = (() => {
     var iso = (time) => new Date(time).toISOString().slice(0, 10)
     var info = {nodes: {}}
     rows.forEach((task) => {
-      info.nodes[task.id] = {name: task.name, section: task.section, start: iso(task.from), end: iso(task.to), tags: task.tags, after: task.after || []}
+      info.nodes[task.id] = {name: task.name, section: task.section, start: iso(task.from), end: iso(task.until), tags: task.tags, after: task.after || []}
     })
     var critical = rows.filter((task) => has(task, 'crit')).map((task) => task.name)
     var summary = `${model.title || 'Gantt chart'}: ${rows.length} tasks from ${iso(from)} to ${iso(to)}` +

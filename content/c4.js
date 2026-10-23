@@ -56,7 +56,8 @@ var c4 = (() => {
   var unquote = (v) => (/^"[\s\S]*"$/.test(v) ? v.slice(1, -1) : v).trim()
 
   var parse = (src) => {
-    var lines = src.replace(/%%\{[\s\S]*?\}%%/g, '').split('\n')
+    var lines = draw.lines(src)
+    if (!lines) return null
     var model = {kind: '', title: '', root: {children: []}, elements: [], rels: [], shapeInRow: 4, boundaryInRow: 2}
     var stack = [model.root]
     var pending = null
@@ -144,42 +145,7 @@ var c4 = (() => {
     return model.kind && model.elements.length ? model : null
   }
 
-  var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]))
-  var num = (v) => Math.round(v * 10) / 10
-  var grid = (v) => Math.ceil(v / 4) * 4
-
-  var ctx = (() => {
-    try {
-      return document.createElement('canvas').getContext('2d')
-    }
-    catch (err) {
-      return null
-    }
-  })()
-  var measure = (s, size, family, weight, spacing) =>
-    (ctx ? (ctx.font = `${weight || 400} ${size}px ${family}`, ctx.measureText(s).width) : s.length * size * 0.6) + s.length * (spacing || 0)
-
-  // words onto lines no wider than max, the last line ends in an ellipsis when the text is cut
-  var wrap = (text, max, size, family, weight, limit) => {
-    var lines = []
-    var line = ''
-    String(text).split(/\s+/).filter(Boolean).forEach((word) => {
-      var next = line ? line + ' ' + word : word
-      if (!line || measure(next, size, family, weight) <= max) line = next
-      else {
-        lines.push(line)
-        line = word
-      }
-    })
-    if (line) lines.push(line)
-    if (lines.length > limit) {
-      lines.length = limit
-      var last = lines[limit - 1]
-      while (last.length > 1 && measure(last + '…', size, family, weight) > max) last = last.slice(0, -1)
-      lines[limit - 1] = last + '…'
-    }
-    return lines
-  }
+  var {esc, num, grid, measure, wrap} = draw
 
   // a polyline with rounded corners
   var round = (points, radius) => {
@@ -354,8 +320,7 @@ var c4 = (() => {
     if (!model) return ''
     var sans = fonts.sans
     var mono = fonts.mono
-    var dark = t.paper === '#020202'
-    var accentText = dark ? t.accent : '#bf4520'
+    var accentText = t.accentText
     var byAlias = new Map(model.elements.map((e) => [e.alias, e]))
     var rels = model.rels.filter((r) => byAlias.has(r.from) && byAlias.has(r.to) && r.from !== r.to)
 
