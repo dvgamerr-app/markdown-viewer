@@ -121,7 +121,7 @@ bun run build:dist    # Chrome build in dist/nimbus-markdown
 bun test              # unit tests
 ```
 
-`bun run build:site` assembles the landing page and its live demo in `_site`. Set `PUBLIC_TRACEWAY_DSN` (a Traceway browser DSN, `<ingest token>@<instance>/api/report`) to turn on its click counts; the Pages workflow reads it from a repository secret of the same name.
+`bun run build:site` assembles the landing page and its live demo in `_site`. Set `PUBLIC_TRACEWAY_DSN` (a Traceway browser DSN, `<ingest token>@<instance>/api/report`) to record visits as Traceway sessions with their clicks; the Pages workflow reads it from a repository secret of the same name.
 
 Load `dist/nimbus-markdown` with **Load unpacked** on `chrome://extensions` (Developer mode on). Use `bun run build:dist:firefox` for Firefox.
 
