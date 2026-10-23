@@ -13,7 +13,8 @@ md.storage = ({compilers}) => {
     Object.assign(state, options)
   }
 
-  chrome.storage.sync.get((res) => {
+  // state stays empty until the stored settings arrive: handlers wait on ready before they read it
+  var ready = new Promise((resolve) => chrome.storage.sync.get((res) => {
     md.storage.bug(res)
 
     Object.assign(state, JSON.parse(JSON.stringify(
@@ -30,9 +31,10 @@ md.storage = ({compilers}) => {
     md.storage.migrations(state)
 
     set(state)
-  })
+    resolve()
+  }))
 
-  return {defaults, state, set}
+  return {defaults, state, set, ready}
 }
 
 md.storage.defaults = (compilers) => {

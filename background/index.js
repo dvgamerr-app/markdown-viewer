@@ -31,8 +31,10 @@ if (typeof importScripts === 'function') {
 
   var messages = md.messages({storage, compilers, mathjax, xhr, webrequest, icon})
 
-  chrome.tabs.onUpdated.addListener(detect.tab)
-  chrome.runtime.onMessage.addListener(messages)
+  // listeners are added at once so a waking worker still gets the event that woke it, they run once the
+  // settings are loaded. messages answers every request, so the channel stays open for it
+  chrome.tabs.onUpdated.addListener((...args) => storage.ready.then(() => detect.tab(...args)))
+  chrome.runtime.onMessage.addListener((...args) => (storage.ready.then(() => messages(...args)), true))
 
-  icon()
+  storage.ready.then(icon)
 })()
