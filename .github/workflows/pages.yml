@@ -5,8 +5,12 @@ on:
     branches: [main]
     paths:
       - "site/**"
+      - "content/**"
+      - "scripts/**"
       - "docs/screenshots/**"
       - "docs/store/marquee-promo-1400x560.png"
+      - "package.json"
+      - "bun.lock"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -33,13 +37,19 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Assemble site
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+          no-cache: true
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      # the live demo runs the built extension renderer, so build it before assembling the site
+      - name: Build extension and assemble site
         run: |
-          mkdir -p _site/screenshots
-          cp -r site/. _site/
-          cp docs/screenshots/0*.png docs/screenshots/fullscreen-*.mp4 docs/screenshots/poster-*.jpg _site/screenshots/
-          cp icons/default/128x128.png _site/icon.png
-          cp docs/store/marquee-promo-1400x560.png _site/og.png
+          bun run build:dist
+          bun scripts/site.mjs _site
 
       - name: Configure Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0

@@ -13,7 +13,7 @@ An interactive Markdown viewer for Chrome. Open any `.md` file and read it as a 
 [![Release](https://img.shields.io/github/v/release/dvgamerr-app/nimbus-markdown?style=for-the-badge&color=2f6b4f)](https://github.com/dvgamerr-app/nimbus-markdown/releases)
 [![License](https://img.shields.io/github/license/dvgamerr-app/nimbus-markdown?style=for-the-badge&color=2f6b4f)](LICENSE)
 
-[Website](https://dvgamerr.app/nimbus-markdown/) · [Install](#install-in-a-minute) · [Reference](docs/reference.md) · [ภาษาไทย](README.th.md)
+[Website](https://dvgamerr.app/nimbus-markdown/) · [Live demo](https://dvgamerr.app/nimbus-markdown/#demo) · [Install](#install-in-a-minute) · [Reference](docs/reference.md) · [ภาษาไทย](README.th.md)
 
 <img src="docs/screenshots/fullscreen-flow.gif" width="760" alt="A flowchart in fullscreen: zoom in, hover a node to light its links, open its popup and find another node">
 

@@ -108,6 +108,16 @@ video.clip { display: block; width: 100%; height: auto; background: #f4f4f4; }
 .sticky span { font-weight: 600; font-size: 15px; }
 .sticky .btn { padding: 10px 16px; }
 @media (prefers-reduced-motion: reduce) { .sticky { transition: none; } }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.tabs button { font: 600 14px var(--sans); padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.stage { position: relative; aspect-ratio: 16 / 9; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #f4f4f4; }
+.stage img, .stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover; }
+.stage .start { position: absolute; inset: 0; display: grid; place-content: center; gap: 10px; text-align: center; background: rgba(23, 37, 30, .55); color: #fff; border: 0; cursor: pointer; font: inherit; }
+.stage .start b { font-size: 20px; display: inline-flex; align-items: center; gap: 10px; background: var(--accent); padding: 13px 22px; border-radius: 10px; }
+.stage .start small { font: 13px var(--mono); opacity: .85; }
+.hint { color: var(--muted); font-size: 15px; margin-top: 14px; }
+@media (max-width: 860px) { .stage { aspect-ratio: 3 / 4; } }
 .compare { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); }
 .compare th, .compare td { padding: 14px 18px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
 .compare thead th { font: 600 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); background: var(--code); }
@@ -184,6 +194,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
     <nav class="nav" aria-label="Main">
       <a class="brand" href="./"><img src="icon.png" alt="" width="36" height="36">Nimbus Markdown</a>
       <div class="nav-links">
+        <a href="#demo">Live demo</a>
         <a href="#explore">Explore</a>
         <a href="#features">Features</a>
         <a href="#start">Get started</a>
@@ -201,7 +212,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
       <p class="lede">Turn Markdown files into clean, interactive documents. Explore Mermaid diagrams in fullscreen: trace node connections, search, zoom and play them step by step.</p>
       <div class="cta">
         <a class="btn btn-primary" id="hero-install" href="https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk">Add to Chrome — Free</a>
-        <a class="btn btn-ghost" href="https://github.com/dvgamerr-app/nimbus-markdown">View on GitHub</a>
+        <a class="btn btn-ghost" href="#demo">Try it live</a>
       </div>
       <p class="trust">Open source · Renders locally · 30+ themes</p>
       <div class="stars" id="stars" aria-live="polite"></div>
@@ -214,7 +225,26 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 </header>
 
 <main>
-  <section id="explore">
+  <section id="demo">
+    <div class="wrap">
+      <p class="label">Live demo</p>
+      <h2>Try it before you install.</h2>
+      <p class="intro">This runs the same diagram renderer as the extension, right here. Hover a node, click it, press <kbd>/</kbd> to search or <kbd>P</kbd> to play.</p>
+      <div class="tabs" role="tablist" aria-label="Demo diagram">
+        <button type="button" role="tab" aria-selected="true" data-kind="flow">Flowchart</button>
+        <button type="button" role="tab" aria-selected="false" data-kind="journey">User journey</button>
+        <button type="button" role="tab" aria-selected="false" data-kind="timeline">Timeline</button>
+        <button type="button" role="tab" aria-selected="false" data-kind="dbml">DBML schema</button>
+      </div>
+      <div class="stage" id="stage">
+        <img src="screenshots/poster-flow.jpg" alt="" id="stage-poster" loading="lazy">
+        <button type="button" class="start" id="stage-start"><b>▶ Start the live demo</b><small>Loads the renderer, about 5 MB</small></button>
+      </div>
+      <p class="hint">Fullscreen keys: <kbd>+</kbd> <kbd>-</kbd> zoom · <kbd>/</kbd> find · <kbd>M</kbd> map · <kbd>P</kbd> play · <kbd>Esc</kbd> close the popup</p>
+    </div>
+  </section>
+
+  <section id="explore" style="padding-top:0">
     <div class="wrap keys">
       <div>
         <p class="label">Fullscreen viewer</p>
@@ -373,14 +403,47 @@ if ('IntersectionObserver' in window) {
     })
   }, { threshold: 0.05 })
   document.querySelectorAll('video.clip').forEach(function (v) { clips.observe(v) })
+  // the sticky bar shows once the hero button has scrolled away, and steps aside while the live demo is on screen
   var sticky = document.getElementById('sticky')
+  var heroAway = false, demoOn = false
+  var place = function () {
+    var on = heroAway && !demoOn
+    sticky.classList.toggle('on', on)
+    sticky.setAttribute('aria-hidden', String(!on))
+    sticky.querySelector('a').tabIndex = on ? 0 : -1
+  }
   new IntersectionObserver(function (entries) {
-    var away = !entries[0].isIntersecting && entries[0].boundingClientRect.top < 0
-    sticky.classList.toggle('on', away)
-    sticky.setAttribute('aria-hidden', String(!away))
-    sticky.querySelector('a').tabIndex = away ? 0 : -1
+    heroAway = !entries[0].isIntersecting && entries[0].boundingClientRect.top < 0
+    place()
   }).observe(document.getElementById('hero-install'))
+  new IntersectionObserver(function (entries) {
+    demoOn = entries[0].isIntersecting
+    place()
+  }, { threshold: 0.3 }).observe(document.getElementById('stage'))
 }
+// live demo: the renderer is only fetched after the visitor asks for it
+var stage = document.getElementById('stage')
+var kind = 'flow'
+var frame = null
+var show = function () {
+  if (!frame) {
+    frame = document.createElement('iframe')
+    frame.title = 'Nimbus Markdown live demo'
+    frame.setAttribute('allow', 'clipboard-write')
+    stage.innerHTML = ''
+    stage.appendChild(frame)
+  }
+  frame.src = 'demo/?d=' + kind
+}
+document.getElementById('stage-start').addEventListener('click', show)
+document.querySelectorAll('.tabs button').forEach(function (tab) {
+  tab.addEventListener('click', function () {
+    kind = tab.dataset.kind
+    document.querySelectorAll('.tabs button').forEach(function (t) { t.setAttribute('aria-selected', String(t === tab)) })
+    if (frame) show()
+    else document.getElementById('stage-poster').src = 'screenshots/poster-' + kind + '.jpg'
+  })
+})
 if (still) document.querySelectorAll('video.clip').forEach(function (v) { v.controls = true })
 fetch('https://api.github.com/repos/dvgamerr-app/nimbus-markdown')
   .then(function (r) { return r.ok ? r.json() : null })

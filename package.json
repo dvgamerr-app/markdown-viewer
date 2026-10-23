@@ -11,7 +11,8 @@
     "build:dist:firefox": "bun scripts/build.mjs firefox",
     "build:zip": "bun scripts/build.mjs firefox zip && bun scripts/build.mjs chrome zip",
     "build:themes": "bun scripts/build.mjs chrome themes",
-    "build:store": "bun scripts/store-assets.mjs"
+    "build:store": "bun scripts/store-assets.mjs",
+    "build:site": "bun scripts/build.mjs chrome && bun scripts/site.mjs"
   },
   "dependencies": {
     "@material/button": "0.37.1",

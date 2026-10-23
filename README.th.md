@@ -13,7 +13,7 @@ Markdown viewer แบบโต้ตอบได้สำหรับ Chrome �
 [![Release](https://img.shields.io/github/v/release/dvgamerr-app/nimbus-markdown?style=for-the-badge&color=2f6b4f)](https://github.com/dvgamerr-app/nimbus-markdown/releases)
 [![License](https://img.shields.io/github/license/dvgamerr-app/nimbus-markdown?style=for-the-badge&color=2f6b4f)](LICENSE)
 
-[เว็บไซต์](https://dvgamerr.app/nimbus-markdown/) · [ติดตั้ง](#ติดตั้งภายในนาทีเดียว) · [คู่มืออ้างอิง](docs/reference.md) · [English](README.md)
+[เว็บไซต์](https://dvgamerr.app/nimbus-markdown/) · [ลองเดโม](https://dvgamerr.app/nimbus-markdown/#demo) · [ติดตั้ง](#ติดตั้งภายในนาทีเดียว) · [คู่มืออ้างอิง](docs/reference.md) · [English](README.md)
 
 <img src="docs/screenshots/fullscreen-flow.gif" width="760" alt="Flowchart ในโหมด fullscreen: ซูม hover node ให้เส้นเชื่อมสว่าง เปิด popup และค้นหา node">
 
