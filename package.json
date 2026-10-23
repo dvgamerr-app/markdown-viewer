@@ -9,6 +9,7 @@
     "build": "bun scripts/build.mjs chrome",
     "build:dist": "bun scripts/build.mjs chrome",
     "build:dist:firefox": "bun scripts/build.mjs firefox",
+    "build:zip": "bun scripts/build.mjs firefox zip && bun scripts/build.mjs chrome zip",
     "build:themes": "bun scripts/build.mjs chrome themes"
   },
   "dependencies": {

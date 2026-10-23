@@ -1,6 +1,6 @@
 # Build
 
-Everything is one script, [build.mjs](build.mjs), run by bun. It builds the unpacked extension in `dist/nimbus-markdown/` (including `themes` and `vendor`) and the `dist/nimbus-markdown.zip` package. No `sh`, `bat`, `zip` or node is needed.
+Everything is one script, [build.mjs](build.mjs), run by bun. It builds the unpacked extension in `dist/nimbus-markdown/` (including `themes` and `vendor`); `build:zip` packs both browsers into `dist/nimbus-markdown-chrome.zip` and `dist/nimbus-markdown-firefox.zip`. No `sh`, `bat`, `zip` or node is needed.
 
 ```bash
 git clone https://github.com/dvgamerr-app/nimbus-markdown.git
@@ -8,6 +8,7 @@ cd nimbus-markdown/
 bun i
 bun run build:dist           # chrome
 bun run build:dist:firefox   # firefox
+bun run build:zip            # chrome and firefox zips in dist/
 bun run build:themes         # only rebuild dist/nimbus-markdown/themes
 ```
 

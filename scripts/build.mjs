@@ -1,5 +1,5 @@
-// Builds the unpacked extension in dist/nimbus-markdown/ and dist/nimbus-markdown.zip.
-// usage: bun scripts/build.mjs [chrome|firefox] [themes]
+// Builds the unpacked extension in dist/nimbus-markdown/, and dist/nimbus-markdown-<browser>.zip with `zip`.
+// usage: bun scripts/build.mjs [chrome|firefox] [themes|zip]
 import {cp, mkdir, readFile, readdir, rm, writeFile} from 'node:fs/promises'
 import {join, resolve} from 'node:path'
 import {zipSync} from 'fflate'
@@ -9,6 +9,7 @@ import * as sass from 'sass'
 
 const browser = process.argv[2] || 'chrome'
 const themesOnly = process.argv[3] === 'themes'
+const withZip = process.argv[3] === 'zip'
 if (!['chrome', 'firefox'].includes(browser)) {
   console.error('Specify target browser: chrome, firefox')
   process.exit(1)
@@ -170,9 +171,12 @@ async function buildPackage () {
     await cp(join(root, name), out(name), {recursive: true})
   }
   await cp(join(root, `manifest.${browser}.json`), out('manifest.json'))
+}
 
+async function buildZip () {
   step('zip')
-  await rm(dist('nimbus-markdown.zip'), {force: true})
+  const zip = dist(`nimbus-markdown-${browser}.zip`)
+  await rm(zip, {force: true})
   const files = {}
   const walk = async (dir, rel) => {
     for (const entry of await readdir(dir, {withFileTypes: true})) {
@@ -183,7 +187,7 @@ async function buildPackage () {
   }
   // chrome archives the folder itself, firefox archives its contents
   await walk(out(), browser === 'chrome' ? 'nimbus-markdown' : '')
-  await writeFile(dist('nimbus-markdown.zip'), zipSync(files, {level: 9}))
+  await writeFile(zip, zipSync(files, {level: 9}))
 }
 
 if (themesOnly) {
@@ -194,5 +198,6 @@ if (themesOnly) {
   await buildVendor()
   await buildThemes()
   await buildPackage()
+  if (withZip) await buildZip()
 }
 console.log('done')
