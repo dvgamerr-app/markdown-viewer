@@ -199,11 +199,11 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
         <a href="#features">Features</a>
         <a href="#start">Get started</a>
         <a href="#faq">FAQ</a>
-        <a href="https://github.com/dvgamerr-app/nimbus-markdown">GitHub</a>
+        <a href="https://github.com/dvgamerr-app/nimbus-markdown" data-track="github-nav">GitHub</a>
       </div>
       <div class="nav-cta">
-        <a class="gh" href="https://github.com/dvgamerr-app/nimbus-markdown">GitHub</a>
-        <a class="install" href="https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk">Install</a>
+        <a class="gh" href="https://github.com/dvgamerr-app/nimbus-markdown" data-track="github-nav">GitHub</a>
+        <a class="install" href="https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk?utm_source=landing&amp;utm_medium=website&amp;utm_content=nav" data-track="install-nav">Install</a>
       </div>
     </nav>
     <div class="hero-copy">
@@ -211,8 +211,8 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
       <h1>Mermaid diagrams you can <em>explore</em>, not just look at.</h1>
       <p class="lede">Turn Markdown files into clean, interactive documents. Explore Mermaid diagrams in fullscreen: trace node connections, search, zoom and play them step by step.</p>
       <div class="cta">
-        <a class="btn btn-primary" id="hero-install" href="https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk">Add to Chrome — Free</a>
-        <a class="btn btn-ghost" href="#demo">Try it live</a>
+        <a class="btn btn-primary" id="hero-install" href="https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk?utm_source=landing&amp;utm_medium=website&amp;utm_content=hero" data-track="install-hero">Add to Chrome — Free</a>
+        <a class="btn btn-ghost" href="#demo" data-track="demo-anchor">Try it live</a>
       </div>
       <p class="trust">Open source · Renders locally · 30+ themes</p>
       <div class="stars" id="stars" aria-live="polite"></div>
@@ -231,14 +231,14 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
       <h2>Try it before you install.</h2>
       <p class="intro">This runs the same diagram renderer as the extension, right here. Hover a node, click it, press <kbd>/</kbd> to search or <kbd>P</kbd> to play.</p>
       <div class="tabs" role="tablist" aria-label="Demo diagram">
-        <button type="button" role="tab" aria-selected="true" data-kind="flow">Flowchart</button>
-        <button type="button" role="tab" aria-selected="false" data-kind="journey">User journey</button>
-        <button type="button" role="tab" aria-selected="false" data-kind="timeline">Timeline</button>
-        <button type="button" role="tab" aria-selected="false" data-kind="dbml">DBML schema</button>
+        <button type="button" role="tab" aria-selected="true" data-kind="flow" data-track="demo-tab-flow">Flowchart</button>
+        <button type="button" role="tab" aria-selected="false" data-kind="journey" data-track="demo-tab-journey">User journey</button>
+        <button type="button" role="tab" aria-selected="false" data-kind="timeline" data-track="demo-tab-timeline">Timeline</button>
+        <button type="button" role="tab" aria-selected="false" data-kind="dbml" data-track="demo-tab-dbml">DBML schema</button>
       </div>
       <div class="stage" id="stage">
         <img src="screenshots/poster-flow.jpg" alt="" id="stage-poster" loading="lazy">
-        <button type="button" class="start" id="stage-start"><b>▶ Start the live demo</b><small>Loads the renderer, about 5 MB</small></button>
+        <button type="button" class="start" id="stage-start" data-track="demo-start"><b>▶ Start the live demo</b><small>Loads the renderer, about 5 MB</small></button>
       </div>
       <p class="hint">Fullscreen keys: <kbd>+</kbd> <kbd>-</kbd> zoom · <kbd>/</kbd> find · <kbd>M</kbd> map · <kbd>P</kbd> play · <kbd>Esc</kbd> close the popup</p>
     </div>
@@ -325,7 +325,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
         <p class="label">Get started</p>
         <h2>Running in a minute.</h2>
         <ol>
-          <li>Install <a href="https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk">Nimbus Markdown</a> from the Chrome Web Store.</li>
+          <li>Install <a href="https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk?utm_source=landing&amp;utm_medium=website&amp;utm_content=steps" data-track="install-steps">Nimbus Markdown</a> from the Chrome Web Store.</li>
           <li>Open <code>chrome://extensions</code>, click <b>Details</b> on Nimbus Markdown and turn on <b>Allow access to file URLs</b>.</li>
           <li>Drag a <code>.md</code> file into the browser. For files on websites, add the site in <b>Advanced Options</b>.</li>
         </ol>
@@ -356,6 +356,7 @@ flowchart LR
         <details><summary>Will it run on every website?</summary><p>No. Website access is an optional permission. Nimbus only renders Markdown on the sites you add in Advanced Options, for example <code>https://raw.githubusercontent.com</code>.</p></details>
         <details><summary>Which diagrams are supported?</summary><p>Every diagram type Mermaid 12 renders. Fullscreen, zoom and node search work on all of them. Sequence, state, journey and timeline diagrams also play step by step, and journey, timeline, gantt, pie, quadrant, git graph, C4, mindmap and requirement diagrams are redrawn in the Nimbus style. DBML is supported separately in <code>dbml</code> code blocks.</p></details>
         <details><summary>Does it work outside Chrome?</summary><p>It installs from the Chrome Web Store on Chromium browsers such as Edge and Brave. A Firefox build is attached to each <a href="https://github.com/dvgamerr-app/nimbus-markdown/releases">GitHub release</a>, with some limits listed in the <a href="https://github.com/dvgamerr-app/nimbus-markdown/blob/main/firefox.md">Firefox notes</a>.</p></details>
+<!-- traceway-faq -->
         <details><summary>Is it really free?</summary><p>Yes. Nimbus is MIT licensed open source, a maintained fork of Markdown Viewer by Simeon Velichkov. There is no paid tier.</p></details>
       </div>
     </div>
@@ -366,8 +367,8 @@ flowchart LR
       <h2>Like it? Give it a star.</h2>
       <p>Nimbus is free and built in the open. A star or a review helps other developers find it.</p>
       <div class="cta">
-        <a class="btn btn-primary" href="https://github.com/dvgamerr-app/nimbus-markdown/stargazers">⭐ Star on GitHub</a>
-        <a class="btn btn-ghost" href="https://github.com/dvgamerr-app/nimbus-markdown/issues">Report an issue</a>
+        <a class="btn btn-primary" href="https://github.com/dvgamerr-app/nimbus-markdown/stargazers" data-track="github-star">⭐ Star on GitHub</a>
+        <a class="btn btn-ghost" href="https://github.com/dvgamerr-app/nimbus-markdown/issues" data-track="github-issues">Report an issue</a>
       </div>
     </div>
   </section>
@@ -375,7 +376,7 @@ flowchart LR
 
 <div class="sticky" id="sticky" aria-hidden="true">
   <span>Nimbus Markdown</span>
-  <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk" tabindex="-1">Add to Chrome — Free</a>
+  <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk?utm_source=landing&amp;utm_medium=website&amp;utm_content=sticky" data-track="install-sticky" tabindex="-1">Add to Chrome — Free</a>
 </div>
 
 <footer>
@@ -450,5 +451,6 @@ fetch('https://api.github.com/repos/dvgamerr-app/nimbus-markdown')
   .then(function (d) { if (d && d.stargazers_count) document.getElementById('stars').textContent = '★ ' + d.stargazers_count + ' stars on GitHub' })
   .catch(function () {})
 </script>
+<!-- traceway -->
 </body>
 </html>

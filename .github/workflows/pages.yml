@@ -47,6 +47,9 @@ jobs:
 
       # the live demo runs the built extension renderer, so build it before assembling the site
       - name: Build extension and assemble site
+        env:
+          # optional: <ingest token>@<instance>/api/report turns on click counts, empty leaves them off
+          PUBLIC_TRACEWAY_DSN: ${{ secrets.PUBLIC_TRACEWAY_DSN }}
         run: |
           bun run build:dist
           bun scripts/site.mjs _site
