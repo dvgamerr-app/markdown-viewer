@@ -129,6 +129,12 @@ Load `dist/nimbus-markdown` with **Load unpacked** on `chrome://extensions` (Dev
 - 🐛 [Report a bug or ask for a feature](https://github.com/dvgamerr-app/nimbus-markdown/issues)
 - 💬 Leave a review on the [Chrome Web Store](https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk)
 
+## Thanks
+
+- **[simov/markdown-viewer](https://github.com/simov/markdown-viewer)** by Simeon Velichkov. Nimbus is a fork of Markdown Viewer, and its renderer, origin management and themes are the foundation everything here is built on.
+- **[cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design)** by Cathryn Lavery. The reference design for how Nimbus draws diagrams: the editorial palette, one focal accent, journey maps, timelines and the rest of the redrawn diagram types.
+- The open-source libraries it ships: [markdown-it](https://github.com/markdown-it/markdown-it), [Mermaid](https://mermaid.js.org), [MathJax](https://www.mathjax.org), [Prism](https://prismjs.com), [panzoom](https://github.com/timmywil/panzoom), [cleanrmd](https://github.com/gadenbuie/cleanrmd) and [github-markdown-css](https://github.com/sindresorhus/github-markdown-css).
+
 ## License
 
-[MIT](LICENSE). Based on [Markdown Viewer](https://github.com/simov/markdown-viewer) by Simeon Velichkov.
+[MIT](LICENSE).

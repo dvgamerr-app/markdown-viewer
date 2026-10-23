@@ -112,6 +112,12 @@ bun test              # unit test
 - 🐛 [แจ้งบั๊กหรือขอฟีเจอร์](https://github.com/dvgamerr-app/nimbus-markdown/issues)
 - 💬 รีวิวบน [Chrome Web Store](https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk)
 
+## ขอบคุณ
+
+- **[simov/markdown-viewer](https://github.com/simov/markdown-viewer)** ของ Simeon Velichkov โปรเจกต์ต้นทางที่ Nimbus fork มา ตัว renderer การจัดการ origin และธีมทั้งหมดเป็นฐานของทุกอย่างในนี้
+- **[cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design)** ของ Cathryn Lavery แบบอ้างอิงในการวาด diagram ของ Nimbus ทั้งโทนสีแบบ editorial การใช้สีเน้นจุดเดียว journey map, timeline และ diagram ที่วาดใหม่ชนิดอื่น ๆ
+- ไลบรารี open source ที่ใช้: [markdown-it](https://github.com/markdown-it/markdown-it), [Mermaid](https://mermaid.js.org), [MathJax](https://www.mathjax.org), [Prism](https://prismjs.com), [panzoom](https://github.com/timmywil/panzoom), [cleanrmd](https://github.com/gadenbuie/cleanrmd) และ [github-markdown-css](https://github.com/sindresorhus/github-markdown-css)
+
 ## License
 
-[MIT](LICENSE) พัฒนาต่อจาก [Markdown Viewer](https://github.com/simov/markdown-viewer) ของ Simeon Velichkov
+[MIT](LICENSE)
