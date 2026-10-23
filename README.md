@@ -6,7 +6,7 @@
 
 **Mermaid diagrams you can actually explore, right in your browser.**
 
-Open any `.md` file in Chrome and read it as a clean, themed document. Click fullscreen on a diagram to zoom, find a node, follow its links and play it step by step. No editor or upload needed.
+An interactive Markdown viewer for Chrome. Open any `.md` file and read it as a clean, themed document. Click fullscreen on a diagram to zoom, find a node, follow its links and play it step by step. No editor or upload needed.
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/kbkjbpmegfjbnpkdmlelkemmolegipkk?style=for-the-badge&logo=googlechrome&logoColor=white&label=Chrome%20Web%20Store&color=2f6b4f)](https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk)
 [![Stars](https://img.shields.io/github/stars/dvgamerr-app/nimbus-markdown?style=for-the-badge&logo=github&color=2f6b4f)](https://github.com/dvgamerr-app/nimbus-markdown/stargazers)

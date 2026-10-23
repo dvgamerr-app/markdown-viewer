@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name"            : "Nimbus Markdown",
   "version"         : "0.0",
-  "description"     : "Read Markdown in Chrome with Mermaid diagrams you can explore in fullscreen, DBML schemas, math, code highlighting and 30+ themes.",
+  "description"     : "Interactive Markdown viewer with fullscreen Mermaid diagrams, node search, diagram playback, DBML schemas and 30+ themes.",
 
   "homepage_url": "https://github.com/dvgamerr-app/nimbus-markdown",
 

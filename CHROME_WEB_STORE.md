@@ -117,15 +117,15 @@ Nimbus Markdown
 #### Summary from package
 
 ```text
-Read Markdown in Chrome with Mermaid diagrams you can explore in fullscreen, DBML schemas, math, code highlighting and 30+ themes.
+Interactive Markdown viewer with fullscreen Mermaid diagrams, node search, diagram playback, DBML schemas and 30+ themes.
 ```
 
-อ่านจาก `description` ใน `manifest.chrome.json` (130 ตัวอักษร ไม่เกิน 132) แก้ในฟอร์มไม่ได้ จะเปลี่ยนเมื่ออัปโหลดแพ็กเกจเวอร์ชันถัดไป
+อ่านจาก `description` ใน `manifest.chrome.json` (121 ตัวอักษร ไม่เกิน 132) แก้ในฟอร์มไม่ได้ จะเปลี่ยนเมื่ออัปโหลดแพ็กเกจเวอร์ชันถัดไป
 
 #### Description
 
 ```text
-Nimbus Markdown turns Markdown files into clean, themed documents right in your browser, and makes their Mermaid diagrams something you can explore instead of just look at.
+Nimbus Markdown is an interactive Markdown viewer for Chrome. It turns Markdown files into clean, themed documents, and lets you explore their Mermaid diagrams in fullscreen: trace node connections, search, zoom and play them step by step, instead of just looking at a static picture.
 
 EXPLORE DIAGRAMS IN FULLSCREEN
 

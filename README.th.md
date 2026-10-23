@@ -6,7 +6,7 @@
 
 **Mermaid diagram ที่สำรวจได้จริง ในเบราว์เซอร์ของคุณ**
 
-เปิดไฟล์ `.md` ใน Chrome แล้วอ่านเป็นเอกสารสวยตามธีมได้ทันที กด fullscreen ที่ diagram เพื่อซูม ค้นหา node ดูเส้นเชื่อม และเล่นทีละขั้น ไม่ต้องเปิด editor หรืออัปโหลดไฟล์
+Markdown viewer แบบโต้ตอบได้สำหรับ Chrome เปิดไฟล์ `.md` แล้วอ่านเป็นเอกสารสวยตามธีมได้ทันที กด fullscreen ที่ diagram เพื่อซูม ค้นหา node ดูเส้นเชื่อม และเล่นทีละขั้น ไม่ต้องเปิด editor หรืออัปโหลดไฟล์
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/kbkjbpmegfjbnpkdmlelkemmolegipkk?style=for-the-badge&logo=googlechrome&logoColor=white&label=Chrome%20Web%20Store&color=2f6b4f)](https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk)
 [![Stars](https://img.shields.io/github/stars/dvgamerr-app/nimbus-markdown?style=for-the-badge&logo=github&color=2f6b4f)](https://github.com/dvgamerr-app/nimbus-markdown/stargazers)
