@@ -780,9 +780,10 @@ var mmd = (() => {
     var isDbml = kind === 'dbml'
     var isJourney = kind === 'journey'
     var isTimeline = kind === 'timeline'
-    // the other diagrams the extension draws itself name their nodes "<prefix>-<id>-0" and carry a "<x>-model"
+    // the other diagrams the extension draws itself name their nodes "<prefix>-<id>-0" and carry a "<x>-model".
+    // A gantt is left out: its pointer belongs to the date cursor, a task neither glows nor opens a popup
     var drawnBy = {
-      gantt: /^gantt-(.+)-0$/, pie: /^pie-(.+)-0$/, quadrantChart: /^quadrant-(.+)-0$/, requirement: /^req-(.+)-0$/,
+      pie: /^pie-(.+)-0$/, quadrantChart: /^quadrant-(.+)-0$/, requirement: /^req-(.+)-0$/,
       gitGraph: /^git-(.+)-0$/, c4: /^c4-(.+)-0$/, mindmap: /^mindmap-(.+)-0$/
     }[kind]
     var isClass = kind === 'classDiagram'
@@ -2266,6 +2267,7 @@ var mmd = (() => {
 
     Promise.all(jobs).then(() => {
       document.querySelectorAll('code.mermaid svg[aria-roledescription=classDiagram]').forEach(classBoxes)
+      document.querySelectorAll('code.mermaid svg[aria-roledescription=gantt]').forEach(gantt.bind)
       document.querySelectorAll('code.mermaid svg[aria-roledescription=c4]').forEach((svg) => c4Text(svg, t))
       document.querySelectorAll('code.mermaid svg[aria-roledescription=er]').forEach(erBoxes)
       document.querySelectorAll('code.mermaid svg').forEach(labelsOnLines)

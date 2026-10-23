@@ -274,7 +274,9 @@ var gantt = (() => {
       y = bottom + ZONE_GAP
     })
     var chartBottom = y - ZONE_GAP
-    var footer = verts.length ? 24 : 0
+    var now = Date.now()
+    var today = model.today && now >= from && now <= to
+    var footer = verts.length || today ? 24 : 0
     var height = chartBottom + footer + MARGIN
 
     // zones go first, the grid draws over their wash
@@ -297,11 +299,12 @@ var gantt = (() => {
       }
     }
 
-    // the axis: mono ticks above a solid baseline, dashed hairlines down through the zones
+    // the axis: mono ticks above a solid baseline with a short notch each, no lines through the zones: the only
+    // full-height lines are today, the vert markers and the cursor
     body.push(`<path d="M${x0},${axisY}H${right}" stroke="${t.ruleSolid}"/>`)
     marks.forEach((time) => {
       var at = num(x(time))
-      body.push(`<path d="M${at},${axisY - 4}V${chartBottom}" stroke="${t.rule}" stroke-dasharray="3 3"/>` +
+      body.push(`<path d="M${at},${axisY - 4}V${axisY}" stroke="${t.ruleSolid}"/>` +
         `<text x="${at}" y="${axisY - 10}" text-anchor="middle" font-family="${mono}" font-size="9" fill="${t.muted}">${esc(strftime(format, time))}</text>`)
     })
 
@@ -344,12 +347,20 @@ var gantt = (() => {
     })
 
     // today, when it falls inside the chart
-    var now = Date.now()
-    if (model.today && now >= from && now <= to) {
+    if (today) {
       var tx = num(x(now))
-      lines.push(`<g class="gantt-today"><path d="M${tx},${axisY}V${chartBottom}" stroke="${accent}" stroke-dasharray="4 3"/>` +
-        `<text x="${tx}" y="${axisY + 10}" text-anchor="middle" font-family="${mono}" font-size="8" letter-spacing="1.12" fill="${accentText}">TODAY</text></g>`)
+      lines.push(`<g class="gantt-today"><path d="M${tx},${axisY}V${chartBottom}" stroke="${accent}"/>` +
+        `<text x="${tx}" y="${chartBottom + 12}" text-anchor="middle" font-family="${mono}" font-size="8" letter-spacing="1.12" fill="${accentText}">TODAY</text></g>`)
     }
+
+    // the cursor: a hairline that follows the pointer across the time area and names the date under it, see bind().
+    // A chart that spans less than two days reads to the minute
+    var cursorFormat = span < 2 * DAY ? '%a %d %b %Y %H:%M' : '%a %d %b %Y'
+    lines.push(`<g class="gantt-cursor" display="none" pointer-events="none" data-x0="${x0}" data-x1="${right}" data-from="${from}" data-to="${to}" ` +
+      `data-top="${axisY}" data-bottom="${chartBottom}" data-format="${cursorFormat}">` +
+      `<path d="M0,${axisY}V${chartBottom}" stroke="${t.ink}" stroke-opacity="0.55"/>` +
+      `<rect x="0" y="${axisY - 24}" width="0" height="18" rx="2" fill="${t.ink}"/>` +
+      `<text x="0" y="${axisY - 15}" text-anchor="middle" dominant-baseline="central" font-family="${mono}" font-size="9" letter-spacing="0.5" fill="${t.paper}"></text></g>`)
 
     var iso = (time) => new Date(time).toISOString().slice(0, 10)
     var info = {nodes: {}}
@@ -367,5 +378,42 @@ var gantt = (() => {
       `<metadata class="gantt-model">${esc(JSON.stringify(info))}</metadata>`, '</svg>'].join('')
   }
 
-  return {parse, render}
+  // the cursor follows the pointer over a drawn chart; the chart may be scaled or panned, so the pointer is mapped
+  // through the svg's own screen matrix
+  var bind = (svg) => {
+    var cursor = svg.querySelector('g.gantt-cursor')
+    if (!cursor || cursor.dataset.bound) return
+    cursor.dataset.bound = '1'
+    var d = cursor.dataset
+    var x0 = +d.x0
+    var x1 = +d.x1
+    var from = +d.from
+    var to = +d.to
+    var line = cursor.querySelector('path')
+    var chip = cursor.querySelector('rect')
+    var label = cursor.querySelector('text')
+    var hide = () => cursor.setAttribute('display', 'none')
+    svg.addEventListener('pointermove', (e) => {
+      var matrix = svg.getScreenCTM()
+      if (!matrix) return
+      var p = svg.createSVGPoint()
+      p.x = e.clientX
+      p.y = e.clientY
+      p = p.matrixTransform(matrix.inverse())
+      if (p.x < x0 || p.x > x1 || p.y < +d.top - 28 || p.y > +d.bottom) return hide()
+      var at = Math.round(p.x * 2) / 2
+      label.textContent = strftime(d.format, from + ((p.x - x0) / (x1 - x0)) * (to - from))
+      cursor.removeAttribute('display')
+      line.setAttribute('d', `M${at},${d.top}V${d.bottom}`)
+      var w = Math.ceil(label.getComputedTextLength()) + 12
+      // the chip stays inside the time area at both ends
+      var cx = Math.min(Math.max(at, x0 + w / 2), x1 - w / 2)
+      chip.setAttribute('x', cx - w / 2)
+      chip.setAttribute('width', w)
+      label.setAttribute('x', cx)
+    })
+    svg.addEventListener('pointerleave', hide)
+  }
+
+  return {parse, render, bind}
 })()

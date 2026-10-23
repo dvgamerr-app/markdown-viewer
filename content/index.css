@@ -478,10 +478,11 @@ pre.mmd-fullscreen svg path.relationshipLine,
 pre.mmd-fullscreen svg g.edgeLabel {
   transition: opacity .18s ease, filter .18s ease;
 }
-pre.mmd-fullscreen svg g.node:hover {
+/*a gantt task does not glow: the pointer over a gantt drives its date cursor*/
+pre.mmd-fullscreen svg g.node:not(.gantt-task):hover {
   filter: drop-shadow(0 0 7px #eb6c36);
 }
-pre.mmd-fullscreen svg g.node:hover > :is(rect, polygon, circle, path, ellipse),
+pre.mmd-fullscreen svg g.node:not(.gantt-task):hover > :is(rect, polygon, circle, path, ellipse),
 pre.mmd-fullscreen svg g.node.mmd-selected > :is(rect, polygon, circle, path, ellipse) {
   stroke: #eb6c36 !important;
   stroke-width: 2px !important;
