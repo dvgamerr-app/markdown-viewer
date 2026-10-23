@@ -1,9 +1,6 @@
+# Nimbus Markdown Reference
 
-# Nimbus Markdown / Browser Extension
-
-A browser extension for rendering Markdown, forked from the original extension by Simeon Velichkov.
-
-Install using the [manual installation](#manual-install) instructions.
+Full reference for every option of the extension. For the overview and install steps see the [README](../README.md).
 
 # Features
 
@@ -162,9 +159,26 @@ Alternatively diagrams can be wrapped in HTML tags:
 </code></pre>
 ```
 
-- resize the diagram container vertically by dragging the bottom right corner of the code block up or down
-- zoom in and out by holding down the Shift key and then using your mouse wheel
-- pan by holding down the left mouse button and drag in any direction
+A ` ```dbml ` block is drawn as a database schema by the extension itself, mermaid is not involved.
+
+Inline a diagram is static: resize its container by dragging the bottom right corner of the code block. Click the fullscreen button on the diagram toolbar to explore it:
+
+- zoom with the mouse wheel or a touchpad pinch, move by dragging
+- hover a node to light up its links, blue into the node and orange out of it
+- click a node for a popup with its connections, upstream and downstream
+- sequence, state, journey and timeline diagrams play step by step
+
+| Key | Action |
+| :- | :- |
+| `+` `-` `0` | Zoom in, zoom out, reset |
+| Arrow keys | Move |
+| `/` | Find a node |
+| `M` | Overview map |
+| `P` | Play or pause |
+| `[` `]` | Previous or next step while playing |
+| `Esc` | Close the popup, then leave fullscreen |
+
+See [mermaid.md](mermaid.md) for an example of every diagram type.
 
 ## Syntax
 
@@ -304,17 +318,10 @@ The following instructions applies for: Chrome, Edge, Opera, Brave, Chromium and
 
 Note that in any of the following cases you won't receive any future updates automatically!
 
-## Load packed .crx
-
-1. Go to [releases] and pick a release that you want to install
-2. Download the `nimbus-markdown.crx` file
-3. Navigate to `chrome://extensions`
-4. Drag and drop the `nimbus-markdown.crx` file into the `chrome://extensions` page
-
 ## Load unpacked .zip
 
 1. Go to [releases] and pick a release that you want to install
-2. Download the `nimbus-markdown.zip` file and extract it
+2. Download the `nimbus-markdown-chrome-<version>.zip` file and extract it
 3. Navigate to `chrome://extensions`
 4. Make sure that the `Developer mode` switch is enabled
 5. Click on the `Load unpacked` button and select the extracted directory
@@ -372,7 +379,7 @@ SOFTWARE.
   [gfm]: https://github.github.com/gfm/
   [prism-lang]: https://prismjs.com/#supported-languages
   [releases]: https://github.com/dvgamerr-app/nimbus-markdown/releases
-  [firefox-docs]: firefox.md
+  [firefox-docs]: ../firefox.md
   [custom-theme]: https://gist.github.com/simov/2a074a1c0123e6ba4bc2bfa6a67d3203
 
   [syntax-github]: https://github.com/simov/markdown-syntax
