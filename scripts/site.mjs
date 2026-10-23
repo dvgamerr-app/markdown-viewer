@@ -21,7 +21,7 @@ readdirSync(shots)
   .filter((name) => /^0.*\.png$|^fullscreen-.*\.mp4$|^poster-.*\.jpg$/.test(name))
   .forEach((name) => cpSync(join(shots, name), join(out, 'screenshots', name)))
 
-// click counts through Traceway, only when a browser DSN (<ingest token>@<instance>/api/report) is given at build time
+// visit sessions and click actions through Traceway, only when a browser DSN (<ingest token>@<instance>/api/report) is given at build time
 const dsn = (process.env.PUBLIC_TRACEWAY_DSN || '').trim()
 const page = join(out, 'index.html')
 let html = readFileSync(page, 'utf8')
@@ -30,7 +30,7 @@ if (dsn.includes('@')) {
   const attr = dsn.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
   html = html
     .replace('<!-- traceway -->', `<meta name="traceway-dsn" content="${attr}">\n<script src="traceway.js" defer></script>\n<script src="track.js" defer></script>`)
-    .replace('<!-- traceway-faq -->', '        <details><summary>Does this website track me?</summary><p>This page counts visits and button clicks with Traceway, a self-hosted service, to learn which links bring people here. Each count carries the page address, referrer, browser and screen size. There are no cookies and no session recording, and the extension is not tracked at all.</p></details>')
+    .replace('<!-- traceway-faq -->', '        <details><summary>Does this website track me?</summary><p>This page uses Traceway, a self-hosted service, to record each visit as an anonymous session: the page address, referrer, IP address, browser and screen size, plus a replay of how the page is used and which buttons are clicked. It sets no cookies and has no sign-in or forms. The extension itself is not tracked at all.</p></details>')
 } else {
   rmSync(join(out, 'track.js'))
   html = html.replace('<!-- traceway -->\n', '').replace('<!-- traceway-faq -->\n', '')
