@@ -117,10 +117,10 @@ Nimbus Markdown
 #### Summary from package
 
 ```text
-Interactive Markdown viewer with fullscreen Mermaid diagrams, node search, diagram playback, DBML schemas and 30+ themes.
+Beautiful Markdown viewer for Chrome. Preview local and online .md files with Mermaid diagrams, syntax highlighting, and themes.
 ```
 
-อ่านจาก `description` ใน `manifest.chrome.json` (121 ตัวอักษร ไม่เกิน 132) แก้ในฟอร์มไม่ได้ จะเปลี่ยนเมื่ออัปโหลดแพ็กเกจเวอร์ชันถัดไป
+อ่านจาก `description` ใน `manifest.chrome.json` (128 ตัวอักษร ไม่เกิน 132) แก้ในฟอร์มไม่ได้ จะเปลี่ยนเมื่ออัปโหลดแพ็กเกจเวอร์ชันถัดไป
 
 #### Description
 
