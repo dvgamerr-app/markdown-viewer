@@ -520,243 +520,287 @@ var mmd = (() => {
 
   // mermaid lays an entity out as a table; keep its position and size for the lines, but draw the box again as the
   // skill's reference does. The box only ever grows, upwards and sideways, so every line still ends inside it
-  var erBoxes = (svg) => {
-    var ns = 'http://www.w3.org/2000/svg'
-    var make = (tag, cls, attrs, text) => {
-      var el = document.createElementNS(ns, tag)
-      el.setAttribute('class', cls)
-      Object.keys(attrs || {}).forEach((name) => el.setAttribute(name, attrs[name]))
-      if (text != null) el.textContent = text
-      return el
-    }
-    var HEAD = 40
-    var ROW = 20
-    var PAD = 16
-    var shift = (node) => {
-      var m = /translate\(([^,)]+)[, ]+([^)]+)\)/.exec(node.getAttribute('transform') || '')
-      return {x: m ? parseFloat(m[1]) : 0, y: m ? parseFloat(m[2]) : 0}
-    }
-    var boxes = []
-    var room = {top: 0, side: 0}
-    svg.querySelectorAll('g.node').forEach((node) => {
-      // an entity without attributes is a plain labelled rect
-      var outer = node.querySelector(':scope > .outer-path, :scope > rect.label-container')
-      if (!outer || node.querySelector('.mmd-er-box')) return
-      var old = outer.getBBox()
-      if (!old.width) return
-      var read = (cls) => Array.from(node.querySelectorAll(':scope > .label' + (cls ? '.' + cls : ''))).map((el) => el.textContent.trim())
-      var name = read('name')[0] || read('')[0] || ''
-      var types = read('attribute-type')
-      var names = read('attribute-name')
-      var keys = read('attribute-keys')
-      var notes = read('attribute-comment')
-      var rows = names.map((field, i) => {
-        var key = (keys[i] || '').split(/\s*,\s*/)
-        var mark = (key.includes('PK') ? '# ' : '') + (key.includes('FK') ? '\u2192 ' : '')
-        var tail = [types[i], key.includes('UK') ? 'unique' : '', notes[i]].filter(Boolean).join(' \u00B7 ')
-        return {left: mark + field, right: tail, field, pk: key.includes('PK'), fk: key.includes('FK'), uk: key.includes('UK')}
-      })
-      var focal = node.classList.contains('focal')
-      var join = node.classList.contains('join')
-      var tag = join ? 'JOIN' : focal ? 'ENTITY \u00B7 ROOT' : 'ENTITY'
-
-      var tagEl = make('text', 'mmd-er-tag', {}, tag)
-      var nameEl = make('text', 'mmd-er-name', {}, name)
-      var cells = rows.map((row) => [make('text', 'mmd-er-field', {}, row.left), make('text', 'mmd-er-type', {'text-anchor': 'end'}, row.right)])
-      var texts = [tagEl, nameEl].concat(cells.flat())
-      texts.forEach((el) => node.appendChild(el))
-      var wide = (el) => el.getComputedTextLength()
-      var need = Math.max(wide(tagEl), wide(nameEl), ...cells.map(([l, r]) => wide(l) + (r.textContent ? 28 + wide(r) : 0))) + PAD * 2
-      var height = Math.max(HEAD + ROW * rows.length + 12, old.height)
-      var width = Math.max(old.width, need)
-      var box = {x: old.x - (width - old.width) / 2, y: old.y + old.height - height, width, height}
-      var right = box.x + box.width
-      var round = {x: box.x, y: box.y, width: box.width, height: box.height, rx: 6, ry: 6}
-
-      node.classList.add('mmd-er-node')
-      node.insertBefore(make('rect', 'mmd-er-fill', round), node.firstChild)
-      node.insertBefore(make('path', 'mmd-er-head', {
-        d: 'M' + box.x + ' ' + (box.y + HEAD) + 'V' + (box.y + 6) + 'Q' + box.x + ' ' + box.y + ' ' + (box.x + 6) + ' ' + box.y +
-          'H' + (right - 6) + 'Q' + right + ' ' + box.y + ' ' + right + ' ' + (box.y + 6) + 'V' + (box.y + HEAD) + 'Z'
-      }), node.children[1])
-      node.appendChild(make('line', 'mmd-er-rule', {x1: box.x, x2: right, y1: box.y + HEAD, y2: box.y + HEAD}))
-      tagEl.setAttribute('x', box.x + PAD)
-      tagEl.setAttribute('y', box.y + 16)
-      nameEl.setAttribute('x', box.x + PAD)
-      nameEl.setAttribute('y', box.y + 32)
-      // each row is a hover target, lit when a relationship that runs through its key is
-      node.__mmdRows = cells.map(([l, r], i) => {
-        var y = box.y + HEAD + ROW * (i + 1)
-        l.setAttribute('x', box.x + PAD)
-        l.setAttribute('y', y)
-        r.setAttribute('x', right - PAD)
-        r.setAttribute('y', y)
-        var rect = make('rect', 'mmd-er-row', {x: box.x + 1, y: y - 14, width: box.width - 2, height: ROW})
-        node.insertBefore(rect, tagEl)
-        return Object.assign({rect, texts: [l, r]}, rows[i])
-      })
-      node.appendChild(make('rect', 'mmd-er-box', round))
-      var at = shift(node)
-      node.__mmdBox = {left: at.x + box.x, top: at.y + box.y, right: at.x + right, bottom: at.y + box.y + box.height}
-      // a row's line meets the box at the middle of the row: its rect spans y - 14 to y + 6
-      node.__mmdRows.forEach((row) => (row.mid = at.y + parseFloat(row.rect.getAttribute('y')) + ROW / 2))
-      boxes.push({old: node.__mmdBox, grown: height - old.height})
-      room.top = Math.max(room.top, height - old.height)
-      room.side = Math.max(room.side, (width - old.width) / 2)
+  var ER_HEAD = 40
+  var ER_ROW = 20
+  var ER_PAD = 16
+  var erMake = (tag, cls, attrs, text) => {
+    var el = document.createElementNS('http://www.w3.org/2000/svg', tag)
+    el.setAttribute('class', cls)
+    Object.keys(attrs || {}).forEach((name) => el.setAttribute(name, attrs[name]))
+    if (text != null) el.textContent = text
+    return el
+  }
+  var erShift = (node) => {
+    var m = /translate\(([^,)]+)[, ]+([^)]+)\)/.exec(node.getAttribute('transform') || '')
+    return {x: m ? parseFloat(m[1]) : 0, y: m ? parseFloat(m[2]) : 0}
+  }
+  var erViewBox = (svg) => (svg.getAttribute('viewBox') || '').split(/[ ,]+/).map(parseFloat)
+  var erLabels = (node, cls) => Array.from(node.querySelectorAll(':scope > .label' + (cls ? '.' + cls : ''))).map((el) => el.textContent.trim())
+  var erRowsOf = (node) => {
+    var types = erLabels(node, 'attribute-type')
+    var keys = erLabels(node, 'attribute-keys')
+    var notes = erLabels(node, 'attribute-comment')
+    return erLabels(node, 'attribute-name').map((field, i) => {
+      var key = (keys[i] || '').split(/\s*,\s*/)
+      var mark = (key.includes('PK') ? '# ' : '') + (key.includes('FK') ? '→ ' : '')
+      var tail = [types[i], key.includes('UK') ? 'unique' : '', notes[i]].filter(Boolean).join(' · ')
+      return {left: mark + field, right: tail, field, pk: key.includes('PK'), fk: key.includes('FK'), uk: key.includes('UK')}
     })
-    // the svg is cropped to what mermaid drew, make room for what grew
-    var view = (svg.getAttribute('viewBox') || '').split(/[ ,]+/).map(parseFloat)
-    if (view.length === 4 && (room.top || room.side)) {
-      view[0] -= room.side
-      view[1] -= room.top
-      view[2] += room.side * 2
-      view[3] += room.top
-      svg.setAttribute('viewBox', view.join(' '))
-      if (svg.style.maxWidth) svg.style.maxWidth = view[2] + 'px'
-    }
+  }
+  var erKind = (node) => {
+    if (node.classList.contains('join')) return 'JOIN'
+    return node.classList.contains('focal') ? 'ENTITY · ROOT' : 'ENTITY'
+  }
+  // the box keeps the bottom edge and the middle of the old one, and grows to hold its text
+  var erSize = (old, count, tagEl, nameEl, cells) => {
+    var wide = (el) => el.getComputedTextLength()
+    var need = Math.max(wide(tagEl), wide(nameEl), ...cells.map(([l, r]) => wide(l) + (r.textContent ? 28 + wide(r) : 0))) + ER_PAD * 2
+    var height = Math.max(ER_HEAD + ER_ROW * count + 12, old.height)
+    var width = Math.max(old.width, need)
+    return {x: old.x - (width - old.width) / 2, y: old.y + old.height - height, width, height}
+  }
+  var erFrame = (node, box) => {
+    var right = box.x + box.width
+    node.classList.add('mmd-er-node')
+    node.insertBefore(erMake('rect', 'mmd-er-fill', {x: box.x, y: box.y, width: box.width, height: box.height, rx: 6, ry: 6}), node.firstChild)
+    node.insertBefore(erMake('path', 'mmd-er-head', {
+      d: 'M' + box.x + ' ' + (box.y + ER_HEAD) + 'V' + (box.y + 6) + 'Q' + box.x + ' ' + box.y + ' ' + (box.x + 6) + ' ' + box.y +
+        'H' + (right - 6) + 'Q' + right + ' ' + box.y + ' ' + right + ' ' + (box.y + 6) + 'V' + (box.y + ER_HEAD) + 'Z'
+    }), node.children[1])
+    node.appendChild(erMake('line', 'mmd-er-rule', {x1: box.x, x2: right, y1: box.y + ER_HEAD, y2: box.y + ER_HEAD}))
+  }
+  // each row is a hover target, lit when a relationship that runs through its key is
+  var erPlaceRows = (node, box, cells, rows, tagEl) => cells.map(([l, r], i) => {
+    var y = box.y + ER_HEAD + ER_ROW * (i + 1)
+    l.setAttribute('x', box.x + ER_PAD)
+    l.setAttribute('y', y)
+    r.setAttribute('x', box.x + box.width - ER_PAD)
+    r.setAttribute('y', y)
+    var rect = erMake('rect', 'mmd-er-row', {x: box.x + 1, y: y - 14, width: box.width - 2, height: ER_ROW})
+    node.insertBefore(rect, tagEl)
+    return Object.assign({rect, texts: [l, r]}, rows[i])
+  })
+  // draws one entity again, null when it is not a table or was drawn already
+  var erDrawNode = (node) => {
+    // an entity without attributes is a plain labelled rect
+    var outer = node.querySelector(':scope > .outer-path, :scope > rect.label-container')
+    if (!outer || node.querySelector('.mmd-er-box')) return null
+    var old = outer.getBBox()
+    if (!old.width) return null
+    var rows = erRowsOf(node)
+    var name = erLabels(node, 'name')[0] || erLabels(node, '')[0] || ''
+    var tagEl = erMake('text', 'mmd-er-tag', {}, erKind(node))
+    var nameEl = erMake('text', 'mmd-er-name', {}, name)
+    var cells = rows.map((row) => [erMake('text', 'mmd-er-field', {}, row.left), erMake('text', 'mmd-er-type', {'text-anchor': 'end'}, row.right)])
+    ;[tagEl, nameEl].concat(cells.flat()).forEach((el) => node.appendChild(el))
+    var box = erSize(old, rows.length, tagEl, nameEl, cells)
+    var right = box.x + box.width
+    erFrame(node, box)
+    tagEl.setAttribute('x', box.x + ER_PAD)
+    tagEl.setAttribute('y', box.y + 16)
+    nameEl.setAttribute('x', box.x + ER_PAD)
+    nameEl.setAttribute('y', box.y + 32)
+    node.__mmdRows = erPlaceRows(node, box, cells, rows, tagEl)
+    node.appendChild(erMake('rect', 'mmd-er-box', {x: box.x, y: box.y, width: box.width, height: box.height, rx: 6, ry: 6}))
+    var at = erShift(node)
+    node.__mmdBox = {left: at.x + box.x, top: at.y + box.y, right: at.x + right, bottom: at.y + box.y + box.height}
+    // a row's line meets the box at the middle of the row: its rect spans y - 14 to y + 6
+    node.__mmdRows.forEach((row) => (row.mid = at.y + parseFloat(row.rect.getAttribute('y')) + ER_ROW / 2))
+    return {old: node.__mmdBox, grown: box.height - old.height, side: (box.width - old.width) / 2}
+  }
+  // the svg is cropped to what mermaid drew, make room for what grew
+  var erGrow = (svg, room) => {
+    var view = erViewBox(svg)
+    if (view.length !== 4 || !(room.top || room.side)) return
+    view[0] -= room.side
+    view[1] -= room.top
+    view[2] += room.side * 2
+    view[3] += room.top
+    svg.setAttribute('viewBox', view.join(' '))
+    if (svg.style.maxWidth) svg.style.maxWidth = view[2] + 'px'
+  }
 
-    // mermaid joins two entities box to box, the skill joins the key rows: the primary key on the one side and the
-    // foreign key that refers to it on the many side. Each line is redrawn as a right-angle route between those rows,
-    // leaving and entering a box side horizontally, so both cardinality marks sit on the row they belong to
-    var squash = (text) => text.toLowerCase().replace(/[^a-z0-9]/g, '')
-    var entity = (name) => svg.querySelector('g.node.mmd-er-node[id$="-' + CSS.escape(name) + '"]')
-    var routes = []
-    svg.querySelectorAll('path.relationshipLine').forEach((line) => {
-      var ends = /^id_(entity-.+-\d+)_(entity-.+-\d+)_\d+$/.exec(line.getAttribute('data-id') || '')
-      var a = ends && entity(ends[1])
-      var b = ends && entity(ends[2])
-      if (!a || !b || a === b) return
-      var many = (attr) => /oneOrMore|zeroOrMore/.test(line.getAttribute(attr) || '')
-      // the parent is the one side; between two "many" or two "one" ends the first entity is
-      var aIsChild = many('marker-start') && !many('marker-end')
-      var parent = aIsChild ? b : a
-      var child = aIsChild ? a : b
-      var key = parent.__mmdRows.find((r) => r.pk)
-      var parentName = squash((/^entity-(.+)-\d+$/.exec(ends[aIsChild ? 2 : 1]) || [])[1] || '')
-      // the foreign key is the one named after the parent (customer_id for CUSTOMER), or after its key (sku for sku)
-      var refs = child.__mmdRows.filter((r) => r.fk)
-      var ref = refs.find((r) => parentName && squash(r.field).includes(parentName)) ||
-        refs.find((r) => key && squash(r.field) === squash(key.field)) || refs[0]
-      // with no key row on either side there is nothing to point at, mermaid's own route stays
-      if (!key && !ref) return
-      var anchor = (node, row) => ({box: node.__mmdBox, y: row ? row.mid : (node.__mmdBox.top + node.__mmdBox.bottom) / 2})
-      var from = anchor(a, a === parent ? key : ref)
-      var to = anchor(b, b === parent ? key : ref)
-      var forward = to.box.left - from.box.right >= 24
-      var side = forward || from.box.left - to.box.right >= 24
-      var x1 = !side ? from.box.right : forward ? from.box.right : from.box.left
-      var x2 = !side ? to.box.right : forward ? to.box.left : to.box.right
-      // side by side the line turns at the middle of the gap, stacked it runs down a lane beside the wider box
-      var lane = side ? (x1 + x2) / 2 : Math.max(from.box.right, to.box.right) + 24
-      routes.push({line, from, to, side, forward, x1, x2, lane})
-    })
-    // routes that would turn on the same lane are spread 12px apart, so no two strokes share a segment
+  // mermaid joins two entities box to box, the skill joins the key rows: the primary key on the one side and the
+  // foreign key that refers to it on the many side. Each line is redrawn as a right-angle route between those rows,
+  // leaving and entering a box side horizontally, so both cardinality marks sit on the row they belong to
+  var erSquash = (text) => text.toLowerCase().replace(/[^a-z0-9]/g, '')
+  var erFind = (svg, name) => svg.querySelector('g.node.mmd-er-node[id$="-' + CSS.escape(name) + '"]')
+  var erMany = (line, attr) => /oneOrMore|zeroOrMore/.test(line.getAttribute(attr) || '')
+  // the foreign key is the one named after the parent (customer_id for CUSTOMER), or after its key (sku for sku)
+  var erRef = (child, key, parentName) => {
+    var refs = child.__mmdRows.filter((r) => r.fk)
+    return refs.find((r) => parentName && erSquash(r.field).includes(parentName)) ||
+      refs.find((r) => key && erSquash(r.field) === erSquash(key.field)) || refs[0]
+  }
+  var erAnchor = (node, row) => ({box: node.__mmdBox, y: row ? row.mid : (node.__mmdBox.top + node.__mmdBox.bottom) / 2})
+  // side by side the line turns at the middle of the gap, stacked it runs down a lane beside the wider box
+  var erSides = (from, to) => {
+    var forward = to.box.left - from.box.right >= 24
+    var side = forward || from.box.left - to.box.right >= 24
+    var x1 = !side ? from.box.right : forward ? from.box.right : from.box.left
+    var x2 = !side ? to.box.right : forward ? to.box.left : to.box.right
+    var lane = side ? (x1 + x2) / 2 : Math.max(from.box.right, to.box.right) + 24
+    return {side, forward, x1, x2, lane}
+  }
+  var erRoute = (svg, line) => {
+    var ends = /^id_(entity-.+-\d+)_(entity-.+-\d+)_\d+$/.exec(line.getAttribute('data-id') || '')
+    var a = ends && erFind(svg, ends[1])
+    var b = ends && erFind(svg, ends[2])
+    if (!a || !b || a === b) return null
+    // the parent is the one side; between two "many" or two "one" ends the first entity is
+    var aIsChild = erMany(line, 'marker-start') && !erMany(line, 'marker-end')
+    var parent = aIsChild ? b : a
+    var child = aIsChild ? a : b
+    var key = parent.__mmdRows.find((r) => r.pk)
+    var parentName = erSquash((/^entity-(.+)-\d+$/.exec(ends[aIsChild ? 2 : 1]) || [])[1] || '')
+    var ref = erRef(child, key, parentName)
+    // with no key row on either side there is nothing to point at, mermaid's own route stays
+    if (!key && !ref) return null
+    var from = erAnchor(a, a === parent ? key : ref)
+    var to = erAnchor(b, b === parent ? key : ref)
+    return Object.assign({line, from, to}, erSides(from, to))
+  }
+  // routes that would turn on the same lane are spread 12px apart, so no two strokes share a segment
+  var erSpread = (routes) => {
     var lanes = {}
     routes.forEach((r) => (lanes[Math.round(r.lane)] = (lanes[Math.round(r.lane)] || []).concat(r)))
     Object.keys(lanes).forEach((k) => {
       var group = lanes[k].sort((p, q) => Math.min(p.from.y, p.to.y) - Math.min(q.from.y, q.to.y))
       group.forEach((r, i) => (r.lane += r.side ? (i - (group.length - 1) / 2) * 12 : i * 12))
     })
-    var R = 8
-    // what the new routes take up, so labels do not land on each other and the svg can grow to hold them
+  }
+  var ER_CORNER = 8
+  var erStraight = (r) => r.side && Math.abs(r.to.y - r.from.y) < 1
+  var erPath = (r) => {
+    var {from, to, x1, x2, lane} = r
+    var dy = to.y - from.y
+    var sy = dy > 0 ? 1 : -1
+    var out = lane > x1 ? 1 : -1
+    var back = x2 > lane ? 1 : -1
+    var k = Math.min(ER_CORNER, Math.abs(dy) / 2, Math.abs(lane - x1), Math.abs(x2 - lane))
+    return erStraight(r)
+      ? `M${x1},${from.y}H${x2}`
+      : `M${x1},${from.y}H${lane - out * k}Q${lane},${from.y} ${lane},${from.y + sy * k}` +
+        `V${to.y - sy * k}Q${lane},${to.y} ${lane + back * k},${to.y}H${x2}`
+  }
+  // what the new routes take up, so labels do not land on each other and the svg can grow to hold them
+  var erCover = (reach, x1, y1, x2, y2) => {
+    reach.left = Math.min(reach.left, x1)
+    reach.top = Math.min(reach.top, y1)
+    reach.right = Math.max(reach.right, x2)
+    reach.bottom = Math.max(reach.bottom, y2)
+  }
+  // the name of a line as the screen shows it, in the svg's own units
+  var erLabelSize = (svg, text) => {
+    var range = document.createRange()
+    range.selectNodeContents(text)
+    var rect = range.getBoundingClientRect()
+    if (!rect.width) return null
+    var inverse = svg.getScreenCTM().inverse()
+    var corner = (x, y) => new DOMPoint(x, y).matrixTransform(inverse)
+    var tl = corner(rect.left, rect.top)
+    var br = corner(rect.right, rect.bottom)
+    return {tl, w: br.x - tl.x, h: br.y - tl.y}
+  }
+  // above a straight line, beside the lane of a turning one, on whichever side has the room: a gap is shared with
+  // the cardinality marks at both boxes
+  var erLabelSpot = (r, w, h) => {
+    var {from, to, x1, x2, lane} = r
+    var straight = erStraight(r)
+    var lo = Math.min(x1, x2)
+    var hi = Math.max(x1, x2)
+    var leftRoom = r.side ? lane - lo - 28 : -1
+    var rightRoom = r.side ? hi - lane - 28 : Infinity
+    var onRight = rightRoom >= w + 8 || rightRoom >= leftRoom
+    var left = straight ? (x1 + x2) / 2 - w / 2 : onRight ? lane + 8 : lane - 8 - w
+    var top = straight ? from.y - 8 - h : (from.y + to.y) / 2 - h / 2
+    return {left, top, straight}
+  }
+  // two names that would meet step apart, along the lane or up from a straight line
+  var erNudge = (spot, w, h, placed) => {
+    var hits = () => placed.some((p) => spot.left < p.right + 4 && spot.left + w > p.left - 4 && spot.top < p.bottom + 4 && spot.top + h > p.top - 4)
+    for (var tries = 0; tries < 8 && hits(); tries++) spot.top += spot.straight ? -(h + 4) : h + 4
+  }
+  // its name moves with it: 8px clear of the stroke
+  var erPlaceLabel = (svg, r, placed, reach) => {
+    var tag = svg.querySelector('g.edgeLabel .label[data-id="' + r.line.getAttribute('data-id') + '"]')
+    var group = tag && tag.closest('g.edgeLabel')
+    var text = group && group.querySelector('p, span')
+    var matrix = group && svg.getScreenCTM()
+    if (!text || !matrix) return
+    group.setAttribute('transform', 'translate(0, 0)')
+    var size = erLabelSize(svg, text)
+    if (!size) return
+    var {w, h} = size
+    var spot = erLabelSpot(r, w, h)
+    erNudge(spot, w, h, placed)
+    placed.push({left: spot.left, top: spot.top, right: spot.left + w, bottom: spot.top + h})
+    erCover(reach, spot.left, spot.top, spot.left + w, spot.top + h)
+    group.setAttribute('transform', `translate(${spot.left - size.tl.x}, ${spot.top - size.tl.y})`)
+  }
+  var erLay = (svg, routes) => {
     var placed = []
     var reach = {left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity}
-    var cover = (x1, y1, x2, y2) => {
-      reach.left = Math.min(reach.left, x1)
-      reach.top = Math.min(reach.top, y1)
-      reach.right = Math.max(reach.right, x2)
-      reach.bottom = Math.max(reach.bottom, y2)
-    }
     routes.forEach((r) => {
       var {line, from, to, x1, x2, lane} = r
-      var dy = to.y - from.y
-      var sy = dy > 0 ? 1 : -1
-      var out = lane > x1 ? 1 : -1
-      var back = x2 > lane ? 1 : -1
-      var k = Math.min(R, Math.abs(dy) / 2, Math.abs(lane - x1), Math.abs(x2 - lane))
-      var d = r.side && Math.abs(dy) < 1
-        ? `M${x1},${from.y}H${x2}`
-        : `M${x1},${from.y}H${lane - out * k}Q${lane},${from.y} ${lane},${from.y + sy * k}` +
-          `V${to.y - sy * k}Q${lane},${to.y} ${lane + back * k},${to.y}H${x2}`
-      line.setAttribute('d', d)
+      line.setAttribute('d', erPath(r))
       // mermaid draws the line as one long dash, a new length needs a new dash
       line.style.strokeDasharray = ''
-      cover(Math.min(x1, x2, lane), Math.min(from.y, to.y), Math.max(x1, x2, lane), Math.max(from.y, to.y))
-      // its name moves with it: above a straight line, beside the lane of a turning one, 8px clear of the stroke
-      var tag = svg.querySelector('g.edgeLabel .label[data-id="' + line.getAttribute('data-id') + '"]')
-      var group = tag && tag.closest('g.edgeLabel')
-      var text = group && group.querySelector('p, span')
-      var matrix = group && svg.getScreenCTM()
-      if (!text || !matrix) return
-      group.setAttribute('transform', 'translate(0, 0)')
-      var range = document.createRange()
-      range.selectNodeContents(text)
-      var rect = range.getBoundingClientRect()
-      if (!rect.width) return
-      var inverse = matrix.inverse()
-      var corner = (x, y) => new DOMPoint(x, y).matrixTransform(inverse)
-      var tl = corner(rect.left, rect.top)
-      var br = corner(rect.right, rect.bottom)
-      var w = br.x - tl.x
-      var h = br.y - tl.y
-      var straight = r.side && Math.abs(dy) < 1
-      // beside a lane, on whichever side has the room: a gap is shared with the cardinality marks at both boxes
-      var lo = Math.min(x1, x2)
-      var hi = Math.max(x1, x2)
-      var leftRoom = r.side ? lane - lo - 28 : -1
-      var rightRoom = r.side ? hi - lane - 28 : Infinity
-      var left = straight ? (x1 + x2) / 2 - w / 2 : rightRoom >= w + 8 || rightRoom >= leftRoom ? lane + 8 : lane - 8 - w
-      var top = straight ? from.y - 8 - h : (from.y + to.y) / 2 - h / 2
-      // two names that would meet step apart, along the lane or up from a straight line
-      var hits = () => placed.some((p) => left < p.right + 4 && left + w > p.left - 4 && top < p.bottom + 4 && top + h > p.top - 4)
-      for (var tries = 0; tries < 8 && hits(); tries++) top += straight ? -(h + 4) : h + 4
-      placed.push({left, top, right: left + w, bottom: top + h})
-      cover(left, top, left + w, top + h)
-      group.setAttribute('transform', `translate(${left - tl.x}, ${top - tl.y})`)
+      erCover(reach, Math.min(x1, x2, lane), Math.min(from.y, to.y), Math.max(x1, x2, lane), Math.max(from.y, to.y))
+      erPlaceLabel(svg, r, placed, reach)
     })
-    // a lane beside the boxes may run past what mermaid drew, the cardinality marks need 20px more
-    var frame = (svg.getAttribute('viewBox') || '').split(/[ ,]+/).map(parseFloat)
-    if (frame.length === 4 && routes.length && isFinite(reach.left)) {
-      var x0 = Math.min(frame[0], reach.left - 24)
-      var y0 = Math.min(frame[1], reach.top - 24)
-      var x1 = Math.max(frame[0] + frame[2], reach.right + 24)
-      var y1 = Math.max(frame[1] + frame[3], reach.bottom + 24)
-      if (x0 < frame[0] || y0 < frame[1] || x1 > frame[0] + frame[2] || y1 > frame[1] + frame[3]) {
-        svg.setAttribute('viewBox', [x0, y0, x1 - x0, y1 - y0].join(' '))
-        if (svg.style.maxWidth) svg.style.maxWidth = (x1 - x0) + 'px'
-      }
-    }
+    return reach
+  }
+  // a lane beside the boxes may run past what mermaid drew, the cardinality marks need 20px more
+  var erFit = (svg, routes, reach) => {
+    var frame = erViewBox(svg)
+    if (frame.length !== 4 || !routes.length || !isFinite(reach.left)) return
+    var x0 = Math.min(frame[0], reach.left - 24)
+    var y0 = Math.min(frame[1], reach.top - 24)
+    var x1 = Math.max(frame[0] + frame[2], reach.right + 24)
+    var y1 = Math.max(frame[1] + frame[3], reach.bottom + 24)
+    var grows = x0 < frame[0] || y0 < frame[1] || x1 > frame[0] + frame[2] || y1 > frame[1] + frame[3]
+    if (!grows) return
+    svg.setAttribute('viewBox', [x0, y0, x1 - x0, y1 - y0].join(' '))
+    if (svg.style.maxWidth) svg.style.maxWidth = (x1 - x0) + 'px'
+  }
 
-    // cardinality is written at the end of the line, where the line meets the entity
-    // the skill's notation: 1 for the one side, N for the many side, whether or not it is optional
-    var words = {onlyOne: '1', zeroOrOne: '1', oneOrMore: 'N', zeroOrMore: 'N'}
+  // cardinality is written at the end of the line, where the line meets the entity
+  // the skill's notation: 1 for the one side, N for the many side, whether or not it is optional
+  var ER_WORDS = {onlyOne: '1', zeroOrOne: '1', oneOrMore: 'N', zeroOrMore: 'N'}
+  var erNearest = (boxes, point) => {
+    var best = null
+    boxes.forEach((b) => {
+      var gap = Math.hypot(Math.max(b.old.left - point.x, 0, point.x - b.old.right), Math.max(b.old.top - point.y, 0, point.y - b.old.bottom))
+      if (!best || gap < best.gap) best = {box: b, gap}
+    })
+    return best
+  }
+  var erMark = (line, length, boxes, group, [attr, distance, way]) => {
+    var kind = /er-(onlyOne|zeroOrOne|oneOrMore|zeroOrMore)/.exec(line.getAttribute(attr) || '')
+    if (!kind) return
+    var point = line.getPointAtLength(distance)
+    var inner = line.getPointAtLength(Math.max(0, Math.min(length, distance + way * 6)))
+    var best = erNearest(boxes, point)
+    if (!best || best.gap > 8) return
+    // push the label out along the line, past the part of the box that grew upwards
+    var dx = inner.x - point.x
+    var dy = inner.y - point.y
+    var span = Math.hypot(dx, dy) || 1
+    var lift = dy / span < -0.5 ? best.box.grown : 0
+    var word = ER_WORDS[kind[1]]
+    var half = word.length * 3.2 + 3
+    var x = point.x + (dx / span) * (half + 6)
+    var y = point.y + (dy / span) * (half + 6) - lift
+    group.appendChild(erMake('rect', '', {x: x - half, y: y - 7, width: half * 2, height: 14, rx: 2}))
+    group.appendChild(erMake('text', '', {x, y: y + 3.5}, word))
+  }
+  var erCardinality = (svg, boxes) => {
     svg.querySelectorAll('path.relationshipLine').forEach((line) => {
       var length = line.getTotalLength()
       if (!length) return
-      var group = make('g', 'mmd-er-card', {'data-edge': line.getAttribute('data-id')})
-      ;[['marker-start', 0, 1], ['marker-end', length, -1]].forEach(([attr, distance, way]) => {
-        var kind = /er-(onlyOne|zeroOrOne|oneOrMore|zeroOrMore)/.exec(line.getAttribute(attr) || '')
-        if (!kind) return
-        var point = line.getPointAtLength(distance)
-        var inner = line.getPointAtLength(Math.max(0, Math.min(length, distance + way * 6)))
-        var best = null
-        boxes.forEach((b) => {
-          var gap = Math.hypot(Math.max(b.old.left - point.x, 0, point.x - b.old.right), Math.max(b.old.top - point.y, 0, point.y - b.old.bottom))
-          if (!best || gap < best.gap) best = {box: b, gap}
-        })
-        if (!best || best.gap > 8) return
-        // push the label out along the line, past the part of the box that grew upwards
-        var dx = inner.x - point.x
-        var dy = inner.y - point.y
-        var span = Math.hypot(dx, dy) || 1
-        var lift = dy / span < -0.5 ? best.box.grown : 0
-        var word = words[kind[1]]
-        var half = word.length * 3.2 + 3
-        var x = point.x + (dx / span) * (half + 6)
-        var y = point.y + (dy / span) * (half + 6) - lift
-        group.appendChild(make('rect', '', {x: x - half, y: y - 7, width: half * 2, height: 14, rx: 2}))
-        group.appendChild(make('text', '', {x, y: y + 3.5}, word))
-      })
+      var group = erMake('g', 'mmd-er-card', {'data-edge': line.getAttribute('data-id')})
+      ;[['marker-start', 0, 1], ['marker-end', length, -1]].forEach((end) => erMark(line, length, boxes, group, end))
       line.parentNode.appendChild(group)
       // the line is a hairline, give the pointer something wider to land on
       var hit = line.cloneNode(false)
@@ -765,6 +809,23 @@ var mmd = (() => {
       hit.setAttribute('data-edge', line.getAttribute('data-id'))
       line.parentNode.appendChild(hit)
     })
+  }
+
+  var erBoxes = (svg) => {
+    var boxes = []
+    var room = {top: 0, side: 0}
+    svg.querySelectorAll('g.node').forEach((node) => {
+      var drawn = erDrawNode(node)
+      if (!drawn) return
+      boxes.push({old: drawn.old, grown: drawn.grown})
+      room.top = Math.max(room.top, drawn.grown)
+      room.side = Math.max(room.side, drawn.side)
+    })
+    erGrow(svg, room)
+    var routes = Array.from(svg.querySelectorAll('path.relationshipLine')).map((line) => erRoute(svg, line)).filter(Boolean)
+    erSpread(routes)
+    erFit(svg, routes, erLay(svg, routes))
+    erCardinality(svg, boxes)
   }
 
   // split a member such as "+deposit(amount) : void" or "-double balance" into coloured tokens
@@ -902,6 +963,14 @@ var mmd = (() => {
       gitGraph: /^git-(.+)-0$/, c4: /^c4-(.+)-0$/, mindmap: /^mindmap-(.+)-0$/
     }[kind]
     var isClass = kind === 'classDiagram'
+    // a node id is "<prefix>-<id>-<n>", the prefix says which diagram drew it
+    var idPattern = {
+      er: /^entity-(.+)-\d+$/, dbml: /^dbml-(.+)-[0-9]+$/, journey: /^journey-(.+)-[0-9]+$/, timeline: /^timeline-(.+)-[0-9]+$/,
+      stateDiagram: /^state-(.+)-\d+$/, classDiagram: /^classId-(.+)-\d+$/
+    }[kind] || drawnBy || /^flowchart-(.+)-\d+$/
+    // the diagrams that carry a model of their own: names come from it, a dbml also shows it in its popup
+    var labelled = isJourney || isTimeline || !!drawnBy
+    var hasModel = isDbml || labelled
     // a journey is a chain of stages joined by the sentiment curve, it plays like a state machine
     var isState = kind === 'stateDiagram' || isEr || isJourney
     // a timeline plays its own reveal along the baseline (timeline.motion), not the comets of a flow. It is a step
@@ -940,14 +1009,14 @@ var mmd = (() => {
     // state diagrams name nodes "state-<id>-<n>"; a composite state is a cluster, drawn apart from the nodes
     // but reached by transitions all the same. Notes are not part of the machine
     var nodes = Array.from(svg.querySelectorAll(isState ? 'g.node:not(.statediagram-note), g.statediagram-cluster' : 'g.node')).map((el) => {
-      var match = (isEr ? /^entity-(.+)-\d+$/ : isDbml ? /^dbml-(.+)-[0-9]+$/ : isJourney ? /^journey-(.+)-[0-9]+$/ : isTimeline ? /^timeline-(.+)-[0-9]+$/ : drawnBy ? drawnBy : isState ? /^state-(.+)-\d+$/ : isClass ? /^classId-(.+)-\d+$/ : /^flowchart-(.+)-\d+$/).exec(local(el.id))
+      var match = idPattern.exec(local(el.id))
       // an entity's text holds every attribute, its name is the first label
       var label = el.querySelector(isClass ? '.label-group' : ':scope > .cluster-label, :scope > .label.name') || el
       return {el, id: (match && match[1]) || '', label: isDbml && match ? match[1] : label.textContent.trim(), cluster: el.classList.contains('statediagram-cluster')}
     }).filter((n) => n.id)
     // a dbml diagram carries what its popup shows, the columns and the keys of every table
     var model = (() => {
-      var meta = (isDbml || isJourney || isTimeline || drawnBy) && svg.querySelector('metadata[class$="-model"]')
+      var meta = hasModel && svg.querySelector('metadata[class$="-model"]')
       try {
         return meta ? JSON.parse(meta.textContent) : null
       }
@@ -955,8 +1024,9 @@ var mmd = (() => {
         return null
       }
     })()
+    var modelNodes = (model && model.nodes) || {}
     nodes.forEach((n) => {
-      if ((isJourney || isTimeline || drawnBy) && model && model.nodes && model.nodes[n.id]) n.label = model.nodes[n.id].name || n.id
+      if (labelled && modelNodes[n.id]) n.label = modelNodes[n.id].name || n.id
     })
     var kinds = ['focal', 'store', 'external', 'input', 'optional', 'security']
     var byId = new Map(nodes.map((n) => [n.id, n]))
@@ -1058,92 +1128,110 @@ var mmd = (() => {
     var comet = [['glow', 1], ['tail', 1], ['body', 0.75], ['head', 0.5], ['core', 0.3]]
     var NS = 'http://www.w3.org/2000/svg'
     var flowSeq = 0
-    // reverse runs it from the end of the path back to the start, over takes the clock for a one-shot. A looping
-    // streak with a cycle runs once per cycle and then waits, drained, for the next one
-    var LOOP = 2400
-    var flow = (edge, dir, delay = 0, loop = false, {reverse, over = 1400, color = '', cycle = 0} = {}) => {
-      // a streak runs towards the arrowhead: a class relation like "A <|-- B" has its head at the start of the path
-      if (reverse === undefined) {
-        var tip = (attr) => /^url\(/.test(edge.el.getAttribute?.(attr) || '') && !/none/.test(edge.el.getAttribute(attr))
-        reverse = tip('marker-start') && !tip('marker-end')
-      }
-      var group = document.createElementNS(NS, 'g')
-      group.setAttribute('class', loop ? 'mmd-flow mmd-loop' : 'mmd-flow')
-      group.dataset.dir = dir
-      // a class relation keeps its own colour while it plays
-      if (!color && edge.el.classList && edge.el.classList.contains('relation')) color = getComputedStyle(edge.el).stroke
-      color && group.style.setProperty('--c', color)
-      // real lengths, not pathLength: a scaled or non-scaling stroke does not reliably honour pathLength for dashes
-      var length = 0
-      try { length = edge.el.getTotalLength() } catch {}
-      if (!length) return group
-      // a long streak, about half the edge, between 80px and 260px but never longer than a short edge
-      var span = Math.min(length * 0.8, Math.max(80, Math.min(260, length * 0.5)))
-      var defs = document.createElementNS(NS, 'defs')
-      group.appendChild(defs)
-      edge.el.parentNode.appendChild(group)
-      var layers = comet.map(([part, share]) => {
-        var fade = document.createElementNS(NS, 'linearGradient')
-        fade.id = 'mmd-flow-fade-' + ++flowSeq
-        fade.setAttribute('class', 'mmd-flow-' + part + '-fade')
-        fade.setAttribute('gradientUnits', 'userSpaceOnUse')
-        ;[[0, 0], [1, 1]].forEach(([offset, opacity]) => {
-          var stop = document.createElementNS(NS, 'stop')
-          stop.setAttribute('offset', offset)
-          stop.setAttribute('stop-opacity', opacity)
-          fade.appendChild(stop)
-        })
-        defs.appendChild(fade)
-        var line = edge.el.cloneNode(false)
-        line.removeAttribute('id')
-        line.removeAttribute('style')
-        line.removeAttribute('marker-end')
-        line.removeAttribute('marker-start')
-        line.removeAttribute('pathLength')
-        // a playing edge carries its step state, which would restyle the copy
-        line.removeAttribute('data-mmd-seq')
-        line.removeAttribute('data-mmd-kind')
-        line.setAttribute('class', 'mmd-flow-' + part)
-        line.style.setProperty('stroke', 'url(#' + fade.id + ')', 'important')
-        var len = span * share
-        line.style.strokeDasharray = len + ' ' + (length + span) * 2
-        group.appendChild(line)
-        return {line, fade, len}
+    // a streak runs towards the arrowhead: a class relation like "A <|-- B" has its head at the start of the path
+    var headAtStart = (el) => {
+      var tip = (attr) => /^url\(/.test(el.getAttribute?.(attr) || '') && !/none/.test(el.getAttribute(attr))
+      return tip('marker-start') && !tip('marker-end')
+    }
+    // a long streak, about half the edge, between 80px and 260px but never longer than a short edge
+    var streakSpan = (length) => Math.min(length * 0.8, Math.max(80, Math.min(260, length * 0.5)))
+    // real lengths, not pathLength: a scaled or non-scaling stroke does not reliably honour pathLength for dashes
+    var lengthOf = (el) => {
+      try { return el.getTotalLength() } catch { return 0 }
+    }
+    // a class relation keeps its own colour while it plays
+    var relationColor = (el) => (el.classList && el.classList.contains('relation') ? getComputedStyle(el).stroke : '')
+    var fadeOf = (part, defs) => {
+      var fade = document.createElementNS(NS, 'linearGradient')
+      fade.id = 'mmd-flow-fade-' + ++flowSeq
+      fade.setAttribute('class', 'mmd-flow-' + part + '-fade')
+      fade.setAttribute('gradientUnits', 'userSpaceOnUse')
+      ;[[0, 0], [1, 1]].forEach(([offset, opacity]) => {
+        var stop = document.createElementNS(NS, 'stop')
+        stop.setAttribute('offset', offset)
+        stop.setAttribute('stop-opacity', opacity)
+        fade.appendChild(stop)
       })
-      // the edge sampled once into at most 256 points: a frame reads its positions from the table, asking the path on
-      // every frame for every layer of every lit edge stalls a large diagram
+      defs.appendChild(fade)
+      return fade
+    }
+    // the copy of the edge that carries one dash of the comet
+    var dashOf = (el, part, fade, dash) => {
+      var line = el.cloneNode(false)
+      line.removeAttribute('id')
+      line.removeAttribute('style')
+      line.removeAttribute('marker-end')
+      line.removeAttribute('marker-start')
+      line.removeAttribute('pathLength')
+      // a playing edge carries its step state, which would restyle the copy
+      line.removeAttribute('data-mmd-seq')
+      line.removeAttribute('data-mmd-kind')
+      line.setAttribute('class', 'mmd-flow-' + part)
+      line.style.setProperty('stroke', 'url(#' + fade.id + ')', 'important')
+      line.style.strokeDasharray = dash
+      return line
+    }
+    // the edge sampled once into at most 256 points: a frame reads its positions from the table, asking the path on
+    // every frame for every layer of every lit edge stalls a large diagram
+    var sampled = (el, length) => {
       var pitch = Math.max(2, length / 256)
       var count = Math.ceil(length / pitch)
       var samples = null
-      var point = (d) => {
-        samples = samples || Array.from({length: count + 1}, (_, k) => edge.el.getPointAtLength(Math.min(k * pitch, length)))
+      return (d) => {
+        samples = samples || Array.from({length: count + 1}, (_, k) => el.getPointAtLength(Math.min(k * pitch, length)))
         var i = Math.min(Math.floor(d / pitch), count - 1)
         var a = samples[i]
         var b = samples[i + 1]
         var f = (d - i * pitch) / Math.min(pitch, length - i * pitch)
         return {x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f}
       }
-      // a point on the edge, carried straight on past either end so the gradient keeps its span there
-      var at = (d) => {
-        var clamped = Math.max(0, Math.min(length, d))
-        var p = point(clamped)
-        if (clamped === d) return p
-        var q = point(d < 0 ? Math.min(length, 1) : Math.max(0, length - 1))
-        var dx = p.x - q.x
-        var dy = p.y - q.y
-        var n = Math.hypot(dx, dy) || 1
-        var over = Math.abs(d - clamped)
-        return {x: p.x + (dx / n) * over, y: p.y + (dy / n) * over}
-      }
+    }
+    // a point on the edge, carried straight on past either end so the gradient keeps its span there
+    var carried = (point, length) => (d) => {
+      var clamped = Math.max(0, Math.min(length, d))
+      var p = point(clamped)
+      if (clamped === d) return p
+      var q = point(d < 0 ? Math.min(length, 1) : Math.max(0, length - 1))
+      var dx = p.x - q.x
+      var dy = p.y - q.y
+      var n = Math.hypot(dx, dy) || 1
+      var past = Math.abs(d - clamped)
+      return {x: p.x + (dx / n) * past, y: p.y + (dy / n) * past}
+    }
+    var ease = (t) => (1 - Math.cos(Math.PI * t)) / 2
+    // reverse runs it from the end of the path back to the start, over takes the clock for a one-shot. A looping
+    // streak with a cycle runs once per cycle and then waits, drained, for the next one
+    var LOOP = 2400
+    var flow = (edge, dir, delay = 0, loop = false, {reverse, over = 1400, color = '', cycle = 0} = {}) => {
+      if (reverse === undefined) reverse = headAtStart(edge.el)
+      var group = document.createElementNS(NS, 'g')
+      group.setAttribute('class', loop ? 'mmd-flow mmd-loop' : 'mmd-flow')
+      group.dataset.dir = dir
+      color = color || relationColor(edge.el)
+      color && group.style.setProperty('--c', color)
+      var length = lengthOf(edge.el)
+      if (!length) return group
+      var span = streakSpan(length)
+      var defs = document.createElementNS(NS, 'defs')
+      group.appendChild(defs)
+      edge.el.parentNode.appendChild(group)
+      var layers = comet.map(([part, share]) => {
+        var fade = fadeOf(part, defs)
+        var len = span * share
+        var line = dashOf(edge.el, part, fade, len + ' ' + (length + span) * 2)
+        group.appendChild(line)
+        return {line, fade, len}
+      })
+      var at = carried(sampled(edge.el, length), length)
       // dashoffset and gradient both follow the head, so they move together frame by frame
       // the streak enters from before the source and runs past the end so it drains wholly into the target
       var duration = loop ? LOOP : over
       var start = performance.now() + delay * 1000
-      var ease = (t) => (1 - Math.cos(Math.PI * t)) / 2
+      var cyclic = loop && cycle
       var frame = (now) => {
         if (!group.isConnected) return
         var elapsed = Math.max(0, now - start)
-        var t = loop && cycle ? Math.min(1, (elapsed % cycle) / duration) : elapsed / duration
+        var t = cyclic ? Math.min(1, (elapsed % cycle) / duration) : elapsed / duration
         if (!loop && t >= 1) return group.remove()
         var run = ease(loop && !cycle ? t % 1 : t)
         var head = reverse ? length - run * (length + span) : run * (length + span)
@@ -1625,8 +1713,7 @@ var mmd = (() => {
     }
 
     var focused = null
-    var focus = (id, reach = null) => {
-      isDbml && lightD([], [])
+    var clearFocus = () => {
       svg.querySelectorAll('.mmd-on, .mmd-selected, .mmd-peek').forEach((el) => el.classList.remove('mmd-on', 'mmd-selected', 'mmd-peek'))
       // the label colour comes from a stylesheet scoped by the svg id, only inline !important outranks it
       svg.querySelectorAll('.edgeLabel span, .edgeLabel p').forEach((el) => {
@@ -1638,55 +1725,67 @@ var mmd = (() => {
         tint(edge, false)
         delete edge.el.dataset.mmdDir
       })
+    }
+    // time runs one way: both sides of a timeline period light as one stretch, left to right. A relationship
+    // has no direction, both ends of an entity's links light in the accent
+    var focusDir = (edge, id, reach) => {
+      if (isTimeline || isEr || reach === 'down') return 'out'
+      return reach === 'up' || edge.from !== id ? 'in' : 'out'
+    }
+    var lightLabel = (label) => {
+      label.classList.add('mmd-on')
+      label.querySelectorAll('span, p').forEach((el) => {
+        el.style.setProperty('color', document.documentElement.classList.contains('_mermaid-dark') ? '#f5f5f5' : '#2d3142', 'important')
+        el.style.setProperty('font-weight', '600', 'important')
+      })
+    }
+    var lightEdge = (edge, index, id, reach) => {
+      var dir = focusDir(edge, id, reach)
+      edge.el.dataset.mmdDir = dir
+      edge.el.classList.add('mmd-on')
+      edge.extras.forEach((el) => el.classList.add('mmd-on'))
+      tint(edge, true, dir)
+      if (edge.label) lightLabel(edge.label)
+      isTimeline || (isJourney && !reach) || flow(edge, dir, Math.min(index, 6) * 0.2, true)
+    }
+    // the head reaches the end of a path at run = length / (length + span), on the eased clock
+    var arrival = (edge) => {
+      var length = edge.el.getTotalLength()
+      return (Math.acos(1 - 2 * (length / (length + streakSpan(length)))) / Math.PI) * LOOP
+    }
+    // a journey stage is a relay: the streak out of it leaves only once the streak into it has arrived, then both
+    // wait for the next round. A stage with nothing coming in starts at once
+    var relay = (id, used) => {
+      var input = used.find((edge) => edge.to === id)
+      var output = used.find((edge) => edge.from === id)
+      var both = input && output
+      var lag = both ? arrival(input) : 0
+      var cycle = both ? lag + LOOP : 0
+      input && flow(input, input.el.dataset.mmdDir, 0, true, {cycle})
+      output && flow(output, output.el.dataset.mmdDir, lag / 1000, true, {cycle})
+    }
+    // one comet runs the whole stretch through the period, from the one before it to the one after
+    var stretch = (used) => {
+      var xs = used.flatMap((edge) => [edge.el.getPointAtLength(0).x, edge.el.getPointAtLength(edge.el.getTotalLength()).x])
+      var y = used[0].el.getPointAtLength(0).y
+      var span = document.createElementNS(NS, 'path')
+      span.setAttribute('class', 'mmd-flow')
+      span.setAttribute('d', 'M' + Math.min(...xs) + ',' + y + 'H' + Math.max(...xs))
+      span.setAttribute('fill', 'none')
+      span.setAttribute('stroke', 'none')
+      used[0].el.parentNode.appendChild(span)
+      flow({el: span}, 'out', 0, true)
+    }
+    var focus = (id, reach = null) => {
+      isDbml && lightD([], [])
+      clearFocus()
       focused = id
       svg.classList.toggle('mmd-focus', !!id)
       if (id) {
         var {shown, used} = trace(id, reach)
-        used.forEach((edge, index) => {
-          // time runs one way: both sides of a timeline period light as one stretch, left to right. A relationship
-          // has no direction, both ends of an entity's links light in the accent
-          var dir = isTimeline || isEr || reach === 'down' ? 'out' : reach === 'up' ? 'in' : edge.from === id ? 'out' : 'in'
-          edge.el.dataset.mmdDir = dir
-          edge.el.classList.add('mmd-on')
-          edge.extras.forEach((el) => el.classList.add('mmd-on'))
-          tint(edge, true, dir)
-          if (edge.label) {
-            edge.label.classList.add('mmd-on')
-            edge.label.querySelectorAll('span, p').forEach((el) => {
-              el.style.setProperty('color', document.documentElement.classList.contains('_mermaid-dark') ? '#f5f5f5' : '#2d3142', 'important')
-              el.style.setProperty('font-weight', '600', 'important')
-            })
-          }
-          isTimeline || (isJourney && !reach) || flow(edge, dir, Math.min(index, 6) * 0.2, true)
-        })
-        // a journey stage is a relay: the streak out of it leaves only once the streak into it has arrived, then both
-        // wait for the next round. A stage with nothing coming in starts at once
-        if (isJourney && !reach && used.length) {
-          var input = used.find((edge) => edge.to === id)
-          var output = used.find((edge) => edge.from === id)
-          // the head reaches the end of a path at run = length / (length + span), on the eased clock
-          var arrive = (edge) => {
-            var length = edge.el.getTotalLength()
-            var span = Math.min(length * 0.8, Math.max(80, Math.min(260, length * 0.5)))
-            return (Math.acos(1 - 2 * (length / (length + span))) / Math.PI) * LOOP
-          }
-          var lag = input && output ? arrive(input) : 0
-          var cycle = input && output ? lag + LOOP : 0
-          input && flow(input, input.el.dataset.mmdDir, 0, true, {cycle})
-          output && flow(output, output.el.dataset.mmdDir, lag / 1000, true, {cycle})
-        }
-        // one comet runs the whole stretch through the period, from the one before it to the one after
-        if (isTimeline && used.length) {
-          var xs = used.flatMap((edge) => [edge.el.getPointAtLength(0).x, edge.el.getPointAtLength(edge.el.getTotalLength()).x])
-          var y = used[0].el.getPointAtLength(0).y
-          var span = document.createElementNS(NS, 'path')
-          span.setAttribute('class', 'mmd-flow')
-          span.setAttribute('d', 'M' + Math.min(...xs) + ',' + y + 'H' + Math.max(...xs))
-          span.setAttribute('fill', 'none')
-          span.setAttribute('stroke', 'none')
-          used[0].el.parentNode.appendChild(span)
-          flow({el: span}, 'out', 0, true)
-        }
+        used.forEach((edge, index) => lightEdge(edge, index, id, reach))
+        if (isJourney && !reach && used.length) relay(id, used)
+        if (isTimeline && used.length) stretch(used)
         nodes.forEach(({el, id: nodeId}) => el.classList.toggle('mmd-on', shown.has(nodeId)))
         byId.get(id).el.classList.add('mmd-selected')
       }
@@ -1728,7 +1827,11 @@ var mmd = (() => {
         tint(e, true, dir)
       })
     }
-    pre.addEventListener('mouseover', (e) => !isEr && !isDbml && active() && nodes.length && peek(e.target.closest && e.target.closest('g.node')), {signal})
+    var hoverable = !isEr && !isDbml
+    pre.addEventListener('mouseover', (e) => {
+      if (!hoverable || !active() || !nodes.length) return
+      peek(e.target.closest && e.target.closest('g.node'))
+    }, {signal})
     pre.addEventListener('mouseleave', () => peek(null), {signal})
 
     // entity model: hover a relationship, a key row or an entity and the relationships through it light up with the

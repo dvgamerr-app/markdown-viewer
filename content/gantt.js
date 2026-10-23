@@ -34,114 +34,156 @@ var gantt = (() => {
     return day === 0 || day === 6
   }
 
-  var parse = (src) => {
-    var lines = draw.lines(src)
-    if (!lines) return null
-    var model = {title: '', dateFormat: 'YYYY-MM-DD', axisFormat: '', tickInterval: '', weekends: false, today: true, sections: [], links: {}}
+  // the plain `name value` settings, keyed by the lowercased directive
+  var SETTINGS = {title: 'title', dateformat: 'dateFormat', axisformat: 'axisFormat', tickinterval: 'tickInterval'}
+  // switches the drawing does not follow: let mermaid draw the chart
+  var UNSUPPORTED = /^(displayMode|includes|inclusiveEndDates|topAxis|weekday|weekend)\b/i
+
+  // every directive handler returns false when the chart is not understood, mermaid then draws it
+  var directives = [
+    [/^acc(Title|Descr)\b/, (state, found, line) => {
+      state.skip = /\{\s*$/.test(line)
+      return true
+    }],
+    [/^(title|dateFormat|axisFormat|tickInterval)\s+(.*)$/i, (state, found) => {
+      state.model[SETTINGS[found[1].toLowerCase()]] = found[2].trim()
+      return true
+    }],
+    [/^todayMarker\s+(.*)$/i, (state, found) => {
+      state.model.today = found[1].trim() !== 'off'
+      return true
+    }],
+    [/^excludes\s+(.*)$/i, (state, found) => {
+      var rest = found[1].split(/[\s,]+/).filter(Boolean)
+      if (rest.some((w) => !/^weekends?$/i.test(w))) return false
+      state.model.weekends = true
+      return true
+    }],
+    [/^section\s*(.*)$/i, (state, found) => {
+      addSection(state, found[1].trim())
+      return true
+    }],
+    [/^click\s+(\S+)\s+href\s+"([^"]*)"/i, (state, found) => {
+      found[1].split(',').forEach((id) => (state.model.links[id.trim()] = found[2]))
+      return true
+    }],
+    // a click that calls a function needs the page's script, the task stays a plain bar
+    [/^click\s/i, () => true],
+    [UNSUPPORTED, () => false],
+  ]
+
+  var addSection = (state, name) => {
+    state.section = {name, tasks: []}
+    state.model.sections.push(state.section)
+  }
+
+  // `name : tags, id, start, end` -> a task in the current section, false when the metadata does not fit
+  var parseTask = (state, line) => {
+    var colon = line.indexOf(':')
+    if (colon < 1) return false
+    if (!state.section) addSection(state, '')
+    var task = {name: line.slice(0, colon).trim(), section: state.section.name, tags: []}
+    var meta = line.slice(colon + 1).split(',').map((m) => m.trim()).filter(Boolean)
+    while (meta.length && TAGS.includes(meta[0])) task.tags.push(meta.shift())
+    if (meta.length > 3 || !meta.length) return false
+    if (meta.length === 3) task.id = meta.shift()
+    if (meta.length === 2) task.start = meta.shift()
+    task.end = meta[0]
+    state.section.tasks.push(task)
+    state.raw.push(task)
+    return true
+  }
+
+  var parseLine = (state, line) => {
+    for (var [regex, handle] of directives) {
+      var found = regex.exec(line)
+      if (found) return handle(state, found, line)
+    }
+    return parseTask(state, line)
+  }
+
+  // the lines after the gantt header into sections and unresolved tasks, null when a line is not understood
+  var parseLines = (lines, model) => {
+    var state = {model, section: null, raw: [], skip: false}
     var head = false
-    var section = null
-    var skip = false
-    var raw = []
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].replace(/%%.*$/, '').trim()
       if (!line) continue
       if (!head) {
         if (!/^gantt$/i.test(line)) return null
         head = true
-        continue
       }
-      if (skip) {
-        skip = !line.includes('}')
-        continue
-      }
-      var found
-      if (/^acc(Title|Descr)\b/.test(line)) skip = /\{\s*$/.test(line)
-      else if ((found = /^title\s+(.*)$/i.exec(line))) model.title = found[1].trim()
-      else if ((found = /^dateFormat\s+(.*)$/i.exec(line))) model.dateFormat = found[1].trim()
-      else if ((found = /^axisFormat\s+(.*)$/i.exec(line))) model.axisFormat = found[1].trim()
-      else if ((found = /^tickInterval\s+(.*)$/i.exec(line))) model.tickInterval = found[1].trim()
-      else if ((found = /^todayMarker\s+(.*)$/i.exec(line))) model.today = found[1].trim() !== 'off'
-      else if ((found = /^excludes\s+(.*)$/i.exec(line))) {
-        var rest = found[1].split(/[\s,]+/).filter(Boolean)
-        if (rest.some((w) => !/^weekends?$/i.test(w))) return null
-        model.weekends = true
-      }
-      else if ((found = /^section\s*(.*)$/i.exec(line))) {
-        section = {name: found[1].trim(), tasks: []}
-        model.sections.push(section)
-      }
-      else if ((found = /^click\s+(\S+)\s+href\s+"([^"]*)"/i.exec(line))) {
-        found[1].split(',').forEach((id) => (model.links[id.trim()] = found[2]))
-      }
-      // a click that calls a function needs the page's script, the task stays a plain bar
-      else if (/^click\s/i.test(line)) continue
-      // switches the drawing does not follow: let mermaid draw the chart
-      else if (/^(displayMode|includes|inclusiveEndDates|topAxis|weekday|weekend)\b/i.test(line)) return null
-      else {
-        var colon = line.indexOf(':')
-        if (colon < 1) return null
-        if (!section) {
-          section = {name: '', tasks: []}
-          model.sections.push(section)
-        }
-        var task = {name: line.slice(0, colon).trim(), section: section.name, tags: []}
-        var meta = line.slice(colon + 1).split(',').map((m) => m.trim()).filter(Boolean)
-        while (meta.length && TAGS.includes(meta[0])) task.tags.push(meta.shift())
-        if (meta.length > 3 || !meta.length) return null
-        if (meta.length === 3) task.id = meta.shift()
-        if (meta.length === 2) task.start = meta.shift()
-        task.end = meta[0]
-        section.tasks.push(task)
-        raw.push(task)
-      }
+      else if (state.skip) state.skip = !line.includes('}')
+      else if (!parseLine(state, line)) return null
     }
-    if (!head || !raw.length) return null
+    return head && state.raw.length ? state.raw : null
+  }
 
-    var date = dateParser(model.dateFormat)
-    if (!date) return null
-    // ids and dates, in source order: a task without a start begins where the one above it ended
+  // the start: the end of the task above, the latest end of the tasks it comes after, or a date. false when unknown
+  var resolveStart = (task, previous, byId, date) => {
+    if (task.start === undefined) {
+      if (!previous) return false
+      task.from = previous.to
+      return true
+    }
+    if (/^after\s/.test(task.start)) {
+      var names = task.start.split(/\s+/).slice(1)
+      var refs = names.map((r) => byId[r])
+      if (!refs.length || refs.some((r) => !r)) return false
+      task.from = Math.max(...refs.map((r) => r.to))
+      task.after = names
+      return true
+    }
+    task.from = date(task.start)
+    return task.from !== null
+  }
+
+  // excluded days do not count toward a duration, each one pushes the end a day further. As in mermaid the bar
+  // stops where the last working day ends (until), the next task still starts after the skipped days (to)
+  var skipWeekends = (task) => {
+    var off = false
+    for (var at = task.from; at <= task.to; at += DAY) {
+      if (!off) task.until = task.to
+      off = weekend(at)
+      if (off) task.to += DAY
+    }
+  }
+
+  var resolveEnd = (task, model, date) => {
+    var length = duration(task.end)
+    if (length === null) {
+      task.to = date(task.end)
+      return task.to !== null
+    }
+    task.to = task.from + length
+    if (model.weekends && length >= DAY) skipWeekends(task)
+    return true
+  }
+
+  // ids and dates, in source order
+  var resolveTasks = (raw, model, date) => {
     var byId = {}
     var previous = null
     for (var k = 0; k < raw.length; k++) {
       var task = raw[k]
       task.id = task.id || 'task' + (k + 1)
-      if (task.start === undefined) {
-        if (!previous) return null
-        task.from = previous.to
-      }
-      else if (/^after\s/.test(task.start)) {
-        var refs = task.start.split(/\s+/).slice(1).map((r) => byId[r])
-        if (!refs.length || refs.some((r) => !r)) return null
-        task.from = Math.max(...refs.map((r) => r.to))
-        task.after = task.start.split(/\s+/).slice(1)
-      }
-      else {
-        task.from = date(task.start)
-        if (task.from === null) return null
-      }
-      var length = duration(task.end)
-      if (length !== null) {
-        task.to = task.from + length
-        // excluded days do not count toward a duration, each one pushes the end a day further. As in mermaid the bar
-        // stops where the last working day ends (until), the next task still starts after the skipped days (to)
-        if (model.weekends && length >= DAY) {
-          var off = false
-          for (var at = task.from; at <= task.to; at += DAY) {
-            if (!off) task.until = task.to
-            off = weekend(at)
-            if (off) task.to += DAY
-          }
-        }
-      }
-      else {
-        task.to = date(task.end)
-        if (task.to === null) return null
-      }
-      if (task.to < task.from) return null
+      if (!resolveStart(task, previous, byId, date) || !resolveEnd(task, model, date)) return false
+      if (task.to < task.from) return false
       if (task.until === undefined) task.until = task.to
       byId[task.id] = task
       previous = task
     }
+    return true
+  }
+
+  var parse = (src) => {
+    var lines = draw.lines(src)
+    if (!lines) return null
+    var model = {title: '', dateFormat: 'YYYY-MM-DD', axisFormat: '', tickInterval: '', weekends: false, today: true, sections: [], links: {}}
+    var raw = parseLines(lines, model)
+    if (!raw) return null
+    var date = dateParser(model.dateFormat)
+    if (!date || !resolveTasks(raw, model, date)) return null
     model.tasks = raw
     return model
   }
@@ -190,180 +232,225 @@ var gantt = (() => {
   var ZONE_GAP = 12
   var AXIS = 32
 
-  // gantt source -> svg markup, or '' when mermaid should draw it. t: the style tokens of mermaid.js
-  var render = (src, t, fonts, id) => {
-    var model = parse(src)
-    if (!model) return ''
-    var sans = fonts.sans
-    var mono = fonts.mono
-    var accent = t.accent
-    // the light accent is a bright orange for marks, text on paper needs the darker one
-    var accentText = t.accentText
-    var has = (task, tag) => task.tags.includes(tag)
-    var rows = model.tasks.filter((task) => !has(task, 'vert'))
-    var verts = model.tasks.filter((task) => has(task, 'vert'))
-    if (!rows.length) return ''
+  var has = (task, tag) => task.tags.includes(tag)
+  var iso = (time) => new Date(time).toISOString().slice(0, 10)
 
+  var STEPS = [{n: 1, unit: 'h', size: 3600000}, {n: 6, unit: 'h', size: 6 * 3600000}, {n: 1, unit: 'day', size: DAY},
+    {n: 2, unit: 'day', size: 2 * DAY}, {n: 1, unit: 'week', size: 7 * DAY}, {n: 2, unit: 'week', size: 14 * DAY},
+    {n: 1, unit: 'month', size: 30 * DAY}, {n: 3, unit: 'month', size: 91 * DAY}, {n: 12, unit: 'month', size: 365 * DAY}]
+
+  // a format without a day (or a month) would print the same label on every tick of a finer step: the finest step
+  // that still shows a different label
+  var stepFloor = (format) => {
+    if (/%[HM]/.test(format)) return 0
+    if (/%[deaAj]/.test(format)) return DAY
+    return /%[bBm]/.test(format) ? 30 * DAY : 365 * DAY
+  }
+
+  // the axis: an explicit tickInterval, or the smallest calendar step that leaves room for its label. null for a
+  // tickInterval that is not understood
+  var axisInterval = (model, format, geo, mono) => {
+    if (model.tickInterval) {
+      var match = /^(\d+)(millisecond|second|minute|hour|day|week|month)$/.exec(model.tickInterval)
+      // a zero step never moves on
+      if (!match || !parseInt(match[1], 10)) return null
+      return {n: parseInt(match[1], 10), unit: INTERVAL[match[2]]}
+    }
+    var label = measure(strftime(format, geo.from), 9, mono) + 24
+    var floor = stepFloor(format)
+    return STEPS.find((s) => s.size >= floor && (s.size / geo.span) * geo.timeW >= label) || STEPS[STEPS.length - 1]
+  }
+
+  // the label column fits the longest name, the time area gets a pitch that keeps day-scale charts readable
+  var geometry = (model, rows, sans) => {
     var from = Math.min(...model.tasks.map((task) => task.from))
     var to = Math.max(...model.tasks.map((task) => task.until))
     if (to === from) to = from + DAY
     var span = to - from
-
-    // the label column fits the longest name, the time area gets a pitch that keeps day-scale charts readable
     var labelW = grid(Math.min(240, Math.max(120, ...rows.map((task) => measure(task.name, 12, sans, 600) + 24))))
     var x0 = MARGIN + labelW + 16
     var timeW = grid(Math.max(480, Math.min(880, (span / DAY) * 20)))
     var right = x0 + timeW
     var zoneRight = right + 12
-    var width = zoneRight + MARGIN
-    var x = (time) => x0 + ((time - from) / span) * timeW
+    return {from, to, span, labelW, x0, timeW, right, zoneRight, width: zoneRight + MARGIN, x: (time) => x0 + ((time - from) / span) * timeW}
+  }
 
-    // the axis: an explicit tickInterval, or the smallest calendar step that leaves room for its label
-    var format = model.axisFormat || '%Y-%m-%d'
-    var interval = null
-    if (model.tickInterval) {
-      var match = /^(\d+)(millisecond|second|minute|hour|day|week|month)$/.exec(model.tickInterval)
-      // a zero step never moves on
-      if (!match || !parseInt(match[1], 10)) return ''
-      interval = {n: parseInt(match[1], 10), unit: INTERVAL[match[2]]}
-    }
-    else {
-      var label = measure(strftime(format, from), 9, mono) + 24
-      var steps = [{n: 1, unit: 'h', size: 3600000}, {n: 6, unit: 'h', size: 6 * 3600000}, {n: 1, unit: 'day', size: DAY},
-        {n: 2, unit: 'day', size: 2 * DAY}, {n: 1, unit: 'week', size: 7 * DAY}, {n: 2, unit: 'week', size: 14 * DAY},
-        {n: 1, unit: 'month', size: 30 * DAY}, {n: 3, unit: 'month', size: 91 * DAY}, {n: 12, unit: 'month', size: 365 * DAY}]
-      // a format without a day (or a month) would print the same label on every tick of a finer step
-      var floor = /%[HM]/.test(format) ? 0 : /%[deaAj]/.test(format) ? DAY : /%[bBm]/.test(format) ? 30 * DAY : 365 * DAY
-      interval = steps.find((s) => s.size >= floor && (s.size / span) * timeW >= label) || steps[steps.length - 1]
-    }
-    var marks = ticks(interval, from, to, 60)
-    if (!marks) return ''
-
-    var body = []
-    var y = MARGIN
-    if (model.title) {
-      body.push(`<text x="${MARGIN}" y="${y + 14}" font-family="${sans}" font-size="16" font-weight="600" fill="${t.ink}">${esc(model.title)}</text>`)
-      y += 40
-    }
-    var axisY = y + AXIS
-    y = axisY + 12
-
-    // phase zones, one per section, rows inside
+  // phase zones, one per section, rows inside: the zones, each row's top and where the last zone ends
+  var layoutZones = (model, top0) => {
     var zones = []
     var rowY = {}
+    var y = top0
     model.sections.forEach((section) => {
       var tasks = section.tasks.filter((task) => !has(task, 'vert'))
       if (!tasks.length) return
       var top = y
-      var named = !!section.name
-      var first = top + (named ? HEAD : 4)
+      var first = top + (section.name ? HEAD : 4)
       tasks.forEach((task, i) => (rowY[task.id] = first + i * ROW))
       var bottom = first + tasks.length * ROW + 4
       zones.push({name: section.name, top, bottom})
       y = bottom + ZONE_GAP
     })
-    var chartBottom = y - ZONE_GAP
-    // task dates are wall-clock times kept as UTC, as mermaid reads them in local time, so now is the local clock too
-    var now = Date.now() - new Date().getTimezoneOffset() * 60000
-    var today = model.today && now >= from && now <= to
-    var footer = verts.length || today ? 24 : 0
-    var height = chartBottom + footer + MARGIN
+    return {zones, rowY, chartBottom: y - ZONE_GAP}
+  }
 
-    // zones go first, the grid draws over their wash
-    zones.forEach((zone) => {
-      body.push(`<rect x="${MARGIN}" y="${zone.top}" width="${zoneRight - MARGIN}" height="${zone.bottom - zone.top}" rx="6" ` +
-        `fill="rgba(${t.inkRgb},0.02)" stroke="rgba(${t.inkRgb},0.10)"/>`)
-      if (zone.name) {
-        body.push(`<text x="${MARGIN + 12}" y="${zone.top + 18}" font-family="${mono}" font-size="8" letter-spacing="1.44" fill="${t.muted}">${esc(zone.name.toUpperCase())}</text>`)
-      }
-    })
+  var titleMarkup = (c) => `<text x="${MARGIN}" y="${MARGIN + 14}" font-family="${c.sans}" font-size="16" font-weight="600" fill="${c.t.ink}">${esc(c.model.title)}</text>`
 
-    // excluded weekends as faint bands across the time area
-    if (model.weekends) {
-      var day = Date.UTC(new Date(from).getUTCFullYear(), new Date(from).getUTCMonth(), new Date(from).getUTCDate())
-      for (; day < to; day += DAY) {
-        if (!weekend(day)) continue
-        var a = Math.max(x(day), x0)
-        var b = Math.min(x(day + DAY), right)
-        if (b > a) body.push(`<rect x="${num(a)}" y="${axisY}" width="${num(b - a)}" height="${chartBottom - axisY}" fill="rgba(${t.inkRgb},0.035)"/>`)
-      }
+  // zones go first, the grid draws over their wash
+  var zoneMarkup = (c) => c.zones.map((zone) => {
+    var box = `<rect x="${MARGIN}" y="${zone.top}" width="${c.zoneRight - MARGIN}" height="${zone.bottom - zone.top}" rx="6" ` +
+      `fill="rgba(${c.t.inkRgb},0.02)" stroke="rgba(${c.t.inkRgb},0.10)"/>`
+    if (!zone.name) return box
+    return box + `<text x="${MARGIN + 12}" y="${zone.top + 18}" font-family="${c.mono}" font-size="8" letter-spacing="1.44" fill="${c.t.muted}">${esc(zone.name.toUpperCase())}</text>`
+  })
+
+  // excluded weekends as faint bands across the time area
+  var weekendMarkup = (c) => {
+    var out = []
+    var start = new Date(c.from)
+    for (var day = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()); day < c.to; day += DAY) {
+      if (!weekend(day)) continue
+      var a = Math.max(c.x(day), c.x0)
+      var b = Math.min(c.x(day + DAY), c.right)
+      if (b > a) out.push(`<rect x="${num(a)}" y="${c.axisY}" width="${num(b - a)}" height="${c.chartBottom - c.axisY}" fill="rgba(${c.t.inkRgb},0.035)"/>`)
     }
+    return out
+  }
 
-    // the axis: mono ticks above a solid baseline with a short notch each, no lines through the zones: the only
-    // full-height lines are today, the vert markers and the cursor
-    body.push(`<path d="M${x0},${axisY}H${right}" stroke="${t.ruleSolid}"/>`)
-    marks.forEach((time) => {
-      var at = num(x(time))
-      body.push(`<path d="M${at},${axisY - 4}V${axisY}" stroke="${t.ruleSolid}"/>` +
-        `<text x="${at}" y="${axisY - 10}" text-anchor="middle" font-family="${mono}" font-size="9" fill="${t.muted}">${esc(strftime(format, time))}</text>`)
-    })
+  // mono ticks above a solid baseline with a short notch each, no lines through the zones: the only full-height
+  // lines are today, the vert markers and the cursor
+  var axisMarkup = (c) => [`<path d="M${c.x0},${c.axisY}H${c.right}" stroke="${c.t.ruleSolid}"/>`].concat(c.marks.map((time) => {
+    var at = num(c.x(time))
+    return `<path d="M${at},${c.axisY - 4}V${c.axisY}" stroke="${c.t.ruleSolid}"/>` +
+      `<text x="${at}" y="${c.axisY - 10}" text-anchor="middle" font-family="${c.mono}" font-size="9" fill="${c.t.muted}">${esc(strftime(c.format, time))}</text>`
+  }))
 
-    // the bars: name in the left column, bar on the axis
-    var cards = rows.map((task) => {
-      var top = rowY[task.id]
-      var crit = has(task, 'crit')
-      var done = has(task, 'done')
-      var active = has(task, 'active')
-      var nameFill = crit ? accentText : done ? t.muted : t.ink
-      var g = [`<g class="node gantt-task" id="${id}-gantt-${esc(task.id)}-0">`]
-      var name = `<text x="${MARGIN + 12}" y="${top + 20}" dominant-baseline="central" font-family="${sans}" font-size="12" font-weight="600" fill="${nameFill}">${esc(fit(task.name, labelW - 24, 12, sans, 600))}</text>`
-      var link = model.links[task.id]
-      g.push(link && /^https?:/i.test(link) ? `<a href="${esc(link)}" target="_blank" rel="noopener">${name}</a>` : name)
-      var a = x(task.from)
-      var b = x(task.until)
-      if (has(task, 'milestone')) {
-        var cx = num((a + b) / 2)
-        var cy = top + 20
-        g.push(`<path d="M${cx},${cy - 8}L${cx + 8},${cy}L${cx},${cy + 8}L${cx - 8},${cy}Z" fill="${crit ? accent : t.ink}" stroke="${t.paper}" stroke-width="1.5"/>`)
-      }
-      else {
-        var w = Math.max(b - a, 4)
-        var fill = crit ? t.accentTint : done ? `rgba(${t.inkRgb},0.05)` : active ? t.node : `rgba(${t.mutedRgb || t.inkRgb},0.15)`
-        var stroke = crit ? accent : done ? t.ruleSolid : active ? t.ink : t.muted
-        var weight = active ? (crit ? 1.6 : 1.4) : 1
-        // an opaque mask first, so the grid stays behind a translucent bar
-        g.push(`<rect x="${num(a)}" y="${top + 8}" width="${num(w)}" height="${BAR}" rx="4" fill="${t.paper}"/>`,
-          `<rect class="gantt-bar" x="${num(a)}" y="${top + 8}" width="${num(w)}" height="${BAR}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${weight}"${done && crit ? ' stroke-opacity="0.5"' : ''}/>`)
-      }
-      g.push('</g>')
-      return g.join('')
-    })
+  var milestoneMarkup = (c, task, a, b, top) => {
+    var cx = num((a + b) / 2)
+    var cy = top + 20
+    return `<path d="M${cx},${cy - 8}L${cx + 8},${cy}L${cx},${cy + 8}L${cx - 8},${cy}Z" fill="${has(task, 'crit') ? c.t.accent : c.t.ink}" stroke="${c.t.paper}" stroke-width="1.5"/>`
+  }
 
-    // vertical markers run the full height, their name under the chart
-    var lines = verts.map((task) => {
-      var at = num(x(task.from))
-      return `<g class="gantt-vert"><path d="M${at},${axisY}V${chartBottom + 6}" stroke="${t.muted}" stroke-dasharray="4 3"/>` +
-        `<text x="${at}" y="${chartBottom + 18}" text-anchor="middle" font-family="${mono}" font-size="8" letter-spacing="1.12" fill="${t.muted}">${esc(task.name.toUpperCase())}</text></g>`
-    })
+  var barFill = (t, crit, done, active) => {
+    if (crit) return t.accentTint
+    if (done) return `rgba(${t.inkRgb},0.05)`
+    return active ? t.node : `rgba(${t.mutedRgb || t.inkRgb},0.15)`
+  }
 
-    // today, when it falls inside the chart
-    if (today) {
-      var tx = num(x(now))
-      lines.push(`<g class="gantt-today"><path d="M${tx},${axisY}V${chartBottom}" stroke="${accent}"/>` +
-        `<text x="${tx}" y="${chartBottom + 12}" text-anchor="middle" font-family="${mono}" font-size="8" letter-spacing="1.12" fill="${accentText}">TODAY</text></g>`)
-    }
+  var barStroke = (t, crit, done, active) => {
+    if (crit) return t.accent
+    if (done) return t.ruleSolid
+    return active ? t.ink : t.muted
+  }
 
-    // the cursor: a hairline that follows the pointer across the time area and names the date under it, see bind().
-    // A chart that spans less than two days reads to the minute
-    var cursorFormat = span < 2 * DAY ? '%a %d %b %Y %H:%M' : '%a %d %b %Y'
-    lines.push(`<g class="gantt-cursor" display="none" pointer-events="none" data-x0="${x0}" data-x1="${right}" data-from="${from}" data-to="${to}" ` +
-      `data-top="${axisY}" data-bottom="${chartBottom}" data-format="${cursorFormat}">` +
-      `<path d="M0,${axisY}V${chartBottom}" stroke="${t.ink}" stroke-opacity="0.55"/>` +
-      `<rect x="0" y="${axisY - 24}" width="0" height="18" rx="2" fill="${t.ink}"/>` +
-      `<text x="0" y="${axisY - 15}" text-anchor="middle" dominant-baseline="central" font-family="${mono}" font-size="9" letter-spacing="0.5" fill="${t.paper}"></text></g>`)
+  var barMarkup = (c, task, a, b, top) => {
+    var t = c.t
+    var crit = has(task, 'crit')
+    var done = has(task, 'done')
+    var active = has(task, 'active')
+    var w = Math.max(b - a, 4)
+    var weight = active ? (crit ? 1.6 : 1.4) : 1
+    // an opaque mask first, so the grid stays behind a translucent bar
+    return `<rect x="${num(a)}" y="${top + 8}" width="${num(w)}" height="${BAR}" rx="4" fill="${t.paper}"/>` +
+      `<rect class="gantt-bar" x="${num(a)}" y="${top + 8}" width="${num(w)}" height="${BAR}" rx="4" fill="${barFill(t, crit, done, active)}" stroke="${barStroke(t, crit, done, active)}" stroke-width="${weight}"${done && crit ? ' stroke-opacity="0.5"' : ''}/>`
+  }
 
-    var iso = (time) => new Date(time).toISOString().slice(0, 10)
+  var nameFill = (t, task) => {
+    if (has(task, 'crit')) return t.accentText
+    return has(task, 'done') ? t.muted : t.ink
+  }
+
+  // the task name in the left column, a link when the click directive gave an http one
+  var nameMarkup = (c, task, top) => {
+    var name = `<text x="${MARGIN + 12}" y="${top + 20}" dominant-baseline="central" font-family="${c.sans}" font-size="12" font-weight="600" fill="${nameFill(c.t, task)}">${esc(fit(task.name, c.labelW - 24, 12, c.sans, 600))}</text>`
+    var link = c.model.links[task.id]
+    return link && /^https?:/i.test(link) ? `<a href="${esc(link)}" target="_blank" rel="noopener">${name}</a>` : name
+  }
+
+  // the bars: name in the left column, bar on the axis
+  var cardMarkup = (c, task) => {
+    var top = c.rowY[task.id]
+    var a = c.x(task.from)
+    var b = c.x(task.until)
+    var shape = has(task, 'milestone') ? milestoneMarkup(c, task, a, b, top) : barMarkup(c, task, a, b, top)
+    return `<g class="node gantt-task" id="${c.id}-gantt-${esc(task.id)}-0">` + nameMarkup(c, task, top) + shape + '</g>'
+  }
+
+  // vertical markers run the full height, their name under the chart
+  var vertMarkup = (c, task) => {
+    var at = num(c.x(task.from))
+    return `<g class="gantt-vert"><path d="M${at},${c.axisY}V${c.chartBottom + 6}" stroke="${c.t.muted}" stroke-dasharray="4 3"/>` +
+      `<text x="${at}" y="${c.chartBottom + 18}" text-anchor="middle" font-family="${c.mono}" font-size="8" letter-spacing="1.12" fill="${c.t.muted}">${esc(task.name.toUpperCase())}</text></g>`
+  }
+
+  var todayMarkup = (c) => {
+    var tx = num(c.x(c.now))
+    return `<g class="gantt-today"><path d="M${tx},${c.axisY}V${c.chartBottom}" stroke="${c.t.accent}"/>` +
+      `<text x="${tx}" y="${c.chartBottom + 12}" text-anchor="middle" font-family="${c.mono}" font-size="8" letter-spacing="1.12" fill="${c.t.accentText}">TODAY</text></g>`
+  }
+
+  // the cursor: a hairline that follows the pointer across the time area and names the date under it, see bind().
+  // A chart that spans less than two days reads to the minute
+  var cursorMarkup = (c) => {
+    var cursorFormat = c.span < 2 * DAY ? '%a %d %b %Y %H:%M' : '%a %d %b %Y'
+    return `<g class="gantt-cursor" display="none" pointer-events="none" data-x0="${c.x0}" data-x1="${c.right}" data-from="${c.from}" data-to="${c.to}" ` +
+      `data-top="${c.axisY}" data-bottom="${c.chartBottom}" data-format="${cursorFormat}">` +
+      `<path d="M0,${c.axisY}V${c.chartBottom}" stroke="${c.t.ink}" stroke-opacity="0.55"/>` +
+      `<rect x="0" y="${c.axisY - 24}" width="0" height="18" rx="2" fill="${c.t.ink}"/>` +
+      `<text x="0" y="${c.axisY - 15}" text-anchor="middle" dominant-baseline="central" font-family="${c.mono}" font-size="9" letter-spacing="0.5" fill="${c.t.paper}"></text></g>`
+  }
+
+  // the text an assistive reader gets, and the model the page's script reads back
+  var describe = (c) => {
     var info = {nodes: {}}
-    rows.forEach((task) => {
+    c.rows.forEach((task) => {
       info.nodes[task.id] = {name: task.name, section: task.section, start: iso(task.from), end: iso(task.until), tags: task.tags, after: task.after || []}
     })
-    var critical = rows.filter((task) => has(task, 'crit')).map((task) => task.name)
-    var summary = `${model.title || 'Gantt chart'}: ${rows.length} tasks from ${iso(from)} to ${iso(to)}` +
+    var critical = c.rows.filter((task) => has(task, 'crit')).map((task) => task.name)
+    var summary = `${c.model.title || 'Gantt chart'}: ${c.rows.length} tasks from ${iso(c.from)} to ${iso(c.to)}` +
       (critical.length ? `, critical path ${critical.join(', ')}` : '')
+    return {info, summary}
+  }
 
-    return [`<svg xmlns="http://www.w3.org/2000/svg" id="${id}" width="100%" style="max-width: ${width}px;" viewBox="0 0 ${width} ${num(height)}" ` +
-      `role="graphics-document document" aria-roledescription="gantt" font-family="${esc(sans)}">`,
-      `<title>${esc(model.title || 'Gantt chart')}</title><desc>${esc(summary)}</desc>`,
+  // everything the markup helpers share: the model, tokens, geometry and the vertical layout
+  var chartContext = (model, t, fonts, id) => {
+    var rows = model.tasks.filter((task) => !has(task, 'vert'))
+    if (!rows.length) return null
+    var geo = geometry(model, rows, fonts.sans)
+    var format = model.axisFormat || '%Y-%m-%d'
+    var interval = axisInterval(model, format, geo, fonts.mono)
+    var marks = interval && ticks(interval, geo.from, geo.to, 60)
+    if (!marks) return null
+    var verts = model.tasks.filter((task) => has(task, 'vert'))
+    var axisY = MARGIN + (model.title ? 40 : 0) + AXIS
+    var layout = layoutZones(model, axisY + 12)
+    // task dates are wall-clock times kept as UTC, as mermaid reads them in local time, so now is the local clock too
+    var now = Date.now() - new Date().getTimezoneOffset() * 60000
+    var today = model.today && now >= geo.from && now <= geo.to
+    var footer = verts.length || today ? 24 : 0
+    return Object.assign({model, t, id, rows, verts, marks, format, axisY, now, today, sans: fonts.sans, mono: fonts.mono,
+      height: layout.chartBottom + footer + MARGIN}, geo, layout)
+  }
+
+  // gantt source -> svg markup, or '' when mermaid should draw it. t: the style tokens of mermaid.js
+  var render = (src, t, fonts, id) => {
+    var model = parse(src)
+    var c = model && chartContext(model, t, fonts, id)
+    if (!c) return ''
+    var body = []
+    if (model.title) body.push(titleMarkup(c))
+    body.push(...zoneMarkup(c))
+    if (model.weekends) body.push(...weekendMarkup(c))
+    body.push(...axisMarkup(c))
+    var cards = c.rows.map((task) => cardMarkup(c, task))
+    var lines = c.verts.map((task) => vertMarkup(c, task))
+    if (c.today) lines.push(todayMarkup(c))
+    lines.push(cursorMarkup(c))
+    var {info, summary} = describe(c)
+    var title = esc(model.title || 'Gantt chart')
+
+    return [`<svg xmlns="http://www.w3.org/2000/svg" id="${id}" width="100%" style="max-width: ${c.width}px;" viewBox="0 0 ${c.width} ${num(c.height)}" ` +
+      `role="graphics-document document" aria-roledescription="gantt" font-family="${esc(c.sans)}">`,
+      `<title>${title}</title><desc>${esc(summary)}</desc>`,
       body.join(''), cards.join(''), lines.join(''),
       `<metadata class="gantt-model">${esc(JSON.stringify(info))}</metadata>`, '</svg>'].join('')
   }

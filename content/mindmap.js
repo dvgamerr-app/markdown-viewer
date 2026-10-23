@@ -29,38 +29,45 @@ var mindmap = (() => {
     return {id: '', shape: 'plain', text: label(text)}
   }
 
+  // hang an item under the nearest shallower one; false when it has no parent, a second root is not a mindmap
+  // mermaid would draw either
+  var attach = (stack, item, indent) => {
+    while (stack.length && stack[stack.length - 1].indent >= indent) stack.pop()
+    if (!stack.length) return false
+    stack[stack.length - 1].item.children.push(item)
+    stack.push({indent, item})
+    return true
+  }
+
+  // icons and classes decorate the node above them, the drawing keeps only the node
+  var decoration = (line) => /^::icon\(/.test(line) || /^:::/.test(line)
+
+  // one non-empty source line into the state; false when the source is not a mindmap this renderer draws
+  var take = (state, raw, line) => {
+    if (!state.head) {
+      state.head = /^mindmap$/i.test(line)
+      return state.head
+    }
+    if (decoration(line)) return true
+    var indent = raw.length - raw.trimStart().length
+    var item = Object.assign(node(line), {children: []})
+    if (!item.text) return false
+    if (state.root) return attach(state.stack, item, indent)
+    state.root = item
+    state.stack = [{indent, item}]
+    return true
+  }
+
   var parse = (src) => {
     var lines = draw.lines(src)
     if (!lines) return null
-    var head = false
-    var root = null
-    var stack = []
+    var state = {head: false, root: null, stack: []}
     for (var i = 0; i < lines.length; i++) {
-      var raw = lines[i].replace(/%%.*$/, '').replace(/\t/g, '    ')
+      var raw = lines[i].replace(/%%.*$/, '').replace(/	/g, '    ')
       var line = raw.trim()
-      if (!line) continue
-      if (!head) {
-        if (!/^mindmap$/i.test(line)) return null
-        head = true
-        continue
-      }
-      // icons and classes decorate the node above them, the drawing keeps only the node
-      if (/^::icon\(/.test(line) || /^:::/.test(line)) continue
-      var indent = raw.length - raw.trimStart().length
-      var item = Object.assign(node(line), {children: []})
-      if (!item.text) return null
-      if (!root) {
-        root = item
-        stack = [{indent, item}]
-        continue
-      }
-      while (stack.length && stack[stack.length - 1].indent >= indent) stack.pop()
-      // a second root is not a mindmap mermaid would draw either
-      if (!stack.length) return null
-      stack[stack.length - 1].item.children.push(item)
-      stack.push({indent, item})
+      if (line && !take(state, raw, line)) return null
     }
-    return head && root ? root : null
+    return state.head && state.root ? state.root : null
   }
 
   var {esc, num, grid, measure, wrap} = draw
@@ -77,96 +84,105 @@ var mindmap = (() => {
     {size: 12, weight: 500, line: 15, px: 12, py: 8, max: 160}
   ]
 
-  // mindmap source -> svg markup, or '' when mermaid should draw it. t: the style tokens of mermaid.js
-  var render = (src, t, fonts, id) => {
-    var root = parse(src)
-    if (!root) return ''
-    var sans = fonts.sans
-    var series = t.series && t.series.length ? t.series : [t.muted]
+  var typeOf = (item) => TYPE[Math.min(item.depth, 2)]
+  var gapOf = (item) => (item.depth ? GAP : BRANCH_GAP)
 
-    // walk the tree once: depth, size and an index for every node
+  // the box of one item from its wrapped text
+  var boxOf = (item, sans) => {
+    var type = typeOf(item)
+    var depth = item.depth
+    item.lines = item.text.split(/<br\s*\/?>/i).flatMap((part) => wrap(part, type.max, type.size, sans, type.weight, 4)).slice(0, 4)
+    var widest = Math.max(...item.lines.map((l) => measure(l, type.size, sans, type.weight)))
+    item.w = grid(Math.max(depth ? 64 : 96, widest + type.px * 2 + (depth === 1 ? 4 : 0) + (item.shape === 'hexagon' ? 12 : 0)))
+    item.h = grid(Math.max(depth ? 32 : 48, item.lines.length * type.line + type.py * 2))
+  }
+
+  // walk the tree once: depth, size and an index for every node, in reading order
+  var sizeTree = (root, sans) => {
     var all = []
     var size = (item, depth, branch) => {
-      var type = TYPE[Math.min(depth, 2)]
       item.depth = depth
       item.branch = branch
       item.n = all.length
       all.push(item)
-      item.lines = item.text.split(/<br\s*\/?>/i).flatMap((part) => wrap(part, type.max, type.size, sans, type.weight, 4)).slice(0, 4)
-      item.w = grid(Math.max(depth ? 64 : 96, Math.max(...item.lines.map((l) => measure(l, type.size, sans, type.weight))) + type.px * 2 + (depth === 1 ? 4 : 0) + (item.shape === 'hexagon' ? 12 : 0)))
-      item.h = grid(Math.max(depth ? 32 : 48, item.lines.length * type.line + type.py * 2))
+      boxOf(item, sans)
       item.children.forEach((child, i) => size(child, depth + 1, depth ? branch : i))
     }
     size(root, 0, -1)
+    return all
+  }
 
-    // the vertical room a subtree needs: its own box or its children stacked, whichever is taller
-    var span = (item) => {
-      var gap = item.depth ? GAP : BRANCH_GAP
-      var kids = item.children.reduce((sum, c, i) => sum + span(c) + (i ? gap : 0), 0)
-      item.span = Math.max(item.h, kids)
-      return item.span
-    }
-    span(root)
+  // the vertical room a subtree needs: its own box or its children stacked, whichever is taller
+  var stacked = (item, key) => item.children.reduce((sum, c, i) => sum + c[key] + (i ? gapOf(item) : 0), 0)
+  var span = (item) => {
+    item.children.forEach(span)
+    item.span = Math.max(item.h, stacked(item, 'span'))
+  }
 
-    // first-level branches go right then left, each to the side that is shorter so far, order kept per side
+  var markSide = (item, side) => {
+    item.side = side
+    item.children.forEach((c) => markSide(c, side))
+  }
+
+  // first-level branches go right then left, each to the side that is shorter so far, order kept per side
+  var splitSides = (root) => {
     var sides = {right: [], left: []}
     var height = {right: 0, left: 0}
     root.children.forEach((c) => {
       var side = height.right <= height.left ? 'right' : 'left'
       height[side] += c.span + (sides[side].length ? BRANCH_GAP : 0)
       sides[side].push(c)
-      var mark = (item) => {
-        item.side = side
-        item.children.forEach(mark)
-      }
-      mark(c)
+      markSide(c, side)
     })
+    return {sides, height}
+  }
 
-    // columns: every depth on a side is as wide as its widest node, nodes align on the edge nearer the root
+  // columns: every depth on a side is as wide as its widest node, nodes align on the edge nearer the root
+  var columns = (all) => {
     var cols = {right: [], left: []}
     all.forEach((item) => {
       if (!item.depth) return
       var c = cols[item.side]
       c[item.depth] = Math.max(c[item.depth] || 0, item.w)
     })
-    var edge = (side, depth) => {
-      var x = root.w / 2 + LEVEL
-      for (var d = 1; d < depth; d++) x += cols[side][d] + LEVEL
-      return x
-    }
+    return cols
+  }
 
-    // place a subtree in the band from top: the node centred on its children, or on its own band when a leaf
-    var place = (item, top) => {
-      var gap = item.depth ? GAP : BRANCH_GAP
-      var kids = item.children.reduce((sum, c, i) => sum + c.span + (i ? gap : 0), 0)
-      if (item.children.length) {
-        var y = top + (item.span - kids) / 2
-        item.children.forEach((c) => {
-          place(c, y)
-          y += c.span + gap
-        })
-        var first = item.children[0]
-        var last = item.children[item.children.length - 1]
-        item.cy = (first.cy + last.cy) / 2
-      }
-      else item.cy = top + item.span / 2
-      var near = edge(item.side, item.depth)
-      item.x = item.side === 'right' ? near : -near - item.w
-      item.y = Math.round((item.cy - item.h / 2) / 4) * 4
-      item.cy = item.y + item.h / 2
+  // place a subtree in the band from top: the node centred on its children, or on its own band when a leaf.
+  // lay: {root, cols}
+  var place = (lay, item, top) => {
+    if (item.children.length) {
+      var y = top + (item.span - stacked(item, 'span')) / 2
+      item.children.forEach((c) => {
+        place(lay, c, y)
+        y += c.span + gapOf(item)
+      })
+      item.cy = (item.children[0].cy + item.children[item.children.length - 1].cy) / 2
     }
+    else item.cy = top + item.span / 2
+    var near = lay.root.w / 2 + LEVEL
+    for (var d = 1; d < item.depth; d++) near += lay.cols[item.side][d] + LEVEL
+    item.x = item.side === 'right' ? near : -near - item.w
+    item.y = Math.round((item.cy - item.h / 2) / 4) * 4
+    item.cy = item.y + item.h / 2
+  }
+
+  var placeAll = (root, all, sides, height) => {
+    var lay = {root, cols: columns(all)}
     ;['right', 'left'].forEach((side) => {
       var y = -height[side] / 2
       sides[side].forEach((c) => {
-        place(c, y)
+        place(lay, c, y)
         y += c.span + BRANCH_GAP
       })
     })
     root.x = -root.w / 2
     root.y = Math.round(-root.h / 2 / 4) * 4
     root.cy = root.y + root.h / 2
+  }
 
-    // shift onto the canvas
+  // shift onto the canvas; answers the size of it
+  var toCanvas = (all) => {
     var minX = Math.min(...all.map((i) => i.x))
     var minY = Math.min(...all.map((i) => i.y))
     var maxX = Math.max(...all.map((i) => i.x + i.w))
@@ -178,69 +194,101 @@ var mindmap = (() => {
       i.y += dy
       i.cy += dy
     })
-    var width = grid(maxX - minX) + MARGIN * 2
-    var bottom = grid(maxY - minY) + MARGIN * 2
+    return {width: grid(maxX - minX) + MARGIN * 2, bottom: grid(maxY - minY) + MARGIN * 2}
+  }
 
-    // connectors: out of the parent's side, a bus halfway across the gap, into the child's near edge
-    var lines = []
-    all.forEach((parent) => parent.children.forEach((child) => {
-      var right = child.side === 'right'
-      var x1 = right ? parent.x + parent.w : parent.x
-      var x2 = right ? child.x : child.x + child.w
-      var s = right ? 1 : -1
-      var xm = x1 + s * LEVEL / 2
-      var y1 = parent.cy
-      var y2 = child.cy
-      var d
-      var r = Math.min(R, Math.abs(y2 - y1) / 2)
-      if (r < 1) d = `M${num(x1)},${num(y1)}H${num(x2)}`
-      else {
-        var v = y2 > y1 ? 1 : -1
-        d = `M${num(x1)},${num(y1)}H${num(xm - s * r)}Q${num(xm)},${num(y1)} ${num(xm)},${num(y1 + v * r)}` +
-          `V${num(y2 - v * r)}Q${num(xm)},${num(y2)} ${num(xm + s * r)},${num(y2)}H${num(x2)}`
-      }
-      lines.push(`<path class="mindmap-line relationshipLine" id="${id}-L-${child.n}" data-from="n${parent.n}" data-to="n${child.n}" ` +
-        `d="${d}" fill="none" stroke="${t.muted}" stroke-width="1"/>`)
-    }))
+  // out of the parent's side, a bus halfway across the gap, into the child's near edge
+  var elbow = (x1, y1, x2, y2, s) => {
+    var r = Math.min(R, Math.abs(y2 - y1) / 2)
+    if (r < 1) return `M${num(x1)},${num(y1)}H${num(x2)}`
+    var xm = x1 + s * LEVEL / 2
+    var v = y2 > y1 ? 1 : -1
+    return `M${num(x1)},${num(y1)}H${num(xm - s * r)}Q${num(xm)},${num(y1)} ${num(xm)},${num(y1 + v * r)}` +
+      `V${num(y2 - v * r)}Q${num(xm)},${num(y2)} ${num(xm + s * r)},${num(y2)}H${num(x2)}`
+  }
 
-    // the outline of a node by its shape: subtle variants of one box, not cartoons
-    var outline = (item, fill, stroke, extra) => {
-      var {x, y, w, h} = item
-      if (item.shape === 'hexagon') {
-        var c = 10
-        return `<path d="M${x + c},${y}H${x + w - c}L${x + w},${y + h / 2}L${x + w - c},${y + h}H${x + c}L${x},${y + h / 2}Z" fill="${fill}" stroke="${stroke}"${extra}/>`
-      }
-      var rx = {square: 2, rounded: 12, circle: h / 2}[item.shape] || (item.depth > 1 ? 4 : 6)
-      var dash = item.shape === 'cloud' || item.shape === 'bang' ? ' stroke-dasharray="4 3"' : ''
-      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(rx, h / 2)}" fill="${fill}" stroke="${stroke}"${dash}${extra}/>`
+  // g: the drawing context {t, series, sans, id}
+  var connector = (g, parent, child) => {
+    var right = child.side === 'right'
+    var x1 = right ? parent.x + parent.w : parent.x
+    var x2 = right ? child.x : child.x + child.w
+    var d = elbow(x1, parent.cy, x2, child.cy, right ? 1 : -1)
+    return `<path class="mindmap-line relationshipLine" id="${g.id}-L-${child.n}" data-from="n${parent.n}" data-to="n${child.n}" ` +
+      `d="${d}" fill="none" stroke="${g.t.muted}" stroke-width="1"/>`
+  }
+
+  // the outline of a node by its shape: subtle variants of one box, not cartoons
+  var outline = (item, fill, stroke, extra) => {
+    var {x, y, w, h} = item
+    if (item.shape === 'hexagon') {
+      var c = 10
+      return `<path d="M${x + c},${y}H${x + w - c}L${x + w},${y + h / 2}L${x + w - c},${y + h}H${x + c}L${x},${y + h / 2}Z" fill="${fill}" stroke="${stroke}"${extra}/>`
     }
+    var rx = {square: 2, rounded: 12, circle: h / 2}[item.shape] || (item.depth > 1 ? 4 : 6)
+    var dash = item.shape === 'cloud' || item.shape === 'bang' ? ' stroke-dasharray="4 3"' : ''
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(rx, h / 2)}" fill="${fill}" stroke="${stroke}"${dash}${extra}/>`
+  }
 
-    var nodes = all.map((item) => {
-      var type = TYPE[Math.min(item.depth, 2)]
-      var g = [`<g class="node mindmap-item" id="${id}-mindmap-n${item.n}-0">`]
-      if (!item.depth) g.push(outline(item, t.accentTint, t.accent, ' stroke-width="1.2"'))
-      else if (item.depth === 1) {
-        g.push(`<rect x="${item.x}" y="${item.y}" width="${item.w}" height="${item.h}" rx="6" fill="${t.paper}"/>`)
-        g.push(outline(item, t.node, t.ink, ''))
-        // the branch colour: a thin bar on the outer edge
-        // kept clear of a chamfer or a wide corner
-        var inset = item.shape === 'hexagon' ? 12 : item.shape === 'rounded' || item.shape === 'circle' ? 8 : 4
-        var bx = item.side === 'right' ? item.x + item.w - inset - 3 : item.x + inset
-        g.push(`<rect x="${bx}" y="${item.y + 6}" width="3" height="${item.h - 12}" rx="1.5" fill="${series[item.branch % series.length]}"/>`)
-      }
-      else {
-        g.push(`<rect x="${item.x}" y="${item.y}" width="${item.w}" height="${item.h}" rx="4" fill="${t.paper}"/>`)
-        g.push(item.shape === 'plain'
-          ? outline(item, `rgba(${t.inkRgb},0.03)`, t.rule, '')
-          : outline(item, t.node, t.muted, ''))
-      }
-      var cx = item.x + item.w / 2 - (item.depth === 1 ? (item.side === 'right' ? 2 : -2) : 0)
-      var top = item.cy - (item.lines.length * type.line) / 2 + type.line / 2
-      item.lines.forEach((line, k) => g.push(
-        `<text x="${num(cx)}" y="${num(top + k * type.line)}" text-anchor="middle" dominant-baseline="central" font-family="${sans}" font-size="${type.size}" font-weight="${type.weight}" fill="${t.ink}">${esc(line)}</text>`))
-      g.push('</g>')
-      return g.join('')
-    })
+  // a paper backing so the connectors never show through the node
+  var backing = (item, rx, t) => `<rect x="${item.x}" y="${item.y}" width="${item.w}" height="${item.h}" rx="${rx}" fill="${t.paper}"/>`
+
+  // how far the branch bar stays clear of a chamfer or a wide corner
+  var barInset = (item) => {
+    if (item.shape === 'hexagon') return 12
+    return item.shape === 'rounded' || item.shape === 'circle' ? 8 : 4
+  }
+
+  var rootShapes = (g, item) => [outline(item, g.t.accentTint, g.t.accent, ' stroke-width="1.2"')]
+
+  // the branch colour: a thin bar on the outer edge
+  var branchShapes = (g, item) => {
+    var inset = barInset(item)
+    var bx = item.side === 'right' ? item.x + item.w - inset - 3 : item.x + inset
+    return [backing(item, 6, g.t), outline(item, g.t.node, g.t.ink, ''),
+      `<rect x="${bx}" y="${item.y + 6}" width="3" height="${item.h - 12}" rx="1.5" fill="${g.series[item.branch % g.series.length]}"/>`]
+  }
+
+  var leafShapes = (g, item) => [backing(item, 4, g.t),
+    item.shape === 'plain'
+      ? outline(item, `rgba(${g.t.inkRgb},0.03)`, g.t.rule, '')
+      : outline(item, g.t.node, g.t.muted, '')]
+
+  var shapesOf = (g, item) => {
+    if (!item.depth) return rootShapes(g, item)
+    return item.depth === 1 ? branchShapes(g, item) : leafShapes(g, item)
+  }
+
+  // the branch label sits off-centre by the width of its bar
+  var textCentre = (item) => {
+    if (item.depth !== 1) return item.x + item.w / 2
+    return item.x + item.w / 2 - (item.side === 'right' ? 2 : -2)
+  }
+
+  var nodeMarks = (g, item) => {
+    var type = typeOf(item)
+    var cx = textCentre(item)
+    var top = item.cy - (item.lines.length * type.line) / 2 + type.line / 2
+    var texts = item.lines.map((line, k) =>
+      `<text x="${num(cx)}" y="${num(top + k * type.line)}" text-anchor="middle" dominant-baseline="central" font-family="${g.sans}" font-size="${type.size}" font-weight="${type.weight}" fill="${g.t.ink}">${esc(line)}</text>`)
+    return [`<g class="node mindmap-item" id="${g.id}-mindmap-n${item.n}-0">`, ...shapesOf(g, item), ...texts, '</g>'].join('')
+  }
+
+  // mindmap source -> svg markup, or '' when mermaid should draw it. t: the style tokens of mermaid.js
+  var render = (src, t, fonts, id) => {
+    var root = parse(src)
+    if (!root) return ''
+    var sans = fonts.sans
+    var g = {t, sans, id, series: t.series && t.series.length ? t.series : [t.muted]}
+
+    var all = sizeTree(root, sans)
+    span(root)
+    var {sides, height} = splitSides(root)
+    placeAll(root, all, sides, height)
+    var {width, bottom} = toCanvas(all)
+
+    var lines = []
+    all.forEach((parent) => parent.children.forEach((child) => lines.push(connector(g, parent, child))))
+    var nodes = all.map((item) => nodeMarks(g, item))
 
     var info = {nodes: {}}
     all.forEach((item) => {
