@@ -780,6 +780,11 @@ var mmd = (() => {
     var isDbml = kind === 'dbml'
     var isJourney = kind === 'journey'
     var isTimeline = kind === 'timeline'
+    // the other diagrams the extension draws itself name their nodes "<prefix>-<id>-0" and carry a "<x>-model"
+    var drawnBy = {
+      gantt: /^gantt-(.+)-0$/, pie: /^pie-(.+)-0$/, quadrantChart: /^quadrant-(.+)-0$/, requirement: /^req-(.+)-0$/,
+      gitGraph: /^git-(.+)-0$/, c4: /^c4-(.+)-0$/, mindmap: /^mindmap-(.+)-0$/
+    }[kind]
     var isClass = kind === 'classDiagram'
     // a journey is a chain of stages joined by the sentiment curve, it plays like a state machine
     var isState = kind === 'stateDiagram' || isEr || isJourney
@@ -819,14 +824,14 @@ var mmd = (() => {
     // state diagrams name nodes "state-<id>-<n>"; a composite state is a cluster, drawn apart from the nodes
     // but reached by transitions all the same. Notes are not part of the machine
     var nodes = Array.from(svg.querySelectorAll(isState ? 'g.node:not(.statediagram-note), g.statediagram-cluster' : 'g.node')).map((el) => {
-      var match = (isEr ? /^entity-(.+)-\d+$/ : isDbml ? /^dbml-(.+)-[0-9]+$/ : isJourney ? /^journey-(.+)-[0-9]+$/ : isTimeline ? /^timeline-(.+)-[0-9]+$/ : isState ? /^state-(.+)-\d+$/ : isClass ? /^classId-(.+)-\d+$/ : /^flowchart-(.+)-\d+$/).exec(local(el.id))
+      var match = (isEr ? /^entity-(.+)-\d+$/ : isDbml ? /^dbml-(.+)-[0-9]+$/ : isJourney ? /^journey-(.+)-[0-9]+$/ : isTimeline ? /^timeline-(.+)-[0-9]+$/ : drawnBy ? drawnBy : isState ? /^state-(.+)-\d+$/ : isClass ? /^classId-(.+)-\d+$/ : /^flowchart-(.+)-\d+$/).exec(local(el.id))
       // an entity's text holds every attribute, its name is the first label
       var label = el.querySelector(isClass ? '.label-group' : ':scope > .cluster-label, :scope > .label.name') || el
       return {el, id: (match && match[1]) || '', label: isDbml && match ? match[1] : label.textContent.trim(), cluster: el.classList.contains('statediagram-cluster')}
     }).filter((n) => n.id)
     // a dbml diagram carries what its popup shows, the columns and the keys of every table
     var model = (() => {
-      var meta = (isDbml || isJourney || isTimeline) && svg.querySelector('metadata.dbml-model, metadata.journey-model, metadata.timeline-model')
+      var meta = (isDbml || isJourney || isTimeline || drawnBy) && svg.querySelector('metadata[class$="-model"]')
       try {
         return meta ? JSON.parse(meta.textContent) : null
       }
@@ -835,7 +840,7 @@ var mmd = (() => {
       }
     })()
     nodes.forEach((n) => {
-      if ((isJourney || isTimeline) && model && model.nodes[n.id]) n.label = model.nodes[n.id].name
+      if ((isJourney || isTimeline || drawnBy) && model && model.nodes && model.nodes[n.id]) n.label = model.nodes[n.id].name || n.id
     })
     var kinds = ['focal', 'store', 'external', 'input', 'optional', 'security']
     var byId = new Map(nodes.map((n) => [n.id, n]))
@@ -2236,14 +2241,15 @@ var mmd = (() => {
       var text = node.textContent
       var id = 'mmd-' + ++sequence
       node.removeAttribute('data-processed')
-      // dbml, user journeys and timelines draw themselves, mermaid only gets what they hand back
+      // dbml, user journeys, timelines, gantt, pie, quadrant, requirement, git, c4 and mindmap draw themselves,
+      // mermaid only gets what they hand back
       // the room the diagram has on the page: the content box of its <pre>, a timeline stretches its axis to fill it
       var box = node.parentNode
       var pad = box ? getComputedStyle(box) : null
       var fit = box ? box.clientWidth - parseFloat(pad.paddingLeft) - parseFloat(pad.paddingRight) : 0
       var custom = node.classList.contains('dbml')
         ? () => dbml.render(text, t, {sans, mono}, id)
-        : () => journey.render(text, t, {sans, mono}, id) || timeline.render(text, t, {sans, mono}, id, fit)
+        : () => [journey, timeline, gantt, pie, quadrant, requirement, gitgraph, c4, mindmap].reduce((svg, d) => svg || d.render(text, t, {sans, mono}, id, fit), '')
       var drawn = Promise.resolve().then(custom).then((svg) => (svg ? {svg} : mermaid.render(id, text)))
       return drawn.then(({svg, bindFunctions}) => {
         node.innerHTML = svg
