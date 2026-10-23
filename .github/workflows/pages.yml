@@ -8,7 +8,7 @@ on:
       - "content/**"
       - "scripts/**"
       - "docs/screenshots/**"
-      - "docs/store/marquee-promo-1400x560.png"
+      - "docs/store/marquee-promo-1280x640.png"
       - "package.json"
       - "bun.lock"
       - ".github/workflows/pages.yml"

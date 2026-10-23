@@ -38,7 +38,7 @@ if (dsn.includes('@')) {
 writeFileSync(page, html)
 
 cpSync(join(root, 'icons', 'default', '128x128.png'), join(out, 'icon.png'))
-cpSync(join(root, 'docs', 'store', 'marquee-promo-1400x560.png'), join(out, 'og.png'))
+cpSync(join(root, 'docs', 'store', 'marquee-promo-1280x640.png'), join(out, 'og.png'))
 
 // the demo runs the built extension renderer unchanged: the same files background/inject.js injects for mermaid
 const ext = join(out, 'demo', 'ext')

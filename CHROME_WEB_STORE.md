@@ -192,6 +192,8 @@ https://github.com/dvgamerr-app/nimbus-markdown
 | Small promo tile | `docs/store/small-promo-440x280.png` | 440×280 | Nimbus Markdown |
 | Marquee promo tile | `docs/store/marquee-promo-1400x560.png` | 1400×560 | Markdown, beautifully rendered. |
 
+ภาพ `docs/store/marquee-promo-1280x640.png` ไม่ใช่ของ Store แต่เป็น social preview ของ GitHub (Settings > Social preview) และใช้เป็น `og:image` ของ landing page
+
 ถ้าจะทำ Global promo video ใช้ GIF ใน `docs/screenshots/fullscreen-*.gif` เป็นต้นทาง แล้วอัปโหลดขึ้น YouTube ก่อนนำ URL มากรอก
 
 ### Additional fields

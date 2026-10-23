@@ -53,6 +53,12 @@ h1 em { font-style: italic; color: var(--accent); }
 .marquee .copy { position: absolute; left: 80px; top: 70px; width: 560px; display: grid; gap: 22px; }
 .marquee h1 { font-size: 78px; }
 .marquee .frame { left: 700px; top: 64px; width: 800px; }
+
+/* 1280 x 640 social preview: GitHub repository card and og:image */
+.social { width: 1280px; height: 640px; }
+.social .copy { position: absolute; left: 72px; top: 76px; width: 540px; display: grid; gap: 22px; }
+.social h1 { font-size: 76px; }
+.social .frame { left: 650px; top: 76px; width: 760px; }
 </style>
 </head>
 <body>
@@ -116,6 +122,16 @@ h1 em { font-style: italic; color: var(--accent); }
     <h1>Markdown, <em>beautifully</em> rendered.</h1>
     <p class="sub">Mermaid diagrams you can explore in fullscreen: zoom, search, follow and play.</p>
     <p class="eyebrow">Flowchart <b>·</b> Sequence <b>·</b> Journey <b>·</b> DBML</p>
+  </div>
+  <div class="frame"><div class="bar"><i></i><i></i><i></i><span>checkout.md</span></div><img src="../screenshots/01-flowchart-fullscreen.png" alt=""></div>
+</div>
+
+<div class="canvas social" data-out="marquee-promo-1280x640.png">
+  <div class="copy">
+    <div class="brand"><img src="store-icon-128.png" alt="">Nimbus Markdown</div>
+    <p class="eyebrow">Interactive Markdown viewer</p>
+    <h1>Diagrams you can <em>explore</em>.</h1>
+    <p class="sub">Fullscreen Mermaid: zoom, search, trace links and play step by step.</p>
   </div>
   <div class="frame"><div class="bar"><i></i><i></i><i></i><span>checkout.md</span></div><img src="../screenshots/01-flowchart-fullscreen.png" alt=""></div>
 </div>
