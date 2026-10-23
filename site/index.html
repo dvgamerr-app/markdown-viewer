@@ -3,15 +3,34 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nimbus Markdown: Mermaid diagrams you can explore</title>
-<meta name="description" content="A free, open-source Chrome extension that renders Markdown files as themed documents, with a fullscreen viewer to zoom, search, follow and play Mermaid diagrams.">
+<title>Nimbus Markdown — Interactive Mermaid Diagrams for Chrome</title>
+<meta name="description" content="Nimbus Markdown is a free, open-source interactive Markdown viewer for Chrome. Open Mermaid diagrams fullscreen to zoom, search nodes, trace their connections and play them step by step.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Nimbus Markdown: Mermaid diagrams you can explore">
-<meta property="og:description" content="Open any .md file in Chrome. Fullscreen a diagram to zoom, find a node, follow its links and play it step by step.">
+<meta property="og:title" content="Nimbus Markdown — Interactive Mermaid Diagrams for Chrome">
+<meta property="og:description" content="Explore Markdown diagrams, not just view them.">
 <meta property="og:url" content="https://dvgamerr.app/nimbus-markdown/">
 <meta property="og:image" content="https://dvgamerr.app/nimbus-markdown/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="icon.png">
+<link rel="canonical" href="https://dvgamerr.app/nimbus-markdown/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Nimbus Markdown",
+  "description": "Interactive Markdown viewer for Chrome with fullscreen Mermaid diagrams, node search, diagram playback, DBML schemas and 30+ themes.",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Chrome",
+  "url": "https://dvgamerr.app/nimbus-markdown/",
+  "downloadUrl": "https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk",
+  "image": "https://dvgamerr.app/nimbus-markdown/og.png",
+  "license": "https://opensource.org/licenses/MIT",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "codeRepository": "https://github.com/dvgamerr-app/nimbus-markdown",
+  "isBasedOn": "https://github.com/simov/markdown-viewer"
+}
+</script>
 <style>
 :root {
   --bg: #f6f4ec;
@@ -77,7 +96,29 @@ kbd { font: 600 13px/1 var(--mono); padding: 4px 8px; border: 1px solid var(--li
 .frame { border-radius: 14px 14px 0 0; background: #e9ebe2; padding: 10px 10px 0; box-shadow: 0 -10px 60px rgba(0,0,0,.35); }
 .frame .dots { display: flex; gap: 7px; padding: 2px 6px 10px; }
 .frame .dots i { width: 11px; height: 11px; border-radius: 50%; background: #c9cdbf; }
-.frame img { border-radius: 8px 8px 0 0; }
+.frame img, .frame video { border-radius: 8px 8px 0 0; }
+video.clip { display: block; width: 100%; height: auto; background: #f4f4f4; }
+.trust { font: 13px var(--mono); color: var(--hero-muted); margin-top: 18px; letter-spacing: .04em; }
+.nav-cta { display: none; gap: 8px; }
+.nav-cta a { font-size: 14px; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 8px; }
+.nav-cta .install { background: var(--accent); color: #fff; }
+.nav-cta .gh { border: 1px solid rgba(238, 243, 220, .35); }
+.sticky { position: fixed; z-index: 10; right: 24px; bottom: 24px; display: flex; gap: 10px; align-items: center; padding: 10px 10px 10px 18px; border-radius: 14px; background: var(--hero); color: var(--hero-ink); border: 1px solid rgba(238, 243, 220, .18); box-shadow: 0 10px 40px rgba(0,0,0,.28); transform: translateY(160%); transition: transform .25s ease; }
+.sticky.on { transform: none; }
+.sticky span { font-weight: 600; font-size: 15px; }
+.sticky .btn { padding: 10px 16px; }
+@media (prefers-reduced-motion: reduce) { .sticky { transition: none; } }
+.compare { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); }
+.compare th, .compare td { padding: 14px 18px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+.compare thead th { font: 600 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); background: var(--code); }
+.compare td:nth-child(2) { color: var(--muted); }
+.compare td:nth-child(3) { font-weight: 600; color: var(--brand); }
+@media (prefers-color-scheme: dark) { .compare td:nth-child(3) { color: #7fc29b; } }
+.faq { max-width: 820px; border-top: 1px solid var(--line); }
+.faq details { border-bottom: 1px solid var(--line); padding: 4px 0; }
+.faq summary { cursor: pointer; padding: 16px 0; font-weight: 600; font-size: 18px; }
+.faq details p { margin: 0 0 18px; color: var(--muted); }
+.faq code, figcaption code { font: 13px var(--mono); background: var(--code); padding: 2px 6px; border-radius: 5px; }
 
 /* sections */
 section { padding: 96px 0; }
@@ -125,6 +166,12 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   .keys, .steps { grid-template-columns: 1fr; }
   .gallery, .features { grid-template-columns: 1fr; }
   .nav-links { display: none; }
+  .nav-cta { display: flex; }
+  .sticky { left: 12px; right: 12px; bottom: 12px; padding: 8px; }
+  .sticky span { display: none; }
+  .sticky .btn { flex: 1; justify-content: center; }
+  .brand { white-space: nowrap; font-size: 15px; }
+  .compare th, .compare td { padding: 12px 8px; font-size: 14px; }
   .hero-copy { padding: 48px 0 36px; }
   section { padding: 64px 0; }
 }
@@ -140,25 +187,28 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
         <a href="#explore">Explore</a>
         <a href="#features">Features</a>
         <a href="#start">Get started</a>
+        <a href="#faq">FAQ</a>
         <a href="https://github.com/dvgamerr-app/nimbus-markdown">GitHub</a>
+      </div>
+      <div class="nav-cta">
+        <a class="gh" href="https://github.com/dvgamerr-app/nimbus-markdown">GitHub</a>
+        <a class="install" href="https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk">Install</a>
       </div>
     </nav>
     <div class="hero-copy">
-      <p class="label">Free Chrome extension · Open source</p>
+      <p class="label">Interactive Markdown viewer for Chrome</p>
       <h1>Mermaid diagrams you can <em>explore</em>, not just look at.</h1>
-      <p class="lede">Open any <code>.md</code> file in Chrome and read it as a clean, themed document. Fullscreen a diagram to zoom, find a node, follow its links and play it step by step.</p>
+      <p class="lede">Turn Markdown files into clean, interactive documents. Explore Mermaid diagrams in fullscreen: trace node connections, search, zoom and play them step by step.</p>
       <div class="cta">
-        <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk">Add to Chrome, it's free</a>
+        <a class="btn btn-primary" id="hero-install" href="https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk">Add to Chrome — Free</a>
         <a class="btn btn-ghost" href="https://github.com/dvgamerr-app/nimbus-markdown">View on GitHub</a>
       </div>
+      <p class="trust">Open source · Renders locally · 30+ themes</p>
       <div class="stars" id="stars" aria-live="polite"></div>
     </div>
     <div class="frame">
       <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
-      <picture>
-        <source srcset="screenshots/01-flowchart-fullscreen.png" media="(prefers-reduced-motion: reduce)">
-        <img src="screenshots/fullscreen-flow.gif" width="1280" height="720" alt="A flowchart in Nimbus fullscreen: zooming in, hovering a node to light its links, opening its popup and searching for another node">
-      </picture>
+      <video class="clip" muted loop playsinline preload="metadata" width="1280" height="720" poster="screenshots/poster-flow.jpg" aria-label="A flowchart in Nimbus fullscreen: zooming in, hovering a node to light its links, opening its popup and searching for another node"><source src="screenshots/fullscreen-flow.mp4" type="video/mp4"></video>
     </div>
   </div>
 </header>
@@ -187,21 +237,39 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
     <div class="wrap">
       <p class="label">Motion</p>
       <h2>Diagrams that play.</h2>
-      <p class="intro">Journeys, timelines and schemas are redrawn in one calm style, and they move when you ask them to.</p>
+      <p class="intro">Mermaid journeys and timelines are redrawn in one calm style and play when you ask them to. DBML, a database schema language that is not part of Mermaid, is drawn by Nimbus as well.</p>
       <div class="gallery">
         <figure>
-          <div class="shot"><picture><source srcset="screenshots/03-journey.png" media="(prefers-reduced-motion: reduce)"><img src="screenshots/fullscreen-journey.gif" width="1280" height="720" loading="lazy" alt="User journey map playing stage by stage along a sentiment curve"></picture></div>
+          <div class="shot"><video class="clip" muted loop playsinline preload="none" width="1280" height="720" poster="screenshots/poster-journey.jpg" aria-label="User journey map playing stage by stage along a sentiment curve"><source src="screenshots/fullscreen-journey.mp4" type="video/mp4"></video></div>
           <figcaption><strong>User journey</strong><span>Stages on a sentiment curve, the low point in orange.</span></figcaption>
         </figure>
         <figure>
-          <div class="shot"><picture><source srcset="screenshots/06-timeline-dark.png" media="(prefers-reduced-motion: reduce)"><img src="screenshots/fullscreen-timeline.gif" width="1280" height="720" loading="lazy" alt="Timeline revealing each period along one baseline"></picture></div>
+          <div class="shot"><video class="clip" muted loop playsinline preload="none" width="1280" height="720" poster="screenshots/poster-timeline.jpg" aria-label="Timeline revealing each period along one baseline"><source src="screenshots/fullscreen-timeline.mp4" type="video/mp4"></video></div>
           <figcaption><strong>Timeline</strong><span>Years spaced by elapsed time, revealed one by one.</span></figcaption>
         </figure>
         <figure>
-          <div class="shot"><picture><source srcset="screenshots/04-dbml.png" media="(prefers-reduced-motion: reduce)"><img src="screenshots/fullscreen-dbml.gif" width="1280" height="720" loading="lazy" alt="DBML schema where hovering a table lights up its foreign keys"></picture></div>
-          <figcaption><strong>DBML schema</strong><span>Hover a table and its keys light up with a pulse.</span></figcaption>
+          <div class="shot"><video class="clip" muted loop playsinline preload="none" width="1280" height="720" poster="screenshots/poster-dbml.jpg" aria-label="DBML schema where hovering a table lights up its foreign keys"><source src="screenshots/fullscreen-dbml.mp4" type="video/mp4"></video></div>
+          <figcaption><strong>DBML schema</strong><span>A <code>dbml</code> code block becomes table cards. Hover a table and its keys light up.</span></figcaption>
         </figure>
       </div>
+    </div>
+  </section>
+
+  <section id="compare" style="padding-top:0">
+    <div class="wrap">
+      <p class="label">Rendered vs explored</p>
+      <h2>A diagram is more than a picture.</h2>
+      <p class="intro">Mermaid draws a diagram as a static image. Nimbus keeps that inline, and adds a fullscreen viewer for when you need to read it properly.</p>
+      <table class="compare">
+        <thead><tr><th scope="col">On a diagram</th><th scope="col">Static render</th><th scope="col">Nimbus fullscreen</th></tr></thead>
+        <tbody>
+          <tr><td>Zoom and move</td><td>Browser zoom only</td><td>Wheel, pinch, drag, + and -</td></tr>
+          <tr><td>Find a node</td><td>Ctrl+F on the page</td><td>Search by name with /</td></tr>
+          <tr><td>Trace connections</td><td>Follow the lines by eye</td><td>Links in blue, out in orange, with a popup</td></tr>
+          <tr><td>Sequences and journeys</td><td>All at once</td><td>Step by step with P</td></tr>
+          <tr><td>Database schemas</td><td>Not part of Mermaid</td><td>DBML drawn as table cards</td></tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
@@ -248,6 +316,21 @@ flowchart LR
     </div>
   </section>
 
+  <section id="faq" style="padding-top:0">
+    <div class="wrap">
+      <p class="label">FAQ</p>
+      <h2>Questions before you install.</h2>
+      <div class="faq">
+        <details><summary>Why do I need to turn on "Allow access to file URLs"?</summary><p>Chrome blocks every extension from reading local files until you allow it. Without that switch Nimbus can only render Markdown on websites you add. It is one toggle on the extension's Details page in <code>chrome://extensions</code>.</p></details>
+        <details><summary>Does Nimbus upload my documents?</summary><p>No. Rendering happens in your browser and your documents are not sent to a developer server. Emoji images load from a CDN, and your settings sync through your browser if sync is on. The <a href="https://github.com/dvgamerr-app/nimbus-markdown/blob/main/PRIVACY.md">privacy policy</a> lists everything it handles.</p></details>
+        <details><summary>Will it run on every website?</summary><p>No. Website access is an optional permission. Nimbus only renders Markdown on the sites you add in Advanced Options, for example <code>https://raw.githubusercontent.com</code>.</p></details>
+        <details><summary>Which diagrams are supported?</summary><p>Every diagram type Mermaid 12 renders. Fullscreen, zoom and node search work on all of them. Sequence, state, journey and timeline diagrams also play step by step, and journey, timeline, gantt, pie, quadrant, git graph, C4, mindmap and requirement diagrams are redrawn in the Nimbus style. DBML is supported separately in <code>dbml</code> code blocks.</p></details>
+        <details><summary>Does it work outside Chrome?</summary><p>It installs from the Chrome Web Store on Chromium browsers such as Edge and Brave. A Firefox build is attached to each <a href="https://github.com/dvgamerr-app/nimbus-markdown/releases">GitHub release</a>, with some limits listed in the <a href="https://github.com/dvgamerr-app/nimbus-markdown/blob/main/firefox.md">Firefox notes</a>.</p></details>
+        <details><summary>Is it really free?</summary><p>Yes. Nimbus is MIT licensed open source, a maintained fork of Markdown Viewer by Simeon Velichkov. There is no paid tier.</p></details>
+      </div>
+    </div>
+  </section>
+
   <section class="star">
     <div class="wrap">
       <h2>Like it? Give it a star.</h2>
@@ -259,6 +342,11 @@ flowchart LR
     </div>
   </section>
 </main>
+
+<div class="sticky" id="sticky" aria-hidden="true">
+  <span>Nimbus Markdown</span>
+  <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk" tabindex="-1">Add to Chrome — Free</a>
+</div>
 
 <footer>
   <div class="wrap">
@@ -275,6 +363,25 @@ document.getElementById('copy').addEventListener('click', function () {
     setTimeout(function () { btn.textContent = 'Copy' }, 1600)
   }, function () {})
 })
+var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+if ('IntersectionObserver' in window) {
+  var clips = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (still) return
+      if (e.isIntersecting) e.target.play().catch(function () {})
+      else e.target.pause()
+    })
+  }, { threshold: 0.05 })
+  document.querySelectorAll('video.clip').forEach(function (v) { clips.observe(v) })
+  var sticky = document.getElementById('sticky')
+  new IntersectionObserver(function (entries) {
+    var away = !entries[0].isIntersecting && entries[0].boundingClientRect.top < 0
+    sticky.classList.toggle('on', away)
+    sticky.setAttribute('aria-hidden', String(!away))
+    sticky.querySelector('a').tabIndex = away ? 0 : -1
+  }).observe(document.getElementById('hero-install'))
+}
+if (still) document.querySelectorAll('video.clip').forEach(function (v) { v.controls = true })
 fetch('https://api.github.com/repos/dvgamerr-app/nimbus-markdown')
   .then(function (r) { return r.ok ? r.json() : null })
   .then(function (d) { if (d && d.stargazers_count) document.getElementById('stars').textContent = '★ ' + d.stargazers_count + ' stars on GitHub' })

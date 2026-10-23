@@ -37,7 +37,7 @@ jobs:
         run: |
           mkdir -p _site/screenshots
           cp -r site/. _site/
-          cp docs/screenshots/0*.png docs/screenshots/fullscreen-*.gif _site/screenshots/
+          cp docs/screenshots/0*.png docs/screenshots/fullscreen-*.mp4 docs/screenshots/poster-*.jpg _site/screenshots/
           cp icons/default/128x128.png _site/icon.png
           cp docs/store/marquee-promo-1400x560.png _site/og.png
 
