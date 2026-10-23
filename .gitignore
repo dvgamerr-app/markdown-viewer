@@ -9,3 +9,4 @@ package-lock.json
 /dist/
 /manifest.json
 /background/index-compilers.js
+_site/

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name"            : "Nimbus Markdown",
   "version"         : "0.0",
-  "description"     : "Dark Mode • Themes • Autoreload • Mermaid Diagrams • MathJax • ToC • Syntax Highlighting",
+  "description"     : "Beautiful Markdown viewer for Chrome. Preview local and online .md files with Mermaid diagrams, syntax highlighting, and themes.",
 
   "homepage_url": "https://github.com/dvgamerr-app/nimbus-markdown",
 

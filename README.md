@@ -1,389 +1,142 @@
+<div align="center">
 
-# Nimbus Markdown / Browser Extension
+<img src="icons/default/128x128.png" width="88" alt="Nimbus Markdown icon">
 
-A browser extension for rendering Markdown, forked from the original extension by Simeon Velichkov.
+# Nimbus Markdown
 
-Install using the [manual installation](#manual-install) instructions.
+**Mermaid diagrams you can actually explore, right in your browser.**
 
-# Features
+An interactive Markdown viewer for Chrome. Open any `.md` file and read it as a clean, themed document. Click fullscreen on a diagram to zoom, find a node, follow its links and play it step by step. No editor or upload needed.
 
-- Secure by design
-- Render local and remote file URLs
-- Granular access to remote origins
-- Full control over the [markdown-it] options
-- 30+ Themes ([cleanrmd], [GitHub][github-theme])
-- Custom theme support
-- GitHub Flavored Markdown (GFM)
-- Auto reload on file change
-- Syntax highlighted code blocks ([prism][prism])
-- Table of Contents (ToC)
-- MathJax formulas ([mathjax])
-- Mermaid diagrams ([mermaid])
-- Convert emoji shortnames (icons provided free by [EmojiOne][emojione])
-- Remember scroll position
-- Markdown Content-Type detection
-- Configurable Markdown file path detection
-- Settings synchronization
-- Raw and rendered markdown views
-- Free and Open Source
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/kbkjbpmegfjbnpkdmlelkemmolegipkk?style=for-the-badge&logo=googlechrome&logoColor=white&label=Chrome%20Web%20Store&color=2f6b4f)](https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk)
+[![Stars](https://img.shields.io/github/stars/dvgamerr-app/nimbus-markdown?style=for-the-badge&logo=github&color=2f6b4f)](https://github.com/dvgamerr-app/nimbus-markdown/stargazers)
+[![Release](https://img.shields.io/github/v/release/dvgamerr-app/nimbus-markdown?style=for-the-badge&color=2f6b4f)](https://github.com/dvgamerr-app/nimbus-markdown/releases)
+[![License](https://img.shields.io/github/license/dvgamerr-app/nimbus-markdown?style=for-the-badge&color=2f6b4f)](LICENSE)
 
-# Table of Contents
+[Website](https://dvgamerr.app/nimbus-markdown/) · [Live demo](https://dvgamerr.app/nimbus-markdown/#demo) · [Install](#install-in-a-minute) · [Reference](docs/reference.md) · [ภาษาไทย](README.th.md)
 
-- **[After Install](#after-install)**
-- **[Themes](#themes)**
-- **[Compiler Options](#compiler-options)**
-- **[Content Options](#content-options)**
-- **[Manage Origins](#manage-origins)**
-- **[Syntax Examples](#syntax-examples)**
+<img src="docs/screenshots/fullscreen-flow.gif" width="760" alt="A flowchart in fullscreen: zoom in, hover a node to light its links, open its popup and find another node">
 
-> Additional documentation specific to [Firefox][firefox-docs]
+<table>
+  <tr>
+    <td><img src="docs/screenshots/01-flowchart-fullscreen.png" width="230" alt="Flowchart node popup in fullscreen"></td>
+    <td><img src="docs/screenshots/02-sequence-dark.png" width="230" alt="Sequence diagram in the dark theme"></td>
+    <td><img src="docs/screenshots/04-dbml.png" width="230" alt="DBML schema drawn as table cards"></td>
+  </tr>
+</table>
 
-# After Install
+**⭐ If Nimbus makes your docs easier to read, star the repo. It helps other developers find it.**
 
-## Local Files
+</div>
 
-1. Navigate to `chrome://extensions`
-2. Locate the nimbus-markdown extension and click on the `Details` button
+## Why Nimbus
 
-![img-extensions]
+- **Diagrams are interactive, not pictures.** Fullscreen any Mermaid diagram to zoom, search, open a node's connections and play sequences, journeys and timelines.
+- **Built for the docs developers read every day.** README files, design notes, architecture and the Markdown your AI coding agent writes, opened straight from disk.
+- **Your file stays on your machine.** Rendering happens in the browser. Local files need one switch, websites only work where you allow them. See the [privacy policy](PRIVACY.md).
+- **Free and open source.** MIT licensed, a maintained fork of Markdown Viewer by Simeon Velichkov.
 
-3. Make sure that the `Allow access to file URLs` switch is turned on
+## Features
 
-![img-file-access]
+| | Feature | What you get |
+| :-: | :- | :- |
+| 🔍 | **Fullscreen diagram viewer** | Zoom, move, find a node (`/`), overview map (`M`), links in blue and out in orange |
+| ▶️ | **Playback** | Sequence, state, journey and timeline diagrams play step by step (`P`) |
+| 🧭 | **Redrawn diagrams** | Journey maps, timelines, gantt, pie, quadrant, git graph, C4, mindmap and requirement diagrams in one clean style |
+| 🗄️ | **DBML schemas** | A ` ```dbml ` block becomes table cards with key chips and routed foreign keys |
+| 🎨 | **30+ themes** | Nimbus light and dark, GitHub, and the cleanrmd themes, plus your own CSS |
+| 🧮 | **MathJax** | Inline `$…$` and display `$$…$$` formulas |
+| 💻 | **Syntax highlighting** | Prism for fenced code blocks, and a highlighted raw Markdown view |
+| 📑 | **Table of contents** | A sidebar that follows your scroll |
+| 🔄 | **Auto reload** | The preview refreshes when you save a local file |
+| ✅ | **GitHub Flavored Markdown** | Tables, task lists, footnotes, emoji and more through markdown-it |
 
-## Remote Files
+<details>
+<summary><b>More screenshots and animations</b></summary>
 
-1. Click on the nimbus-markdown icon and select [Advanced Options](#manage-origins)
-2. Add the origins that you want enabled for the nimbus-markdown extension
+| Journey playback | Timeline playback |
+| :-: | :-: |
+| <img src="docs/screenshots/fullscreen-journey.gif" width="400" alt="Journey map playing stage by stage"> | <img src="docs/screenshots/fullscreen-timeline.gif" width="400" alt="Timeline revealing each period along the baseline"> |
+| **DBML hover and popup** | **Tables, code and math** |
+| <img src="docs/screenshots/fullscreen-dbml.gif" width="400" alt="Hovering DBML tables lights their foreign keys"> | <img src="docs/screenshots/05-table-code.png" width="400" alt="Rendered table, sequence diagram and code"> |
+| **Journey map** | **Timeline in the dark theme** |
+| <img src="docs/screenshots/03-journey.png" width="400" alt="Journey map with a sentiment curve"> | <img src="docs/screenshots/06-timeline-dark.png" width="400" alt="Timeline in the dark theme"> |
 
----
+Every screenshot is rendered from the mock documents in [docs/showcase](docs/showcase/).
 
-# Themes
+</details>
 
-All themes support the following width options:
+## Install in a minute
 
-- `auto` - automatically adjust the content width based on the screen size
-- `full` - 100% screen width
-- `wide` - fixed at 1400px
-- `large` - fixed at 1200px
-- `medium` - fixed at 992px
-- `small` - fixed at 768px
-- `tiny` - fixed at 576px
+1. Install **[Nimbus Markdown from the Chrome Web Store](https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk)**. It also installs on Chromium browsers such as Edge and Brave.
+2. For local files: open `chrome://extensions`, click **Details** on Nimbus Markdown and turn on **Allow access to file URLs**.
+3. Drag a `.md` file into the browser.
 
-The `auto` option on the `github` and `github-dark` themes has a fixed width with a surrounding border identical to a rendered `README.md` file for a repository hosted on github.com
+For Markdown on websites, click the extension icon, open **Advanced Options** and add the site, for example `https://raw.githubusercontent.com`. Details are in [Manage Origins](docs/reference.md#manage-origins).
 
-## Custom Theme
+## Try it
 
-1. Go to the Advanced Options and click on Settings
-2. Select `CUSTOM` for Content Theme
-3. Upload your Custom Theme below
-4. Specify the Color Scheme of your theme
+Save this as `flow.md`, open it in Chrome and click the fullscreen button on the diagram:
 
-> Your custom theme will be minified automatically on upload and it can be up to 8KB in size.
+````markdown
+# Release flow
 
-> You can add `<link rel="stylesheet" type="text/css" href="file:///home/me/custom-theme.css">` to your markdown document to speed up development while working on your theme. Custom theme [example][custom-theme].
+```mermaid
+flowchart LR
+  pr([Pull request]) --> ci{Checks pass?}
+  ci -->|yes| merge[Merge]:::focal
+  ci -->|no| fix[Fix] --> pr
+  merge --> tag[(Tag)] --> store([Web Store])
+```
+````
 
----
+Or open the ready-made examples: [docs/showcase](docs/showcase/) and every diagram type in [docs/mermaid.md](docs/mermaid.md).
 
-# Compiler Options
+## How it works
 
-Full **CommonMark** support including **GFM** tables and strikethrough **+**
-
-| Option         | Default | Description
-| :-             | :-:     | :-
-| **abbr**       | **`true`**  | Abbreviation using `*[word]: Text` `<abbr>`
-| **attr**       | **`true`**  | Custom attributes using `{}` curly brackets
-| **breaks**     | **`true`**  | Convert new lines `\n` in paragraphs into line breaks `<br>`
-| **cjk**        | **`true`**  | Suppress linebreaks between east asian characters
-| **deflist**    | **`true`**  | Definition list `<dl>`
-| **footnote**   | **`true`**  | Footnotes `[^1]` `[^1]: a`
-| **html**       | **`true`**  | Enable HTML tags in source
-| **ins**        | **`true`**  | Inserted text `++a++` `<ins>`
-| **linkify**    | **`true`**  | Autoconvert URL-like text to links
-| **mark**       | **`true`**  | Marked text `==a==` `<mark>`
-| **sub**        | **`true`**  | Subscript `~a~` `<sub>`
-| **sup**        | **`true`**  | Superscript `^a^` `<sup>`
-| **tasklists**  | **`true`**  | Task lists `- [x]`
-| **typographer**| **`true`**  | Enable some language-neutral replacement + quotes beautification
-| **xhtmlOut**   | **`true`**  | Use `/` to close single tags (`<br />`)
-
----
-
-# Content Options
-
-| Option         | Default | Description
-| :-             | :-:     | :-
-| **autoreload** | **`true`**  | Auto reload on file change
-| **emoji**      | **`true`**  | Convert emoji `:shortnames:` into EmojiOne images
-| **mathjax**    | **`true`**  | Render MathJax formulas
-| **mermaid**    | **`true`**  | Render Mermaid diagrams
-| **syntax**     | **`true`**  | Syntax highlighted fenced code blocks
-| **toc**        | **`true`**  | Generate Table of Contents
-
-## Autoreload
-
-When enabled the extension will make a GET request every second to markdown files hosted on:
-
-- `file:///` URLs
-- any host that resolves to localhost IPv4 `127.0.0.1` or IPv6 `::1`
-
-## Emoji
-
-Convert emoji :shortnames: into EmojiOne images:
-
-- Emoji shortnames like `:smile:` will be converted to :smile: using EmojiOne images.
-- Currently unicode symbols like `😄` and ASCII emoji like `:D` are not supported.
-
-## MathJax
-
-The following MathJax delimiters are supported:
-
-- inline math: `\(math\)` and `$math$`
-- display math: `\[math\]` and `$$math$$`
-
-The following rules apply to your markdown content when MathJax is enabled:
-
-- Regular dollar sign `$` in text that is not part of a math formula should be escaped: `\$`
-- Regular markdown escaping for parentheses: `\(` and `\)`, and brackets: `\[` and `\]` is not supported. MathJax will convert anything between these delimiters to math formulas, unless they are wrapped in backticks: `` `\(` `` or fenced code blocks.
-
-## Mermaid
-
-Render Mermaid diagrams wrapped in `mmd` or `mermaid` fenced code blocks:
-
-    ```mmd
-    sequenceDiagram
-    ```
-
-Alternatively diagrams can be wrapped in HTML tags:
-
-```html
-<pre><code class="mermaid">
-  sequenceDiagram
-</code></pre>
+```text
+  .md file or allowed site
+          │
+  background worker ── detects Markdown by path or content type
+          │
+  content script ──── markdown-it ─► mermaid · dbml · prism · mathjax
+          │
+  themed page with a table of contents and the fullscreen diagram viewer
 ```
 
-- resize the diagram container vertically by dragging the bottom right corner of the code block up or down
-- zoom in and out by holding down the Shift key and then using your mouse wheel
-- pan by holding down the left mouse button and drag in any direction
+Plain JavaScript, Manifest V3, Mithril for the settings pages, built into `dist/` with a single Bun script.
 
-## Syntax
+## Documentation
 
-Syntax highlighting for fenced code blocks:
+- [Reference](docs/reference.md): themes, compiler and content options, origins, manual install
+- [Mermaid examples](docs/mermaid.md) and [DBML examples](docs/dbml.md)
+- [Firefox notes](firefox.md)
+- [Privacy policy](PRIVACY.md) and [changelog](CHANGELOG.md)
 
-    ```js
-    var hello = 'hi'
-    ```
+## Develop
 
-Alternatively code blocks can be wrapped in HTML tags:
-
-```html
-<pre class="language-js"><code class="language-js">var hello = 'hi'</code></pre>
+```bash
+bun i
+bun run build:dist    # Chrome build in dist/nimbus-markdown
+bun test              # unit tests
 ```
 
-> Full list of supported languages and their corresponding [aliases][prism-lang] to use.
+`bun run build:site` assembles the landing page and its live demo in `_site`. Set `PUBLIC_TRACEWAY_DSN` (a Traceway browser DSN, `<ingest token>@<instance>/api/report`) to turn on its click counts; the Pages workflow reads it from a repository secret of the same name.
 
-## ToC
+Load `dist/nimbus-markdown` with **Load unpacked** on `chrome://extensions` (Developer mode on). Use `bun run build:dist:firefox` for Firefox.
 
-Generates Table of Contents (ToC) based on the headers found in the markdown document.
+## Support the project
 
----
+- ⭐ [Star the repository](https://github.com/dvgamerr-app/nimbus-markdown/stargazers) so more people find it
+- 🐛 [Report a bug or ask for a feature](https://github.com/dvgamerr-app/nimbus-markdown/issues)
+- 💬 Leave a review on the [Chrome Web Store](https://chromewebstore.google.com/detail/nimbus-markdown/kbkjbpmegfjbnpkdmlelkemmolegipkk)
 
-# Manage Origins
+## Thanks
 
-Click on the nimbus-markdown icon and select `Advanced Options`.
+- **[simov/markdown-viewer](https://github.com/simov/markdown-viewer)** by Simeon Velichkov. Nimbus is a fork of Markdown Viewer, and its renderer, origin management and themes are the foundation everything here is built on.
+- **[cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design)** by Cathryn Lavery. The reference design for how Nimbus draws diagrams: the editorial palette, one focal accent, journey maps, timelines and the rest of the redrawn diagram types.
+- The open-source libraries it ships: [markdown-it](https://github.com/markdown-it/markdown-it), [Mermaid](https://mermaid.js.org), [MathJax](https://www.mathjax.org), [Prism](https://prismjs.com), [panzoom](https://github.com/timmywil/panzoom), [cleanrmd](https://github.com/gadenbuie/cleanrmd) and [github-markdown-css](https://github.com/sindresorhus/github-markdown-css).
 
-By default nimbus-markdown does not have access to any content:
+## License
 
-![img-no-access]
-
-## Enable File Access
-
-To enable access to file URLs follow [these steps](#local-files).
-
-In case access to local files was not enabled, an additional `Allow Access` button will be present next to the File Access header:
-
-![img-file-access-allow]
-
-Clicking on it will point you to the built-in management page for the extension where you can toggle the `Allow access to file URLs` switch to enable it.
-
-## Enable Site Access
-
-Access to individual sites can be enabled by copy/pasting a URL address into the Site Access text box and then clicking on the `Add` button next to it:
-
-![img-site-access-add]
-
-> Access to both `http` and `https` protocols can be enabled by using a wildcard `*://raw.githubusercontent.com`
-
-> Access to all subdomains for a given hostname can be enabled by using a wildcard `https://*.githubusercontent.com`
-
-> Access to all ports on `localhost` can be enabled by adding `http://localhost`.
-> Access to a specific port can be enabled by adding `http://localhost:3000`
-
-## Allow on All Sites
-
-Access to **all** sites can be enabled by clicking on the `Allow All` button next to the Site Access header:
-
-![img-site-allow-all]
-
-> This is identical to adding the `*://*` pattern into the text box.
-
-## Content Detection
-
-Each enabled origin has an option for content type header detection and path matching regular expression:
-
-![img-site-access-enabled]
-
-### Header Detection
-
-When this option is enabled the extension will check if the `content-type` header with a value of `text/markdown`, `text/x-markdown` or `text/plain` is present.
-
-### Path Matching
-
-When this option is enabled the extension will check if the page URL matches the Path Matching RegExp.
-
-The default regular expression is: `\.(?:markdown|mdown|mkdn|md|mkd|mdwn|mdtxt|mdtext|text)(?:#.*|\?.*)?$`
-
-It is a simple regular expression that matches URLs ending with:
-
-- markdown file extension: `\.(?:markdown|mdown|mkdn|md|mkd|mdwn|mdtxt|mdtext|text)`
-- and optionally a hash or a querystring after that: `(?:#.*|\?.*)?`
-
-> The `?:` used in `(?:match)` stands for *non-capturing group* and it is there for performance reasons.
-
-You can modify the path matching regular expression for each enabled origin. The settings are being updated as you type.
-
-### Path Matching Priority
-
-The enabled origins are matched from most to least specific:
-
-1. `https://raw.githubusercontent.com`
-2. `https://*.githubusercontent.com`
-3. `*://raw.githubusercontent.com`
-4. `*://*.githubusercontent.com`
-5. `*://*`
-
-The matching origin with the highest priority will be picked and its header detection and path matching settings will be used to determine if the content should be rendered or not.
-
-> It is recommended to explicitly allow only the origins that you want the extension to have access to.
-
-## Remove Origin
-
-Click on the `Remove` button for the origin that you want to remove. This removes the permission itself so that the extension can no longer access that origin.
-
-## Refresh Origin
-
-The extension synchronizes your preferences across all of your devices if you have logged into your browser and enabled the sync feature. The list of your allowed origins is being synced too. However, the actual permissions that you grant using the consent popup cannot be synced.
-
-In case you have enabled a new origin on some of your devices you will have to explicitly allow it on your other devices. In this case the origin will be highlighted and an additional `Refresh` button will be present:
-
-![img-site-refresh]
-
-Only origins that needs to be refreshed will be highlighted. The extension cannot access highlighted origins unless you click on the `Refresh` button.
-
-> In some cases access to previously allowed origins may get disabled. Make sure you check back the advanced options page or reload it and look for highlighted origins that needs to be refreshed.
-
----
-
-# Syntax Examples
-
-Examples about the Markdown syntax and all features available in nimbus-markdown can be found on [GitHub][syntax-github], [GitLab][syntax-gitlab] and [BitBucket][syntax-bitbucket]:
-
-- **elements.md** - quick overview of the Markdown syntax and a summary of the nimbus-markdown features
-- **syntax.md** - extensive list of Markdown syntax examples with different combinations and edge cases
-- **prism.md** - syntax highlighting examples
-- **mermaid.md** - different types of Mermaid diagrams
-- **mathjax.md** - MathJax examples and support documentation
-
-Allow the appropriate remote origin or pull any of the above repositories and access it on the `file:///` origin locally.
-
----
-
-# Manual Install
-
-The following instructions applies for: Chrome, Edge, Opera, Brave, Chromium and Vivaldi.
-
-Note that in any of the following cases you won't receive any future updates automatically!
-
-## Load packed .crx
-
-1. Go to [releases] and pick a release that you want to install
-2. Download the `nimbus-markdown.crx` file
-3. Navigate to `chrome://extensions`
-4. Drag and drop the `nimbus-markdown.crx` file into the `chrome://extensions` page
-
-## Load unpacked .zip
-
-1. Go to [releases] and pick a release that you want to install
-2. Download the `nimbus-markdown.zip` file and extract it
-3. Navigate to `chrome://extensions`
-4. Make sure that the `Developer mode` switch is enabled
-5. Click on the `Load unpacked` button and select the extracted directory
-
-## Build
-
-1. Clone this repository
-2. Execute `bun i` then `bun run build:dist` (or `bun run build:dist:firefox` to build for Firefox)
-3. Navigate to `chrome://extensions`
-4. Make sure that the `Developer mode` switch is enabled
-5. Click on the `Load unpacked` button and select `dist/nimbus-markdown`
-
----
-
-# License
-
-The MIT License (MIT)
-
-Copyright (c) 2013-present, Simeon Velichkov <simeonvelichkov@gmail.com>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-
-
-  [marked]: https://github.com/markedjs/marked
-  [remark]: https://github.com/remarkjs/remark
-  [markdown-it]: https://github.com/markdown-it/markdown-it
-  [commonmark]: https://github.com/commonmark/commonmark.js
-  [showdown]: https://github.com/showdownjs/showdown
-  [remarkable]: https://github.com/jonschlinkert/remarkable
-
-  [emojione]: https://emojione.com
-  [mathjax]: https://www.mathjax.org
-  [mermaid]: https://mermaid.js.org
-  [prism]: https://prismjs.com
-  [github-theme]: https://github.com/sindresorhus/github-markdown-css
-  [cleanrmd]: https://pkg.garrickadenbuie.com/cleanrmd/#themes
-
-  [gfm]: https://github.github.com/gfm/
-  [prism-lang]: https://prismjs.com/#supported-languages
-  [releases]: https://github.com/dvgamerr-app/nimbus-markdown/releases
-  [firefox-docs]: firefox.md
-  [custom-theme]: https://gist.github.com/simov/2a074a1c0123e6ba4bc2bfa6a67d3203
-
-  [syntax-github]: https://github.com/simov/markdown-syntax
-  [syntax-gitlab]: https://gitlab.com/simovelichkov/markdown-syntax
-  [syntax-bitbucket]: https://bitbucket.org/simovelichkov/markdown-syntax
-
-  [img-extensions]: https://i.imgur.com/kzullaI.png
-  [img-file-access]: https://i.imgur.com/VVcPv0T.png
-  [img-no-access]: https://i.imgur.com/U6mjgX0.png
-  [img-file-access-allow]: https://i.imgur.com/2bStHeb.png
-  [img-site-access-add]: https://i.imgur.com/CFg9JBt.png
-  [img-site-allow-all]: https://i.imgur.com/MXZqFOB.png
-  [img-site-access-enabled]: https://i.imgur.com/tFMzJ3l.png
-  [img-site-refresh]: https://i.imgur.com/j0gATxT.png
+[MIT](LICENSE).

@@ -1,0 +1,143 @@
+<!doctype html>
+<!-- Live demo for the landing page. It runs the extension's own diagram renderer: scripts/site.mjs copies
+    content/*.js, the vendor bundles and the nimbus themes from dist/nimbus-markdown into ext/ next to this page,
+    so what you try here is what the extension draws. Pick a diagram with ?d=flow|journey|timeline|dbml -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Nimbus Markdown live demo</title>
+<link rel="stylesheet" href="ext/content/index.css">
+<link rel="stylesheet" href="ext/content/themes.css">
+<link rel="stylesheet" id="theme" href="ext/themes/nimbus.css">
+<style>
+#_html { visibility: visible; }
+#loading { font: 14px ui-monospace, Consolas, monospace; color: #4f5d75; padding: 24px; }
+</style>
+</head>
+<body class="_theme-nimbus _color-light">
+<div id="loading">Loading the Nimbus diagram renderer…</div>
+<div id="_html" class="markdown-theme"></div>
+
+<script type="text/plain" id="flow">flowchart TD
+  client([Web client]):::input --> gw[API gateway]:::security
+  gw --> auth{Signed in?}
+  auth -->|no| login[Redirect to sign in]
+  auth -->|yes| cart[Load cart]
+  cart --> price[Price & tax]:::focal
+  price --> stock{In stock?}
+  stock -->|no| notify[Back-in-stock alert]:::optional
+  stock -->|yes| pay[Payment provider]:::external
+  pay --> orders[(Orders DB)]:::store
+  orders --> mail[Receipt email]:::external
+  orders --> done([Order placed])</script>
+<script type="text/plain" id="journey">journey
+  title First week of a new team
+  section Discover
+    Sign up: 4: Owner
+    Import notes: 5: Owner
+  section Adopt
+    Invite the team: 4: Owner, Teammate
+    Hit the free limit: 1: Owner
+  section Decide
+    Upgrade to Teams: 3: Owner, Finance</script>
+<script type="text/plain" id="timeline">timeline
+  title Release history
+  section Beta
+    2021 : Private beta
+    2022 : Public beta : Sync
+  section Launch
+    2023 : 1.0 : Mobile apps
+    2024 : Teams
+  section Scale
+    2026 : AI search : Offline mode</script>
+<script type="text/plain" id="dbml">Table customers {
+  id uuid [pk]
+  email text [unique, not null]
+  created_at timestamptz [not null]
+}
+
+Table orders {
+  id uuid [pk]
+  customer_id uuid [not null]
+  status text [not null]
+  total numeric(12,2) [not null]
+  placed_at timestamptz [not null]
+}
+
+Table products {
+  id uuid [pk]
+  sku text [unique, not null]
+  name text [not null]
+  price numeric(12,2) [not null]
+}
+
+Table order_items {
+  id uuid [pk]
+  order_id uuid [not null]
+  product_id uuid [not null]
+  qty integer [not null]
+}
+
+Table payments {
+  id uuid [pk]
+  order_id uuid [not null]
+  provider text [not null]
+  amount numeric(12,2) [not null]
+}
+
+Ref: orders.customer_id > customers.id
+Ref: order_items.order_id > orders.id
+Ref: order_items.product_id > products.id
+Ref: payments.order_id - orders.id</script>
+
+<script>
+// the slice of the content script state the diagram renderer reads (content/index.js)
+var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+var state = {theme: dark ? 'nimbus-dark' : 'nimbus', _themes: {'nimbus': 'light', 'nimbus-dark': 'dark'}, html: ''}
+if (dark) {
+  document.getElementById('theme').href = 'ext/themes/nimbus-dark.css'
+  document.body.className = '_theme-nimbus-dark _color-dark'
+}
+
+var pick = new URLSearchParams(location.search).get('d')
+var kind = ['flow', 'journey', 'timeline', 'dbml'].indexOf(pick) >= 0 ? pick : 'flow'
+var code = document.createElement('code')
+code.className = kind === 'dbml' ? 'mermaid dbml' : 'mermaid'
+code.textContent = document.getElementById(kind).textContent
+var pre = document.createElement('pre')
+pre.appendChild(code)
+document.getElementById('_html').appendChild(pre)
+state.html = document.getElementById('_html').innerHTML
+
+var files = ['vendor/mermaid.min.js', 'vendor/panzoom.min.js', 'content/draw.js', 'content/dbml.js', 'content/journey.js',
+  'content/timeline.js', 'content/gantt.js', 'content/pie.js', 'content/quadrant.js', 'content/requirement.js',
+  'content/gitgraph.js', 'content/c4.js', 'content/mindmap.js', 'content/mermaid.js']
+var load = (i) => {
+  if (i === files.length) return start()
+  var s = document.createElement('script')
+  s.src = 'ext/' + files[i]
+  s.onload = () => load(i + 1)
+  s.onerror = () => { document.getElementById('loading').textContent = 'The demo could not load. Install the extension to try it.' }
+  document.head.appendChild(s)
+}
+// render, then open the diagram fullscreen so the whole viewer is ready to try
+var start = () => {
+  mmd.render()
+  var wait = setInterval(() => {
+    var full = document.querySelector('pre .mmd-toolbar button[title="Fullscreen"]')
+    if (!full) return
+    clearInterval(wait)
+    document.getElementById('loading').remove()
+    full.click()
+    // a phone has no room for the overview map next to the diagram, it stays one key (M) away
+    var map = document.querySelector('pre.mmd-fullscreen .mmd-toolbar button[title^="Overview map"]')
+    innerWidth < 600 && map && document.querySelector('pre.mmd-fullscreen .mmd-map') && map.click()
+    parent !== window && parent.postMessage({nimbusDemo: 'ready', kind}, '*')
+  }, 50)
+}
+load(0)
+</script>
+</body>
+</html>

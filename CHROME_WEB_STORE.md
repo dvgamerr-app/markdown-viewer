@@ -100,79 +100,110 @@ URL นี้เป็นปลายทางที่คาดไว้ ยั
 No login required. In chrome://extensions, open Nimbus Markdown > Details and enable "Allow access to file URLs". Open a local .md file to view rendered Markdown. Use the popup or Advanced Options to change themes and enable Mermaid, MathJax, syntax highlighting, and ToC. Edit and save the file to test autoreload. For remote Markdown, add its origin in Advanced Options, grant site access, then open the raw Markdown URL.
 ```
 
-## Graphic assets — ไฟล์พร้อมอัปโหลด
+## ลำดับกรอก Store listing ตามฟอร์มจริง
 
-ไฟล์อยู่ในโฟลเดอร์ `store-assets/` เป็น PNG 24-bit RGB ไม่มี alpha ทั้งหมด ใช้โลโก้และภาพ UI ที่มีอยู่จริงในโปรเจกต์
+แท็บ Store listing ใน Developer Dashboard แบ่งเป็น 3 ส่วน: Product details, Graphic assets และ Additional fields
 
-| ช่อง | ไฟล์ | ขนาด |
-| --- | --- | --- |
-| Store icon | `store-assets/store-icon-128.png` | 128×128 |
-| Global promo video | เว้นว่าง หากยังไม่มีวิดีโอ YouTube | — |
-| Screenshots ลำดับ 1 | `store-assets/screenshot-01-settings.png` | 1280×800 |
-| Screenshots ลำดับ 2 | `store-assets/screenshot-02-dark-mode.png` | 1280×800 |
-| Screenshots ลำดับ 3 | `store-assets/screenshot-03-quick-controls.png` | 1280×800 |
-| Small promo tile | `store-assets/small-promo-440x280.png` | 440×280 |
-| Marquee promo tile | `store-assets/marquee-promo-1400x560.png` | 1400×560 |
+### Product details
 
-ภาพหน้าจอชุดนี้แสดงหน้าตั้งค่าและ popup พร้อมข้อความประกอบ ไม่ใช่ภาพเอกสาร Markdown ที่เรนเดอร์ สร้างซ้ำได้ด้วย `./store-assets.ps1`
+#### Title from package
 
-## Store listing
-
-### Name
-
+```text
 Nimbus Markdown
+```
 
-### Short description
+อ่านจาก `name` ใน manifest แก้ในฟอร์มไม่ได้
 
-Render Markdown with dark mode, themes, Mermaid diagrams, math formulas, syntax highlighting, and automatic reload.
+#### Summary from package
 
-### Detailed description
+```text
+Beautiful Markdown viewer for Chrome. Preview local and online .md files with Mermaid diagrams, syntax highlighting, and themes.
+```
 
-Nimbus Markdown turns Markdown files into readable, themed documents directly in your browser. Preview local files and Markdown URLs on websites you choose to enable.
+อ่านจาก `description` ใน `manifest.chrome.json` (128 ตัวอักษร ไม่เกิน 132) แก้ในฟอร์มไม่ได้ จะเปลี่ยนเมื่ออัปโหลดแพ็กเกจเวอร์ชันถัดไป
 
-FEATURES
+#### Description
 
-• Light and dark themes, with over 30 themes and custom theme support.
-• GitHub Flavored Markdown, including tables, task lists, and strikethrough.
-• Syntax highlighting for fenced code blocks.
-• Mermaid diagrams and MathJax formulas.
-• A table of contents for navigating long documents.
-• Automatic reload for local files and local development previews.
-• Raw and rendered Markdown views.
-• Remembered scroll positions.
-• Configurable Markdown detection by file path and content type.
-• Settings synchronization through your browser.
+```text
+Nimbus Markdown is an interactive Markdown viewer for Chrome. It turns Markdown files into clean, themed documents, and lets you explore their Mermaid diagrams in fullscreen: trace node connections, search, zoom and play them step by step, instead of just looking at a static picture.
+
+EXPLORE DIAGRAMS IN FULLSCREEN
+
+• Open any Mermaid diagram fullscreen, then zoom and move around it.
+• Find a node by name (/) and open an overview map of the whole diagram (M).
+• Hover a node to light its links: blue into it, orange out of it. Click it to see its connections, upstream and downstream.
+• Play sequence, state, journey and timeline diagrams step by step (P).
+• Journey maps, timelines, gantt, pie, quadrant, git graph, C4, mindmap and requirement diagrams are redrawn in one calm, editorial style.
+• DBML code blocks become database schemas with key chips and routed foreign keys.
+
+A COMPLETE MARKDOWN READER
+
+• Over 30 themes, light and dark, plus your own CSS.
+• GitHub Flavored Markdown: tables, task lists, footnotes, strikethrough and emoji.
+• Syntax highlighting for code blocks, and a highlighted raw Markdown view.
+• MathJax formulas.
+• A table of contents that follows where you are reading.
+• Automatic reload when you save a local file.
+• Remembered scroll positions and settings that sync through your browser.
+
+BUILT FOR THE DOCS DEVELOPERS READ EVERY DAY
+
+README files, design notes, architecture docs and the Markdown your AI coding agent writes. Open them straight from disk without switching to an editor.
 
 GET STARTED
 
-For local files, open the extension's Details page at chrome://extensions and enable “Allow access to file URLs”. Then open a Markdown file in your browser.
+1. Open chrome://extensions, click Details on Nimbus Markdown and turn on "Allow access to file URLs".
+2. Drag a .md file into the browser.
+3. For Markdown on websites, open Advanced Options and add the sites you want. Nothing runs on a site until you allow it.
 
-For remote files, open Nimbus Markdown's Advanced Options and add the websites you want to enable. Site access can be managed individually.
+PRIVACY
 
-CUSTOMIZE YOUR READING EXPERIENCE
+Rendering happens in your browser. Your documents are not uploaded to a developer server. Read the privacy policy for the full details.
 
-Choose a theme, adjust content width, configure Markdown options, and enable the rendering features you need. You can also upload a custom CSS theme.
+FREE AND OPEN SOURCE
 
-Nimbus Markdown is free and open source. It is a fork of Markdown Viewer by Simeon Velichkov.
+MIT licensed. Nimbus Markdown is a maintained fork of Markdown Viewer by Simeon Velichkov, with diagrams styled after the diagram-design project by Cathryn Lavery.
 
-Source code and documentation:
+Source code, examples and issues:
 https://github.com/dvgamerr-app/nimbus-markdown
+```
 
-### Language
+#### Category
 
-English — สำหรับ listing ภาษาอังกฤษนี้
+**Developer Tools** (อยู่ในกลุ่ม Productivity)
 
-### Category
+#### Language
 
-เลือกหมวดที่เกี่ยวกับ Developer Tools หากมีในฟอร์มจริง
+**English**
 
-### Homepage URL
+### Graphic assets
 
-https://github.com/dvgamerr-app/nimbus-markdown
+ไฟล์ทั้งหมดอยู่ใน `docs/store/` เป็น PNG 24-bit RGB ไม่มี alpha ภาพหน้าจอเป็นการ render เอกสาร mock ใน `docs/showcase/` ผ่าน extension จริง ดีไซน์อยู่ใน `docs/store/assets.html` (โทน editorial ตาม diagram-design) สร้างใหม่ได้ด้วย `bun run build:store`
 
-### Support URL
+| ช่อง | ไฟล์ | ขนาด | ข้อความหลัก |
+| --- | --- | --- | --- |
+| Store icon | `docs/store/store-icon-128.png` | 128×128 | — |
+| Global promo video | เว้นว่าง หากยังไม่มีวิดีโอ YouTube | — | — |
+| Screenshot 1 | `docs/store/screenshot-01-flowchart.png` | 1280×800 | Mermaid diagrams you can explore. |
+| Screenshot 2 | `docs/store/screenshot-02-sequence.png` | 1280×800 | Sequence diagrams, day or night. |
+| Screenshot 3 | `docs/store/screenshot-03-journey.png` | 1280×800 | Journeys and timelines that play. |
+| Screenshot 4 | `docs/store/screenshot-04-dbml.png` | 1280×800 | Database schemas, drawn for you. |
+| Screenshot 5 | `docs/store/screenshot-05-document.png` | 1280×800 | Markdown, beautifully rendered. |
+| Small promo tile | `docs/store/small-promo-440x280.png` | 440×280 | Nimbus Markdown |
+| Marquee promo tile | `docs/store/marquee-promo-1400x560.png` | 1400×560 | Markdown, beautifully rendered. |
 
-https://github.com/dvgamerr-app/nimbus-markdown/issues
+ภาพ `docs/store/marquee-promo-1280x640.png` ไม่ใช่ของ Store แต่เป็น social preview ของ GitHub (Settings > Social preview) และใช้เป็น `og:image` ของ landing page
+
+ถ้าจะทำ Global promo video ใช้ GIF ใน `docs/screenshots/fullscreen-*.gif` เป็นต้นทาง แล้วอัปโหลดขึ้น YouTube ก่อนนำ URL มากรอก
+
+### Additional fields
+
+| ช่อง | ค่า |
+| --- | --- |
+| Official URL | **None** จนกว่าจะยืนยันเจ้าของโดเมน `dvgamerr.app` ใน Google Search Console แล้วค่อยเลือก |
+| Homepage URL | `https://dvgamerr.app/nimbus-markdown/` (หลัง Pages deploy แล้ว ระหว่างนี้ใช้ `https://github.com/dvgamerr-app/nimbus-markdown`) |
+| Support URL | `https://github.com/dvgamerr-app/nimbus-markdown/issues` |
+| Mature content | **ไม่เลือก** ไม่มีเนื้อหาสำหรับผู้ใหญ่ |
 
 ## Privacy practices — Single purpose
 
@@ -218,7 +249,7 @@ No account or login is required to test the extension.
 
 - **Privacy policy URL:** มีไฟล์ `PRIVACY.md` แล้ว ต้องเผยแพร่บน GitHub และตรวจว่าเปิดอ่านแบบสาธารณะได้ก่อนกรอก URL
 - **Contact email:** ใช้อีเมลสำหรับติดต่อผู้ดูแลจริง ไม่ใช่อีเมลผู้เขียนต้นฉบับใน LICENSE
-- **Screenshots / promotional images:** เลือกภาพที่ตรงกับหน้าตาและฟีเจอร์ของเวอร์ชันที่อัปโหลด
+- **Screenshots / promotional images:** ภาพใน `docs/store/` ถ่ายจาก build ปัจจุบัน ถ้า UI ของ diagram เปลี่ยนให้ถ่ายใหม่ก่อนส่ง
 - **Data usage declarations:** ตรวจตามพฤติกรรมจริงก่อนเลือกคำตอบ การเรนเดอร์เข้าถึงเนื้อหาเอกสารและ URL; ตำแหน่งการอ่านถูกเก็บใน local storage และการตั้งค่ารวมถึง site rules ใช้ Chrome Sync
 - **External requests:** ตัวแปลง emoji ใช้ภาพจาก cdn.jsdelivr.net และเอกสารที่เรนเดอร์อาจอ้างอิงทรัพยากรภายนอก จึงไม่ควรระบุว่าการทำงานทั้งหมดเป็น offline หรือไม่มีการเชื่อมต่อภายนอก
 - **Remote code declaration:** การโหลดภาพจาก CDN ไม่ใช่หลักฐานว่ามี remote executable code ต้องตรวจ renderer, vendor scripts และแพ็กเกจที่จะส่งก่อนตอบช่องนี้
@@ -226,7 +257,7 @@ No account or login is required to test the extension.
 
 ## Source references
 
-- `README.md` — ฟีเจอร์และขั้นตอนใช้งาน
+- `README.md`, `docs/reference.md` — ฟีเจอร์และขั้นตอนใช้งาน
 - `manifest.json`, `manifest.chrome.json` — ชื่อ เวอร์ชัน และสิทธิ์
 - `background/storage.js` — การเก็บและซิงก์การตั้งค่า
 - `background/detect.js`, `background/inject.js` — ตรวจจับและเรนเดอร์เอกสาร
