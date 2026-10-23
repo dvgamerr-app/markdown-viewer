@@ -75,7 +75,8 @@ describe('timeline render', () => {
 
   test('a tie has no milestone', () => {
     const flat = timeline.render('timeline\n  Q1 : a : b\n  Q2 : c : d', light, fonts, 't-3')
-    expect(flat).not.toContain('#bf4520')
+    // the style keeps the accent for the ring of a selected period, the drawing has none
+    expect(flat.replace(/<style>[^<]*<\/style>/, '')).not.toContain('#bf4520')
     expect(info(flat).nodes.p1.gap).toBeNull()
   })
 
@@ -109,5 +110,49 @@ describe('timeline fit', () => {
 
   test('a narrower room never squeezes the axis', () => {
     expect(width(timeline.render(src, light, fonts, 't-8', 100))).toBe(width(timeline.render(src, light, fonts, 't-9')))
+  })
+})
+
+describe('timeline motion', () => {
+  // just enough of an svg for motion(): its model, the period groups and the progress stroke
+  const stub = (svg) => {
+    const attrs = {}
+    const el = (key) => ({setAttribute: (k, v) => (attrs[key] = v), removeAttribute: () => delete attrs[key]})
+    const groups = {}
+    const progress = {style: {}}
+    const classes = new Set()
+    return {
+      attrs, progress, classes,
+      svg: {
+        id: 'm',
+        classList: {toggle: (c, on) => (on ? classes.add(c) : classes.delete(c))},
+        querySelector: (sel) => {
+          if (sel === 'metadata.timeline-model') return {textContent: /<metadata class="timeline-model">([^<]*)</.exec(svg)[1].replaceAll('&quot;', '"').replaceAll('&amp;', '&')}
+          if (sel === '.tl-progress') return progress
+          const key = /timeline-(p\d+)-0/.exec(sel)[1]
+          return (groups[key] = groups[key] || el(key))
+        }
+      }
+    }
+  }
+
+  test('a step per period: the one in play, the ones behind, the ones ahead', () => {
+    const s = stub(timeline.render(src, light, fonts, 'm'))
+    const run = timeline.motion(s.svg)
+    expect(run.steps.map((x) => x.label)).toEqual(['2002 · LinkedIn', '2004 · Facebook, Google, Orkut', '2010 · Instagram, Pinterest'])
+    run.frame(1)
+    expect(s.attrs).toEqual({p0: 'done', p1: 'now', p2: 'wait'})
+    expect(s.classes.has('tl-motion')).toBe(true)
+    expect(parseFloat(s.progress.style.strokeDashoffset)).toBeGreaterThan(0)
+    run.frame(run.steps.length)
+    expect(s.attrs).toEqual({})
+    expect(s.classes.has('tl-motion')).toBe(false)
+  })
+
+  test('a long timeline steps by section, eight steps at most', () => {
+    const long = 'timeline\n' + ['A', 'B', 'C'].map((name, k) => `  section ${name}\n` + [0, 1, 2, 3].map((i) => `    ${2000 + k * 4 + i} : e`).join('\n')).join('\n')
+    expect(timeline.motion(stub(timeline.render(long, light, fonts, 'm')).svg).steps.map((x) => x.label)).toEqual(['2000 – 2003 · A', '2004 – 2007 · B', '2008 – 2011 · C'])
+    const flat = 'timeline\n' + Array.from({length: 20}, (_, i) => `  ${2000 + i} : e`).join('\n')
+    expect(timeline.motion(stub(timeline.render(flat, light, fonts, 'm')).svg).steps.length).toBeLessThanOrEqual(8)
   })
 })

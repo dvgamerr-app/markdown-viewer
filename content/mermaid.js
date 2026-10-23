@@ -694,11 +694,14 @@ var mmd = (() => {
     var isJourney = kind === 'journey'
     var isTimeline = kind === 'timeline'
     var isClass = kind === 'classDiagram'
-    // a journey is a chain of stages joined by the sentiment curve, a timeline a chain of periods along its
-    // baseline: both play like a state machine
-    var isState = kind === 'stateDiagram' || isEr || isJourney || isTimeline
+    // a journey is a chain of stages joined by the sentiment curve, it plays like a state machine
+    var isState = kind === 'stateDiagram' || isEr || isJourney
+    // a timeline plays its own reveal along the baseline (timeline.motion), not the comets of a flow. It is a step
+    // mode, so under reduced motion there is nothing to play and the figure stays complete
+    var still = !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    var tl = isTimeline && !still ? timeline.motion(pre.querySelector(':scope > code.mermaid svg')) : null
     // an entity model is not a flow, it has nothing to play: its relationships light up on hover instead
-    var plays = isSequence || (isState && !isEr)
+    var plays = isSequence || (isState && !isEr) || !!tl
     plays && button('play', isJourney ? 'Play journey (P)' : isTimeline ? 'Play timeline (P)' : isState ? 'Play transitions (P)' : 'Play sequence (P)', () => pre._mmdSeqToggle && pre._mmdSeqToggle())
     var find = button('find', 'Find node (/)', () => openFind())
     var mapButton = button('map', 'Overview map (M)', () => toggleMap())
@@ -1789,7 +1792,9 @@ var mmd = (() => {
         })
         return steps
       }
-      var steps = isState ? stateSteps() : sequenceSteps()
+      var steps = tl ? tl.steps : isState ? stateSteps() : sequenceSteps()
+      // the skill's motion budget for a timeline: holds of 720 to 1200ms, a whole run within 8s
+      var hold = tl ? Math.min(1200, Math.max(720, Math.floor(8000 / steps.length / 160) * 160)) : HOLD
       var starts = isState ? new Set(nodes.filter((n) => !edges.some((e) => e.to === n.id)).map((n) => n.id)) : null
       var at = -1
       var playing = false
@@ -1817,7 +1822,10 @@ var mmd = (() => {
       closeTool.title = 'Close (Esc)'
       closeTool.setAttribute('aria-label', 'Close')
       closeTool.addEventListener('click', () => seqStop())
-      player.append(tool('prev', 'Previous message ([)', () => move(-1)), playTool, tool('next', 'Next message (])', () => move(1)), counter, caption, closeTool)
+      var unit = tl ? 'period' : 'message'
+      // a timeline announces the period it moves to, the caption is its live status
+      tl && caption.setAttribute('role', 'status')
+      player.append(tool('prev', 'Previous ' + unit + ' ([)', () => move(-1)), playTool, tool('next', 'Next ' + unit + ' (])', () => move(1)), counter, caption, closeTool)
       pre.appendChild(player)
 
       var markSteps = (current) => steps.forEach((step, j) => {
@@ -1836,6 +1844,7 @@ var mmd = (() => {
         state ? n.el.setAttribute('data-mmd-seq', state) : n.el.removeAttribute('data-mmd-seq')
       })
       var mark = (current) => {
+        if (tl) return tl.frame(current)
         markSteps(current)
         isState && markNodes(current)
       }
@@ -1931,6 +1940,7 @@ var mmd = (() => {
       }
       // every message of a step travels on one clock
       var travel = (step) => {
+        if (tl) return
         var places = step.msgs.map(travelOne).filter(Boolean)
         if (calm) return places.forEach((place) => place(1))
         var begin = performance.now()
@@ -1958,7 +1968,7 @@ var mmd = (() => {
         counter.textContent = at + 1 + ' / ' + steps.length
         caption.textContent = steps[at].label
         paint()
-        if (playing) timer = setTimeout(() => (at + 1 < steps.length ? go(at + 1) : finish()), HOLD)
+        if (playing) timer = setTimeout(() => (at + 1 < steps.length ? go(at + 1) : finish()), hold)
       }
       // the run ends complete: every message back at full strength
       var finish = () => {

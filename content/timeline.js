@@ -206,6 +206,8 @@ var timeline = (() => {
       segments.push(`<path class="timeline-line relationshipLine" id="${id}-S-${k}" data-from="p${k - 1}" data-to="p${k}" ` +
         `d="M${num(xs[k - 1])},${base}H${num(xs[k])}" fill="none" ${line}/>`)
     }
+    // playback only: an ink stroke drawn along the baseline up to the period in play, see motion()
+    segments.push(`<path class="tl-progress" aria-hidden="true" d="M${num(capL)},${base}H${num(capR)}" pathLength="1" fill="none" stroke="${t.ink}" stroke-width="1.5"/>`)
 
     var marks = periods.map((p, i) => {
       var x = num(xs[i])
@@ -216,8 +218,11 @@ var timeline = (() => {
       var top = up ? edge - 8 - p.rows : edge + 8
       var g = [`<g class="node timeline-period" id="${id}-timeline-p${i}-0">`,
         `<rect class="timeline-hit" x="${num(xs[i] - p.w / 2)}" y="${num((up ? top : base) - PAD)}" width="${p.w}" height="${num(p.rows + p.drop + PAD * 2 + 8)}" rx="6" fill="rgba(0,0,0,0)"/>`,
-        `<path d="M${x},${base}V${edge}" stroke="${big ? accent : faint(0.3)}"/>`,
-        `<circle cx="${x}" cy="${base}" r="${big ? 6 : 4}" fill="${big ? accent : t.ink}"/>`]
+        // the drop runs out from the dot, so drawing it in playback grows it from the baseline
+        `<path class="tl-drop" d="M${x},${base}V${edge}" pathLength="1" stroke="${big ? accent : faint(0.3)}"/>`,
+        `<circle class="tl-ring" aria-hidden="true" cx="${x}" cy="${base}" r="${big ? 11 : 9}" fill="none" stroke="${t.ink}"/>`,
+        `<circle cx="${x}" cy="${base}" r="${big ? 6 : 4}" fill="${big ? accent : t.ink}"/>`,
+        `<g class="tl-label ${up ? 'tl-up' : 'tl-down'}">`]
       var yy = top
       p.date.forEach((l) => {
         yy += 12
@@ -231,7 +236,7 @@ var timeline = (() => {
         yy += 16
         g.push(`<text x="${x}" y="${num(yy - 5)}" text-anchor="middle" font-family="${mono}" font-size="8" letter-spacing="${TRACK}" fill="${t.soft}">+${p.more} MORE</text>`)
       }
-      g.push('</g>')
+      g.push('</g></g>')
       return g.join('')
     })
 
@@ -258,10 +263,10 @@ var timeline = (() => {
     var width = fit && right + MARGIN <= fit + 4 ? Math.floor(fit) : grid(right + MARGIN)
     var height = grid(y)
 
-    var info = {nodes: {}}
+    var info = {axis: [num(capL), num(capR)], nodes: {}}
     periods.forEach((p, i) => {
       info.nodes['p' + i] = {
-        name: p.label, section: p.section, n: i + 1, events: p.events, major: i === major,
+        name: p.label, section: p.section, n: i + 1, events: p.events, major: i === major, x: num(xs[i]),
         gap: numeric && i ? num(values[i] - values[i - 1]) : null,
         prev: i ? 'p' + (i - 1) : '', next: i < n - 1 ? 'p' + (i + 1) : ''
       }
@@ -273,9 +278,87 @@ var timeline = (() => {
     return [`<svg xmlns="http://www.w3.org/2000/svg" id="${id}" width="100%" style="max-width: ${width}px;" viewBox="0 0 ${width} ${height}" ` +
       `role="graphics-document document" aria-roledescription="timeline" font-family="${esc(sans)}">`,
       `<title>${esc(model.title || 'Timeline')}</title><desc>${esc(summary)}</desc>`,
+      `<style>${motionCss('#' + id)}</style>`,
       body.join(''), segments.join(''), marks.join(''), legend.join(''),
       `<metadata class="timeline-model">${esc(JSON.stringify(info))}</metadata>`, '</svg>'].join('')
   }
 
-  return {parse, render}
+  // playback, the skill's step mode: the figure is complete until a run starts. In a run an ink stroke draws along
+  // the baseline to the period in play, which is ringed while its drop draws out of the dot and its label rises off
+  // the baseline. Periods behind stay, periods ahead wait faint. The run ends on the complete figure.
+  // One clock: 160ms fast, 480ms step, every delay a multiple of 160ms
+  var motionCss = (root) => `
+    ${root} .tl-progress { stroke-dasharray: 1 1; stroke-dashoffset: 1; opacity: 0; pointer-events: none;
+      transition: stroke-dashoffset 480ms cubic-bezier(.2,.8,.2,1), opacity 160ms linear; }
+    ${root}.tl-motion .tl-progress { opacity: 1; }
+    ${root} .tl-ring { opacity: 0; pointer-events: none; transition: opacity 160ms linear; }
+    ${root}.tl-motion [data-tl=now] .tl-ring { opacity: 1; transition-delay: 320ms; }
+    ${root} .timeline-period, ${root} .tl-label { transition: opacity 480ms cubic-bezier(.2,.8,.2,1), transform 480ms cubic-bezier(.2,.8,.2,1); }
+    ${root} .tl-drop { stroke-dasharray: 1 1; stroke-dashoffset: 0; transition: stroke-dashoffset 480ms cubic-bezier(.2,.8,.2,1); }
+    ${root}.tl-motion [data-tl=wait] { opacity: .12; }
+    ${root}.tl-motion [data-tl=wait] .tl-drop { stroke-dashoffset: 1; }
+    ${root}.tl-motion [data-tl=wait] .tl-label { opacity: 0; }
+    ${root}.tl-motion [data-tl=wait] .tl-up { transform: translateY(8px); }
+    ${root}.tl-motion [data-tl=wait] .tl-down { transform: translateY(-8px); }
+    ${root}.tl-motion [data-tl=now], ${root}.tl-motion [data-tl=now] .tl-drop { transition-delay: 160ms; }
+    ${root}.tl-motion [data-tl=now] .tl-label { transition-delay: 320ms; }
+    @media (prefers-reduced-motion: reduce) {
+      ${root} * { transition: none !important; }
+    }
+    @media print {
+      ${root} .tl-progress, ${root} .tl-ring { display: none; }
+      ${root} [data-tl], ${root} .tl-label { opacity: 1 !important; transform: none !important; }
+      ${root} .tl-drop { stroke-dashoffset: 0 !important; }
+    }`
+
+  // the steps of a run over a drawn timeline, and frame(i) to show step i: below 0 or past the end is the complete
+  // figure. At most eight steps: a longer timeline steps by section, or else by even runs of periods
+  var motion = (svg) => {
+    var meta = svg.querySelector('metadata.timeline-model')
+    var info
+    try {
+      info = JSON.parse(meta.textContent)
+    }
+    catch (err) {
+      return null
+    }
+    var ids = Object.keys(info.nodes)
+    var groups = []
+    var sections = ids.reduce((list, key) => {
+      var name = info.nodes[key].section
+      if (!list.length || list[list.length - 1].name !== name) list.push({name, keys: []})
+      list[list.length - 1].keys.push(key)
+      return list
+    }, [])
+    if (ids.length <= 8) ids.forEach((key) => groups.push({keys: [key], name: ''}))
+    else if (sections.length > 1 && sections.length <= 8) groups = sections
+    else {
+      var size = Math.ceil(ids.length / 8)
+      for (var i = 0; i < ids.length; i += size) groups.push({keys: ids.slice(i, i + size), name: ''})
+    }
+    var els = ids.map((key) => svg.querySelector('[id="' + svg.id + '-timeline-' + key + '-0"]'))
+    var progress = svg.querySelector('.tl-progress')
+    var [from, to] = info.axis
+    var at = {}
+    groups.forEach((group, g) => group.keys.forEach((key) => (at[key] = g)))
+    var steps = groups.map((group) => {
+      var first = info.nodes[group.keys[0]]
+      var last = info.nodes[group.keys[group.keys.length - 1]]
+      var span = group.keys.length > 1 ? first.name + ' – ' + last.name : first.name
+      var said = group.keys.length > 1 ? group.name : first.events.join(', ')
+      return {label: said ? span + ' · ' + said : span, x: last.x}
+    })
+    var frame = (i) => {
+      var on = i >= 0 && i < steps.length
+      svg.classList.toggle('tl-motion', on)
+      ids.forEach((key, k) => {
+        if (!els[k]) return
+        on ? els[k].setAttribute('data-tl', at[key] < i ? 'done' : at[key] === i ? 'now' : 'wait') : els[k].removeAttribute('data-tl')
+      })
+      if (progress) progress.style.strokeDashoffset = on ? String(1 - (steps[i].x - from) / (to - from || 1)) : ''
+    }
+    return {steps, frame}
+  }
+
+  return {parse, render, motion}
 })()
