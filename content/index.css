@@ -478,16 +478,17 @@ pre.mmd-fullscreen svg path.relationshipLine,
 pre.mmd-fullscreen svg g.edgeLabel {
   transition: opacity .18s ease, filter .18s ease;
 }
-/*a gantt task does not glow: the pointer over a gantt drives its date cursor*/
-pre.mmd-fullscreen svg g.node:not(.gantt-task):hover {
+/*a gantt task, a pie slice or a quadrant point does not glow, the pointer over a gantt drives its date cursor; a journey stage is a whole column
+  and is marked by its dot and the curve, never by a border or a glow*/
+pre.mmd-fullscreen svg g.node:not(.gantt-task, .journey-stage, .pie-slice, .quadrant-point):hover {
   filter: drop-shadow(0 0 7px #eb6c36);
 }
-pre.mmd-fullscreen svg g.node:not(.gantt-task):hover > :is(rect, polygon, circle, path, ellipse),
-pre.mmd-fullscreen svg g.node.mmd-selected > :is(rect, polygon, circle, path, ellipse) {
+pre.mmd-fullscreen svg g.node:not(.gantt-task, .journey-stage, .pie-slice, .quadrant-point):hover > :is(rect, polygon, circle, path, ellipse),
+pre.mmd-fullscreen svg g.node.mmd-selected:not(.journey-stage, .pie-slice, .quadrant-point) > :is(rect, polygon, circle, path, ellipse) {
   stroke: #eb6c36 !important;
   stroke-width: 2px !important;
 }
-pre.mmd-fullscreen svg g.node.mmd-selected {
+pre.mmd-fullscreen svg g.node.mmd-selected:not(.journey-stage, .pie-slice, .quadrant-point) {
   filter: drop-shadow(0 0 10px #eb6c36);
 }
 pre.mmd-fullscreen svg path.flowchart-link.mmd-hover,
@@ -860,7 +861,7 @@ svg.mmd-seq text.messageText[data-mmd-seq=now] {
   font-weight: 600;
 }
 /*state playback: the state just reached is lit, the ones reached before keep their colours, the rest wait*/
-svg.mmd-seq g.node[data-mmd-seq=now] > :is(rect, circle, polygon, ellipse):not(.mmd-er-box, .mmd-er-fill) {
+svg.mmd-seq g.node:not(.journey-stage)[data-mmd-seq=now] > :is(rect, circle, polygon, ellipse):not(.mmd-er-box, .mmd-er-fill) {
   fill: rgba(235, 108, 54, .08) !important;
   stroke: #eb6c36 !important;
   stroke-width: 1.6px !important;
@@ -879,7 +880,7 @@ svg.mmd-seq g.statediagram-cluster[data-mmd-seq=now] rect.outer {
   stroke: #eb6c36 !important;
   stroke-dasharray: none !important;
 }
-._mermaid-dark svg.mmd-seq g.node[data-mmd-seq=now] > :is(rect, circle, polygon, ellipse):not(.mmd-er-box, .mmd-er-fill) {
+._mermaid-dark svg.mmd-seq g.node:not(.journey-stage)[data-mmd-seq=now] > :is(rect, circle, polygon, ellipse):not(.mmd-er-box, .mmd-er-fill) {
   fill: rgba(235, 108, 54, .14) !important;
 }
 .mmd-token {

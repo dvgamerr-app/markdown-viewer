@@ -597,7 +597,10 @@ var mmd = (() => {
       })
       node.appendChild(make('rect', 'mmd-er-box', round))
       var at = shift(node)
-      boxes.push({old: {left: at.x + old.x, top: at.y + old.y, right: at.x + old.x + old.width, bottom: at.y + old.y + old.height}, grown: height - old.height})
+      node.__mmdBox = {left: at.x + box.x, top: at.y + box.y, right: at.x + right, bottom: at.y + box.y + box.height}
+      // a row's line meets the box at the middle of the row: its rect spans y - 14 to y + 6
+      node.__mmdRows.forEach((row) => (row.mid = at.y + parseFloat(row.rect.getAttribute('y')) + ROW / 2))
+      boxes.push({old: node.__mmdBox, grown: height - old.height})
       room.top = Math.max(room.top, height - old.height)
       room.side = Math.max(room.side, (width - old.width) / 2)
     })
@@ -610,6 +613,118 @@ var mmd = (() => {
       view[3] += room.top
       svg.setAttribute('viewBox', view.join(' '))
       if (svg.style.maxWidth) svg.style.maxWidth = view[2] + 'px'
+    }
+
+    // mermaid joins two entities box to box, the skill joins the key rows: the primary key on the one side and the
+    // foreign key that refers to it on the many side. Each line is redrawn as a right-angle route between those rows,
+    // leaving and entering a box side horizontally, so both cardinality marks sit on the row they belong to
+    var squash = (text) => text.toLowerCase().replace(/[^a-z0-9]/g, '')
+    var entity = (name) => svg.querySelector('g.node.mmd-er-node[id$="-' + CSS.escape(name) + '"]')
+    var routes = []
+    svg.querySelectorAll('path.relationshipLine').forEach((line) => {
+      var ends = /^id_(entity-.+-\d+)_(entity-.+-\d+)_\d+$/.exec(line.getAttribute('data-id') || '')
+      var a = ends && entity(ends[1])
+      var b = ends && entity(ends[2])
+      if (!a || !b || a === b) return
+      var many = (attr) => /oneOrMore|zeroOrMore/.test(line.getAttribute(attr) || '')
+      // the parent is the one side; between two "many" or two "one" ends the first entity is
+      var aIsChild = many('marker-start') && !many('marker-end')
+      var parent = aIsChild ? b : a
+      var child = aIsChild ? a : b
+      var key = parent.__mmdRows.find((r) => r.pk)
+      var parentName = squash((/^entity-(.+)-\d+$/.exec(ends[aIsChild ? 2 : 1]) || [])[1] || '')
+      // the foreign key is the one named after the parent (customer_id for CUSTOMER), or after its key (sku for sku)
+      var refs = child.__mmdRows.filter((r) => r.fk)
+      var ref = refs.find((r) => parentName && squash(r.field).includes(parentName)) ||
+        refs.find((r) => key && squash(r.field) === squash(key.field)) || refs[0]
+      // with no key row on either side there is nothing to point at, mermaid's own route stays
+      if (!key && !ref) return
+      var anchor = (node, row) => ({box: node.__mmdBox, y: row ? row.mid : (node.__mmdBox.top + node.__mmdBox.bottom) / 2})
+      var from = anchor(a, a === parent ? key : ref)
+      var to = anchor(b, b === parent ? key : ref)
+      var forward = to.box.left - from.box.right >= 24
+      var side = forward || from.box.left - to.box.right >= 24
+      var x1 = !side ? from.box.right : forward ? from.box.right : from.box.left
+      var x2 = !side ? to.box.right : forward ? to.box.left : to.box.right
+      // side by side the line turns at the middle of the gap, stacked it runs down a lane beside the wider box
+      var lane = side ? (x1 + x2) / 2 : Math.max(from.box.right, to.box.right) + 24
+      routes.push({line, from, to, side, forward, x1, x2, lane})
+    })
+    // routes that would turn on the same lane are spread 12px apart, so no two strokes share a segment
+    var lanes = {}
+    routes.forEach((r) => (lanes[Math.round(r.lane)] = (lanes[Math.round(r.lane)] || []).concat(r)))
+    Object.keys(lanes).forEach((k) => {
+      var group = lanes[k].sort((p, q) => Math.min(p.from.y, p.to.y) - Math.min(q.from.y, q.to.y))
+      group.forEach((r, i) => (r.lane += r.side ? (i - (group.length - 1) / 2) * 12 : i * 12))
+    })
+    var R = 8
+    // what the new routes take up, so labels do not land on each other and the svg can grow to hold them
+    var placed = []
+    var reach = {left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity}
+    var cover = (x1, y1, x2, y2) => {
+      reach.left = Math.min(reach.left, x1)
+      reach.top = Math.min(reach.top, y1)
+      reach.right = Math.max(reach.right, x2)
+      reach.bottom = Math.max(reach.bottom, y2)
+    }
+    routes.forEach((r) => {
+      var {line, from, to, x1, x2, lane} = r
+      var dy = to.y - from.y
+      var sy = dy > 0 ? 1 : -1
+      var out = lane > x1 ? 1 : -1
+      var back = x2 > lane ? 1 : -1
+      var k = Math.min(R, Math.abs(dy) / 2, Math.abs(lane - x1), Math.abs(x2 - lane))
+      var d = r.side && Math.abs(dy) < 1
+        ? `M${x1},${from.y}H${x2}`
+        : `M${x1},${from.y}H${lane - out * k}Q${lane},${from.y} ${lane},${from.y + sy * k}` +
+          `V${to.y - sy * k}Q${lane},${to.y} ${lane + back * k},${to.y}H${x2}`
+      line.setAttribute('d', d)
+      // mermaid draws the line as one long dash, a new length needs a new dash
+      line.style.strokeDasharray = ''
+      cover(Math.min(x1, x2, lane), Math.min(from.y, to.y), Math.max(x1, x2, lane), Math.max(from.y, to.y))
+      // its name moves with it: above a straight line, beside the lane of a turning one, 8px clear of the stroke
+      var tag = svg.querySelector('g.edgeLabel .label[data-id="' + line.getAttribute('data-id') + '"]')
+      var group = tag && tag.closest('g.edgeLabel')
+      var text = group && group.querySelector('p, span')
+      var matrix = group && svg.getScreenCTM()
+      if (!text || !matrix) return
+      group.setAttribute('transform', 'translate(0, 0)')
+      var range = document.createRange()
+      range.selectNodeContents(text)
+      var rect = range.getBoundingClientRect()
+      if (!rect.width) return
+      var inverse = matrix.inverse()
+      var corner = (x, y) => new DOMPoint(x, y).matrixTransform(inverse)
+      var tl = corner(rect.left, rect.top)
+      var br = corner(rect.right, rect.bottom)
+      var w = br.x - tl.x
+      var h = br.y - tl.y
+      var straight = r.side && Math.abs(dy) < 1
+      // beside a lane, on whichever side has the room: a gap is shared with the cardinality marks at both boxes
+      var lo = Math.min(x1, x2)
+      var hi = Math.max(x1, x2)
+      var leftRoom = r.side ? lane - lo - 28 : -1
+      var rightRoom = r.side ? hi - lane - 28 : Infinity
+      var left = straight ? (x1 + x2) / 2 - w / 2 : rightRoom >= w + 8 || rightRoom >= leftRoom ? lane + 8 : lane - 8 - w
+      var top = straight ? from.y - 8 - h : (from.y + to.y) / 2 - h / 2
+      // two names that would meet step apart, along the lane or up from a straight line
+      var hits = () => placed.some((p) => left < p.right + 4 && left + w > p.left - 4 && top < p.bottom + 4 && top + h > p.top - 4)
+      for (var tries = 0; tries < 8 && hits(); tries++) top += straight ? -(h + 4) : h + 4
+      placed.push({left, top, right: left + w, bottom: top + h})
+      cover(left, top, left + w, top + h)
+      group.setAttribute('transform', `translate(${left - tl.x}, ${top - tl.y})`)
+    })
+    // a lane beside the boxes may run past what mermaid drew, the cardinality marks need 20px more
+    var frame = (svg.getAttribute('viewBox') || '').split(/[ ,]+/).map(parseFloat)
+    if (frame.length === 4 && routes.length && isFinite(reach.left)) {
+      var x0 = Math.min(frame[0], reach.left - 24)
+      var y0 = Math.min(frame[1], reach.top - 24)
+      var x1 = Math.max(frame[0] + frame[2], reach.right + 24)
+      var y1 = Math.max(frame[1] + frame[3], reach.bottom + 24)
+      if (x0 < frame[0] || y0 < frame[1] || x1 > frame[0] + frame[2] || y1 > frame[1] + frame[3]) {
+        svg.setAttribute('viewBox', [x0, y0, x1 - x0, y1 - y0].join(' '))
+        if (svg.style.maxWidth) svg.style.maxWidth = (x1 - x0) + 'px'
+      }
     }
 
     // cardinality is written at the end of the line, where the line meets the entity
@@ -781,9 +896,9 @@ var mmd = (() => {
     var isJourney = kind === 'journey'
     var isTimeline = kind === 'timeline'
     // the other diagrams the extension draws itself name their nodes "<prefix>-<id>-0" and carry a "<x>-model".
-    // A gantt is left out: its pointer belongs to the date cursor, a task neither glows nor opens a popup
+    // A gantt, a pie and a quadrant are left out: a task, a slice or a point neither glows nor opens a popup
     var drawnBy = {
-      pie: /^pie-(.+)-0$/, quadrantChart: /^quadrant-(.+)-0$/, requirement: /^req-(.+)-0$/,
+      requirement: /^req-(.+)-0$/,
       gitGraph: /^git-(.+)-0$/, c4: /^c4-(.+)-0$/, mindmap: /^mindmap-(.+)-0$/
     }[kind]
     var isClass = kind === 'classDiagram'
@@ -943,8 +1058,10 @@ var mmd = (() => {
     var comet = [['glow', 1], ['tail', 1], ['body', 0.75], ['head', 0.5], ['core', 0.3]]
     var NS = 'http://www.w3.org/2000/svg'
     var flowSeq = 0
-    // reverse runs it from the end of the path back to the start, over takes the clock for a one-shot
-    var flow = (edge, dir, delay = 0, loop = false, {reverse, over = 1400, color = ''} = {}) => {
+    // reverse runs it from the end of the path back to the start, over takes the clock for a one-shot. A looping
+    // streak with a cycle runs once per cycle and then waits, drained, for the next one
+    var LOOP = 2400
+    var flow = (edge, dir, delay = 0, loop = false, {reverse, over = 1400, color = '', cycle = 0} = {}) => {
       // a streak runs towards the arrowhead: a class relation like "A <|-- B" has its head at the start of the path
       if (reverse === undefined) {
         var tip = (attr) => /^url\(/.test(edge.el.getAttribute?.(attr) || '') && !/none/.test(edge.el.getAttribute(attr))
@@ -1020,14 +1137,15 @@ var mmd = (() => {
       }
       // dashoffset and gradient both follow the head, so they move together frame by frame
       // the streak enters from before the source and runs past the end so it drains wholly into the target
-      var duration = loop ? 2400 : over
+      var duration = loop ? LOOP : over
       var start = performance.now() + delay * 1000
       var ease = (t) => (1 - Math.cos(Math.PI * t)) / 2
       var frame = (now) => {
         if (!group.isConnected) return
-        var t = Math.max(0, now - start) / duration
+        var elapsed = Math.max(0, now - start)
+        var t = loop && cycle ? Math.min(1, (elapsed % cycle) / duration) : elapsed / duration
         if (!loop && t >= 1) return group.remove()
-        var run = ease(t % 1)
+        var run = ease(loop && !cycle ? t % 1 : t)
         var head = reverse ? length - run * (length + span) : run * (length + span)
         var to = at(head)
         layers.forEach(({line, fade, len}) => {
@@ -1525,8 +1643,9 @@ var mmd = (() => {
       if (id) {
         var {shown, used} = trace(id, reach)
         used.forEach((edge, index) => {
-          // time runs one way: both sides of a timeline period light as one stretch, left to right
-          var dir = isTimeline || reach === 'down' ? 'out' : reach === 'up' ? 'in' : edge.from === id ? 'out' : 'in'
+          // time runs one way: both sides of a timeline period light as one stretch, left to right. A relationship
+          // has no direction, both ends of an entity's links light in the accent
+          var dir = isTimeline || isEr || reach === 'down' ? 'out' : reach === 'up' ? 'in' : edge.from === id ? 'out' : 'in'
           edge.el.dataset.mmdDir = dir
           edge.el.classList.add('mmd-on')
           edge.extras.forEach((el) => el.classList.add('mmd-on'))
@@ -1538,8 +1657,24 @@ var mmd = (() => {
               el.style.setProperty('font-weight', '600', 'important')
             })
           }
-          isTimeline || flow(edge, dir, Math.min(index, 6) * 0.2, true)
+          isTimeline || (isJourney && !reach) || flow(edge, dir, Math.min(index, 6) * 0.2, true)
         })
+        // a journey stage is a relay: the streak out of it leaves only once the streak into it has arrived, then both
+        // wait for the next round. A stage with nothing coming in starts at once
+        if (isJourney && !reach && used.length) {
+          var input = used.find((edge) => edge.to === id)
+          var output = used.find((edge) => edge.from === id)
+          // the head reaches the end of a path at run = length / (length + span), on the eased clock
+          var arrive = (edge) => {
+            var length = edge.el.getTotalLength()
+            var span = Math.min(length * 0.8, Math.max(80, Math.min(260, length * 0.5)))
+            return (Math.acos(1 - 2 * (length / (length + span))) / Math.PI) * LOOP
+          }
+          var lag = input && output ? arrive(input) : 0
+          var cycle = input && output ? lag + LOOP : 0
+          input && flow(input, input.el.dataset.mmdDir, 0, true, {cycle})
+          output && flow(output, output.el.dataset.mmdDir, lag / 1000, true, {cycle})
+        }
         // one comet runs the whole stretch through the period, from the one before it to the one after
         if (isTimeline && used.length) {
           var xs = used.flatMap((edge) => [edge.el.getPointAtLength(0).x, edge.el.getPointAtLength(edge.el.getTotalLength()).x])
@@ -1587,7 +1722,7 @@ var mmd = (() => {
       if (!node || focused) return
       hovered = edges.filter((e) => e.from === node.id || e.to === node.id)
       hovered.forEach((e) => {
-        var dir = isTimeline || e.from === node.id ? 'out' : 'in'
+        var dir = isTimeline || isEr || e.from === node.id ? 'out' : 'in'
         e.el.dataset.mmdDir = dir
         e.el.classList.add('mmd-hover')
         tint(e, true, dir)
