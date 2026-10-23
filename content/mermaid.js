@@ -2125,9 +2125,13 @@ var mmd = (() => {
       var id = 'mmd-' + ++sequence
       node.removeAttribute('data-processed')
       // dbml, user journeys and timelines draw themselves, mermaid only gets what they hand back
+      // the room the diagram has on the page: the content box of its <pre>, a timeline stretches its axis to fill it
+      var box = node.parentNode
+      var pad = box ? getComputedStyle(box) : null
+      var fit = box ? box.clientWidth - parseFloat(pad.paddingLeft) - parseFloat(pad.paddingRight) : 0
       var custom = node.classList.contains('dbml')
         ? () => dbml.render(text, t, {sans, mono}, id)
-        : () => journey.render(text, t, {sans, mono}, id) || timeline.render(text, t, {sans, mono}, id)
+        : () => journey.render(text, t, {sans, mono}, id) || timeline.render(text, t, {sans, mono}, id, fit)
       var drawn = Promise.resolve().then(custom).then((svg) => (svg ? {svg} : mermaid.render(id, text)))
       return drawn.then(({svg, bindFunctions}) => {
         node.innerHTML = svg

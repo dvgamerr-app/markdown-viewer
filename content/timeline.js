@@ -100,8 +100,9 @@ var timeline = (() => {
   var EVENTS = 4
   var TRACK = 1.12
 
-  // timeline source -> svg markup, or '' when mermaid should draw it. t: the style tokens of mermaid.js
-  var render = (src, t, fonts, id) => {
+  // timeline source -> svg markup, or '' when mermaid should draw it. t: the style tokens of mermaid.js, fit: the
+  // width the axis may stretch to
+  var render = (src, t, fonts, id, fit) => {
     var model = parse(src)
     if (!model) return ''
     var sans = fonts.sans
@@ -146,12 +147,23 @@ var timeline = (() => {
     }
     // evenly spaced periods have nothing to measure, give them the width of a label
     if (!numeric) scale = Math.max(scale, ...periods.map((p) => p.w / 2 + GAP / 2))
-    var xs = values.map((v) => (v - values[0]) * scale)
-    var left = Math.min(xs[0] - CAP, ...periods.map((p, i) => xs[i] - p.w / 2))
-    xs = xs.map((x) => x - left + MARGIN)
-    var capL = xs[0] - CAP
-    var capR = xs[n - 1] + CAP
-    var right = Math.max(capR, ...periods.map((p, i) => xs[i] + p.w / 2))
+    var xs, capL, capR, right
+    var place = () => {
+      xs = values.map((v) => (v - values[0]) * scale)
+      var left = Math.min(xs[0] - CAP, ...periods.map((p, i) => xs[i] - p.w / 2))
+      xs = xs.map((x) => x - left + MARGIN)
+      capL = xs[0] - CAP
+      capR = xs[n - 1] + CAP
+      right = Math.max(capR, ...periods.map((p, i) => xs[i] + p.w / 2))
+    }
+    place()
+    // the axis fills the room it is given: only the distances grow, the type keeps its size. A label that stuck out
+    // past an end stops doing so once the axis grows, so the stretch is measured again until it fits
+    for (var pass = 0; n > 1 && fit && pass < 3 && right + MARGIN < fit - 1; pass++) {
+      var span = xs[n - 1] - xs[0]
+      scale *= (span + fit - right - MARGIN) / span
+      place()
+    }
 
     var body = []
     var y = MARGIN
@@ -227,8 +239,7 @@ var timeline = (() => {
     var legend = []
     if (major >= 0 || numeric) {
       var ly = y
-      legend.push(`<path d="M${MARGIN},${ly}H${num(right)}" stroke="${faint(0.1)}" stroke-width="0.8"/>`,
-        `<text x="${MARGIN}" y="${ly + 16}" font-family="${mono}" font-size="8" letter-spacing="1.44" fill="${t.muted}">LEGEND</text>`)
+      legend.push(`<text x="${MARGIN}" y="${ly + 16}" font-family="${mono}" font-size="8" letter-spacing="1.44" fill="${t.muted}">LEGEND</text>`)
       var lx = MARGIN + 12
       var item = (r, fill, text) => {
         legend.push(`<circle cx="${lx}" cy="${ly + 32}" r="${r}" fill="${fill}"/>`,
@@ -237,10 +248,14 @@ var timeline = (() => {
       }
       item(4, t.ink, 'Period')
       major >= 0 && item(6, accent, 'Busiest period')
-      numeric && legend.push(`<text x="${lx - 8}" y="${ly + 32}" dominant-baseline="central" font-family="${sans}" font-size="9" font-style="italic" fill="${t.muted}">Spacing is proportional to elapsed time.</text>`)
+      var note = 'Spacing is proportional to elapsed time.'
+      numeric && legend.push(`<text x="${lx - 8}" y="${ly + 32}" dominant-baseline="central" font-family="${sans}" font-size="9" font-style="italic" fill="${t.muted}">${note}</text>`)
+      // the strip may run wider than the axis, the figure widens with it
+      right = Math.max(right, numeric ? lx - 8 + measure(note, 9, sans, 400) : lx - 32)
+      legend.unshift(`<path d="M${MARGIN},${ly}H${num(right)}" stroke="${faint(0.1)}" stroke-width="0.8"/>`)
       y = ly + 48
     }
-    var width = grid(right + MARGIN)
+    var width = fit && right + MARGIN <= fit + 4 ? Math.floor(fit) : grid(right + MARGIN)
     var height = grid(y)
 
     var info = {nodes: {}}

@@ -93,3 +93,21 @@ describe('timeline render', () => {
     expect(at[1] - at[0]).toBeCloseTo(at[2] - at[1], 1)
   })
 })
+
+describe('timeline fit', () => {
+  const width = (svg) => parseFloat(/viewBox="0 0 ([\d.]+)/.exec(svg)[1])
+
+  test('the axis stretches to the room it is given, the type keeps its size', () => {
+    const natural = timeline.render(src, light, fonts, 't-6')
+    const wide = timeline.render(src, light, fonts, 't-7', 1200)
+    expect(width(natural)).toBeLessThan(1200)
+    expect(Math.abs(width(wide) - 1200)).toBeLessThanOrEqual(4)
+    expect(wide.match(/font-size="12"/g).length).toBe(natural.match(/font-size="12"/g).length)
+    const at = dots(wide)
+    expect((at[1] - at[0]) / (at[2] - at[1])).toBeCloseTo(2 / 6, 1)
+  })
+
+  test('a narrower room never squeezes the axis', () => {
+    expect(width(timeline.render(src, light, fonts, 't-8', 100))).toBe(width(timeline.render(src, light, fonts, 't-9')))
+  })
+})
