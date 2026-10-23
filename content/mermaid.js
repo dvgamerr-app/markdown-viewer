@@ -130,10 +130,10 @@ var mmd = (() => {
     commitLabelBackground: t.paper,
     // quadrant
     quadrant1Fill: t.accentTint, quadrant2Fill: `rgba(${t.inkRgb},0.03)`,
-    quadrant3Fill: t.paper, quadrant4Fill: `rgba(${t.inkRgb},0.03)`,
+    quadrant3Fill: `rgba(${t.inkRgb},0.03)`, quadrant4Fill: `rgba(${t.inkRgb},0.03)`,
     quadrant1TextFill: t.ink, quadrant2TextFill: t.ink,
     quadrant3TextFill: t.ink, quadrant4TextFill: t.ink,
-    quadrantPointFill: t.accent,
+    quadrantPointFill: t.muted,
     quadrantPointTextFill: t.ink,
     quadrantTitleFill: t.ink,
     quadrantXAxisTextFill: t.soft,
@@ -314,6 +314,72 @@ var mmd = (() => {
     .milestoneText, .vertText { font-family: ${mono} !important; font-size: 10px !important; font-weight: 400 !important; letter-spacing: 0.06em; fill: ${t.soft} !important; font-style: normal !important; }
     .today line { stroke: ${t.accent} !important; stroke-width: 1px !important; stroke-dasharray: 4 3; }
 
+    /* pie: slices cut by paper hairlines with no outer ring, percentages in mono, legend swatches as small rounded
+      squares. The first slice is the accent, the rest the muted series palette */
+    .pieOuterCircle { stroke: none !important; }
+    .pieCircle { stroke-width: 2px !important; }
+    .slice { font-family: ${mono} !important; font-size: 10px !important; font-weight: 600; letter-spacing: 0.04em; }
+    .legend text { font-family: ${sans} !important; font-size: 12px !important; fill: ${t.ink} !important; }
+    .legend rect { width: 10px; height: 10px; rx: 2px; ry: 2px; transform: translate(0, 4px); stroke: none !important; }
+
+    /* quadrant: one hairline frame and cross, the four cells share one ink wash and only the first is tinted, cell
+      names and axis ends are tracked mono eyebrows, points are muted dots with their names in sans */
+    .quadrants + .border line { stroke-width: 1px !important; }
+    .quadrants + .border line:nth-child(-n+4) { stroke: ${t.ruleSolid} !important; }
+    .quadrants + .border line:nth-child(n+5) { stroke: ${t.muted} !important; }
+    .quadrants .quadrant text, .labels text { font-family: ${mono} !important; font-size: 9px !important; letter-spacing: 0.18em; text-transform: uppercase; fill: ${t.muted} !important; }
+    .quadrants .quadrant:first-child text { fill: ${t.accent} !important; font-weight: 600; }
+    .labels text { fill: ${t.soft} !important; }
+    .data-point circle { stroke: ${t.paper} !important; stroke-width: 1.5px !important; }
+    .data-point text { font-family: ${sans} !important; font-size: 11px !important; font-weight: 600; fill: ${t.ink} !important; }
+
+    /* requirement: the <<type>> line is a tracked mono eyebrow, the name sans, one hairline box */
+    .node:has(> .divider) > .outer-path path[stroke]:not([stroke=none]) { stroke: ${t.ink} !important; stroke-width: 1px !important; }
+    .node:has(> .divider) > g.label:nth-child(2) :is(span, p) { font-family: ${mono} !important; font-size: 9px !important; letter-spacing: 0.14em; text-transform: uppercase; color: ${t.soft} !important; }
+    .node:has(> .divider) > g.label:nth-child(3) :is(span, p) { font-size: 13px !important; font-weight: 600 !important; color: ${t.ink} !important; }
+    /* fields keep the font they were measured in, mono would overflow their boxes */
+    .node:has(> .divider) > g.label:nth-child(n+4) :is(span, p) { color: ${t.ink} !important; }
+    .node:has(> .divider) > .divider path { stroke: rgba(${t.inkRgb},0.22) !important; stroke-width: 1px !important; }
+
+    /* gitgraph: branches are dotted rails, commits small dots, merge lines thin in the branch colour, branch names
+      as mono tabs, commit ids and tags in mono */
+    .branch { stroke: ${t.ruleSolid} !important; stroke-width: 1px !important; stroke-dasharray: 2 4 !important; }
+    .arrow { stroke-width: 2px !important; }
+    circle.commit { r: 6px; stroke-width: 2px !important; }
+    .commit-highlight-outer, .commit-highlight-inner { rx: 2px; ry: 2px; }
+    .branchLabelBkg { fill: ${t.paper2} !important; stroke: ${t.ruleSolid} !important; stroke-opacity: 1 !important; stroke-width: 1px !important; opacity: 1 !important; }
+    .branchLabel text, .branchLabel tspan { font-family: ${mono} !important; font-size: 11px !important; font-weight: 600; fill: ${t.ink} !important; }
+    .commit-label { font-family: ${mono} !important; font-size: 10px !important; fill: ${t.soft} !important; }
+    .commit-label-bkg { fill: ${t.paper} !important; opacity: 0.85 !important; }
+    .tag-label { font-family: ${mono} !important; font-size: 10px !important; fill: ${t.ink} !important; }
+    .tag-label-bkg { fill: ${t.accentTint} !important; stroke: ${t.accent} !important; stroke-width: 1px !important; }
+    .tag-hole { fill: ${t.accent} !important; }
+
+    /* c4: boxes take the same skin as every node, set in the config, only the text colour is left to redraw */
+    .c4-name text, .c4-descr text, .c4-type text, .c4-techn text { font-family: ${sans} !important; }
+    .c4-type text, .c4-techn text { font-family: ${mono} !important; font-size: 9px !important; letter-spacing: 0.08em; }
+    .c4-descr text { font-size: 11px !important; }
+    .c4-shape rect, .c4-shape circle, .c4-shape path { stroke-width: 1px !important; }
+    /* boundaries, relations and their labels are drawn #444 by attribute: boundaries as dashed hairline frames with a
+      mono caption, relations muted with a mono label, user colours from UpdateRelStyle are left alone */
+    rect[stroke="#444444"] { stroke: ${t.ruleSolid} !important; stroke-dasharray: 4 4; rx: 8px; ry: 8px; }
+    path[stroke="#444444"], line[stroke="#444444"] { stroke: ${t.muted} !important; }
+    [id$=arrowhead] path, [id$=arrowend] path { fill: ${t.muted} !important; stroke: ${t.muted} !important; }
+    text[fill="#444444"] { font-family: ${mono} !important; font-size: 11px !important; fill: ${t.muted} !important; }
+    text[fill="#444444"][style*="16px"] { font-size: 10px !important; font-weight: 600 !important; letter-spacing: 0.14em; text-transform: uppercase; fill: ${t.soft} !important; }
+    text[fill="#444444"][style*="14px"] { font-size: 9px !important; letter-spacing: 0.12em; fill: ${t.soft} !important; }
+
+    /* mindmap: every branch is one colour of the series palette, nodes a light wash of it with a hairline, thin edges,
+      the root is the accent. Labels stay ink */
+    .mindmap-node .nodeLabel, .mindmap-node .nodeLabel p, .mindmap-node text { color: ${t.ink} !important; fill: ${t.ink} !important; font-weight: 600; }
+    .mindmap-node :is(.node-bkg, .label-container) { stroke-width: 1px !important; }
+    .mindmap-node .node-line, .mindmap-node line { display: none; }
+    .mindmap-node.section-root :is(.node-bkg, .label-container) { fill: color-mix(in srgb, ${t.accent} 8%, ${t.paper}) !important; stroke: ${t.accent} !important; stroke-width: 1.2px !important; }
+    .edge { stroke-width: 1.5px !important; }
+    ${[t.series[0], t.series[1], t.series[2], t.series[3], t.series[4], t.muted, t.soft, t.link].map((c, i) => `
+    .mindmap-node.section-${i} :is(.node-bkg, .label-container) { fill: color-mix(in srgb, ${c} 16%, ${t.paper}) !important; stroke: ${c} !important; }
+    .section-edge-${i} { stroke: ${c} !important; }`).join('')}
+
     .focal > rect, .focal > polygon, .focal > circle, .focal > path {
       fill: ${t.accentTint} !important; stroke: ${t.accent} !important; stroke-width: 1.2px !important;
     }
@@ -333,6 +399,27 @@ var mmd = (() => {
       fill: ${t.accentTint} !important; stroke: ${t.accent} !important; stroke-opacity: 0.5; stroke-dasharray: 4 4;
     }
   `
+
+  // c4 colours its shapes from the config: the system in scope is the focal accent, the rest are ink-outlined nodes,
+  // external ones dashed-weight neutrals
+  var c4Colors = (t) => {
+    var colors = {}
+    ;['person', 'system', 'system_db', 'system_queue', 'container', 'container_db', 'container_queue', 'component', 'component_db', 'component_queue'].forEach((kind) => {
+      var focal = kind.startsWith('system')
+      colors[kind + '_bg_color'] = focal ? `color-mix(in srgb, ${t.accent} 8%, ${t.node})` : t.node
+      colors[kind + '_border_color'] = focal ? t.accent : t.ink
+      colors['external_' + kind + '_bg_color'] = `color-mix(in srgb, ${t.muted} 8%, ${t.node})`
+      colors['external_' + kind + '_border_color'] = t.muted
+    })
+    return colors
+  }
+
+  // c4 writes its text colour (white) inline with !important, a stylesheet cannot beat that
+  var c4Text = (svg, t) => {
+    svg.querySelectorAll('[style*="#FFFFFF" i], [style*="rgb(255, 255, 255)"]').forEach((el) => {
+      el.style.setProperty(el.tagName == 'text' ? 'fill' : 'color', t.ink, 'important')
+    })
+  }
 
   // a class box is drawn as two paths with square corners, redraw it as one rounded rect so it matches every other node
   var classBoxes = (svg) => {
@@ -2140,6 +2227,7 @@ var mmd = (() => {
       sequence: {actorMargin: 64, boxMargin: 12, noteMargin: 12, messageMargin: 40, mirrorActors: false, activationWidth: 8},
       state: {padding: 12},
       er: {fontSize: 12, entityPadding: 4},
+      c4: c4Colors(t),
       gantt: {barHeight: 24, barGap: 12, leftPadding: 90, fontSize: 11, sectionFontSize: 9}
     }
     mermaid.initialize(config)
@@ -2172,6 +2260,7 @@ var mmd = (() => {
 
     Promise.all(jobs).then(() => {
       document.querySelectorAll('code.mermaid svg[aria-roledescription=classDiagram]').forEach(classBoxes)
+      document.querySelectorAll('code.mermaid svg[aria-roledescription=c4]').forEach((svg) => c4Text(svg, t))
       document.querySelectorAll('code.mermaid svg[aria-roledescription=er]').forEach(erBoxes)
       document.querySelectorAll('code.mermaid svg').forEach(labelsOnLines)
       document.querySelectorAll('pre > code.mermaid > svg').forEach((diagram) => {
